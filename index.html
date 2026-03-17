@@ -2691,7 +2691,7 @@ async function refreshFromGoogleSheets() {
     renderMain();
     dataOk = true;
   } catch(e) {
-    showToast('❌ Ошибка загрузки таблицы: ' + e.message, true);
+    flyEmoji(false); showToast('❌ Ошибка загрузки таблицы: ' + e.message, true);
   }
 
   // ── Загрузка планировок из GitHub ─────────────────────────────
@@ -2712,7 +2712,7 @@ async function refreshFromGoogleSheets() {
   } catch(e) { /* тихо */ }
 
   if (dataOk) {
-    showToast('✅ Обновлено: ' + STORES.length + ' магазинов, ' + Object.keys(FP_MAP).length + ' планировок');
+    flyEmoji(true); showToast('✅ Обновлено: ' + STORES.length + ' магазинов, ' + Object.keys(FP_MAP).length + ' планировок');
   }
 
   if (btn) { btn.disabled = false; btn.innerHTML = '☁️ Обновить'; }
@@ -2727,6 +2727,36 @@ function showToast(msg, isError) {
   t.textContent = msg;
   t.className = 'upload-toast' + (isError ? ' error' : '') + ' show';
   setTimeout(() => { t.className = 'upload-toast' + (isError ? ' error' : ''); }, 3500);
+}
+
+function flyEmoji(success) {
+  const btn = document.getElementById('mainRefreshBtn');
+  if (!btn) return;
+  const emoji = success ? '\uD83D\uDC4D' : '\uD83D\uDC4E'; // 👍 👎
+  const rect = btn.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.textContent = emoji;
+  el.style.cssText = [
+    'position:fixed',
+    'left:' + (rect.left + rect.width / 2) + 'px',
+    'top:' + (rect.top + rect.height / 2) + 'px',
+    'font-size:14px',
+    'z-index:9999',
+    'pointer-events:none',
+    'transform:translate(-50%,-50%) scale(0.5)',
+    'opacity:1',
+    'transition:none'
+  ].join(';');
+  document.body.appendChild(el);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      el.style.transition = 'transform 0.75s cubic-bezier(0.15,0.85,0.3,1), opacity 0.75s ease, top 0.75s ease';
+      el.style.top = (rect.top - 55) + 'px';
+      el.style.transform = 'translate(-50%,-50%) scale(3)';
+      el.style.opacity = '0';
+    });
+  });
+  setTimeout(() => el.remove(), 850);
 }
 
 function handleXLSXUpload(input) {
