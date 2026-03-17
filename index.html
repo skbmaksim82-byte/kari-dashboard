@@ -1401,69 +1401,75 @@ function renderOrderTable() {
     return `<span class="qty-badge qty-pos">${v}</span>`;
   }
 
+  const thStyle = 'white-space:nowrap;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--red);font-weight:700;background:var(--surface2);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;';
+  const tdStyle = 'white-space:nowrap;padding:9px 12px;vertical-align:middle;';
+  const tdCenter = 'white-space:nowrap;padding:9px 12px;vertical-align:middle;text-align:center;';
+
   return `
     <div class="order-section">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
         <div>
-          <h2>Сводная таблица заказа ПОСМ</h2>
+          <h2>Сводная таблица</h2>
           <p class="order-subtitle">${stores.length} магазинов · Применены текущие фильтры</p>
         </div>
-        <button class="export-btn" onclick="exportCSV()">⬇ Экспорт CSV</button>
+        <button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,#1D6F42,#196040);display:flex;align-items:center;gap:7px">
+          📊 Выгрузить в Excel
+        </button>
       </div>
-      <div style="overflow-x:auto;max-width:100%">
-        <table class="order-table">
+      <div style="overflow-x:auto;max-width:100%;max-height:calc(100vh - 280px);overflow-y:auto;border-radius:8px;border:1px solid var(--border)">
+        <table style="border-collapse:collapse;font-size:12px;width:max-content;min-width:100%">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Магазин</th>
-              <th>Подраздел.</th>
-              <th>Кат.</th>
-              <th>Торцы X</th>
-              <th>Торцы G</th>
-              <th>Витр. модули</th>
-              <th>ЮМ</th>
-              <th>Ворота</th>
-              <th>Лайтбоксы</th>
-              <th>Таблички реж.</th>
-              <th>Витрина</th>
-              <th>КХ</th>
-              <th>Косм.</th>
-              <th>Одежда</th>
-              <th>Спорт</th>
+              <th style="${thStyle}">Номер магазина</th>
+              <th style="${thStyle}">Магазин / Адрес</th>
+              <th style="${thStyle}">Подразделение</th>
+              <th style="${thStyle}">Кат.</th>
+              <th style="${thStyle}">Торцы X</th>
+              <th style="${thStyle}">Торцы G</th>
+              <th style="${thStyle}">Витр. модули</th>
+              <th style="${thStyle}">ЮМ</th>
+              <th style="${thStyle}">Ворота</th>
+              <th style="${thStyle}">Лайтбоксы</th>
+              <th style="${thStyle}">Таблички реж.</th>
+              <th style="${thStyle}">Витрина</th>
+              <th style="${thStyle}">КХ</th>
+              <th style="${thStyle}">Косм.</th>
+              <th style="${thStyle}">Одежда</th>
+              <th style="${thStyle}">Спорт</th>
             </tr>
           </thead>
           <tbody>
             ${stores.map(s => `
-              <tr>
-                <td style="color:var(--muted);font-size:11px">${s.id}</td>
-                <td><span class="store-link" onclick="selectStoreAndTab(${s.id})">${s.name}</span></td>
-                <td><span style="font-size:11px;padding:2px 6px;border-radius:4px;background:${DIVISION_COLORS[s.division]||'#333'}20;color:${DIVISION_COLORS[s.division]||'#aaa'}">${s.division}</span></td>
-                <td style="text-align:center"><span class="badge badge-cat">${s.category}</span></td>
-                <td style="text-align:center">${qty(s.tortsX)}</td>
-                <td style="text-align:center">${qty(s.tortsG)}</td>
-                <td style="text-align:center">${qty(s.vitrinaModules, 3)}</td>
-                <td style="text-align:center">${qty(s.ymCount, 10)}</td>
-                <td style="text-align:center">${qty(s.antiTheftGates, 8)}</td>
-                <td style="text-align:center">${qty(s.lightboxesCount, 2)}</td>
-                <td style="text-align:center">${qty(s.workHourSignsCount, 3)}</td>
-                <td style="text-align:center">${s.hasVitrina ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
-                <td style="text-align:center">${s.hasKH ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
-                <td style="text-align:center">${s.hasCosmetics ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
-                <td style="text-align:center">${s.hasClothes ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
-                <td style="text-align:center">${s.hasSport ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
+              <tr style="border-bottom:1px solid rgba(248,187,217,0.35)">
+                <td style="${tdCenter}font-size:12px;font-weight:500;color:var(--text)">${s.id}</td>
+                <td style="${tdStyle}"><span class="store-link" onclick="selectStoreAndTab(${s.id})" style="font-size:12px;font-weight:500">${s.name}</span></td>
+                <td style="${tdStyle}"><span style="font-size:11px;padding:2px 6px;border-radius:4px;background:${DIVISION_COLORS[s.division]||'#333'}20;color:${DIVISION_COLORS[s.division]||'#aaa'}">${s.division}</span></td>
+                <td style="${tdCenter}"><span class="badge badge-cat">${s.category}</span></td>
+                <td style="${tdCenter}">${qty(s.tortsX)}</td>
+                <td style="${tdCenter}">${qty(s.tortsG)}</td>
+                <td style="${tdCenter}">${qty(s.vitrinaModules, 3)}</td>
+                <td style="${tdCenter}">${qty(s.ymCount, 10)}</td>
+                <td style="${tdCenter}">${qty(s.antiTheftGates, 8)}</td>
+                <td style="${tdCenter}">${qty(s.lightboxesCount, 2)}</td>
+                <td style="${tdCenter}">${qty(s.workHourSignsCount, 3)}</td>
+                <td style="${tdCenter}">${s.hasVitrina ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
+                <td style="${tdCenter}">${s.hasKH ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
+                <td style="${tdCenter}">${s.hasCosmetics ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
+                <td style="${tdCenter}">${s.hasClothes ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
+                <td style="${tdCenter}">${s.hasSport ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
               </tr>
             `).join('')}
           </tbody>
           <tfoot>
-            <tr class="table-total">
-              <td colspan="4">ИТОГО (${stores.length} маг.)</td>
-              <td style="text-align:center">${totals.tortsX}</td>
-              <td style="text-align:center">${totals.tortsG}</td>
-              <td style="text-align:center">${totals.vitrinaModules.toFixed(1)}</td>
-              <td style="text-align:center">${totals.ymCount}</td>
-              <td style="text-align:center">${totals.antiTheftGates}</td>
-              <td style="text-align:center">${totals.lightboxesCount}</td>
-              <td style="text-align:center">${totals.workHourSigns}</td>
+            <tr style="background:rgba(194,24,91,0.07);border-top:2px solid var(--red)">
+              <td colspan="4" style="${tdStyle}font-weight:700;color:var(--red)">ИТОГО (${stores.length} маг.)</td>
+              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.tortsX}</td>
+              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.tortsG}</td>
+              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.vitrinaModules.toFixed(1)}</td>
+              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.ymCount}</td>
+              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.antiTheftGates}</td>
+              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.lightboxesCount}</td>
+              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.workHourSigns}</td>
               <td colspan="5"></td>
             </tr>
           </tfoot>
@@ -1629,6 +1635,48 @@ function renderStoreDetail() {
 }
 
 // ─── EXPORT ───
+
+function exportExcel() {
+  const stores = filteredStores;
+  // Build data array
+  const headers = ['Номер магазина','Магазин / Адрес','Город','Подразделение','Категория','Вид',
+    'Торцы X','Торцы G','Витрина','Мод.витрины','ТВ витрина','ЮМ','Оформл.ЮИ','Ворота',
+    'КХ','КХ м','Косметика','Косм.м','Одежда','Одежда м','Спорт','Спорт м','Расп.спорт',
+    'Св.таблички','Лайтбоксы','Фасад','Реле вр.','Табл.реж.кол','Размер','Формат',
+    'Корзины','Площадь общ.','Площадь торг.'];
+  const rows = stores.map(s => [
+    s.id, s.name, s.city, s.division, s.category, s.kind,
+    s.tortsX, s.tortsG, s.hasVitrina?'Да':'Нет', s.vitrinaModules, s.vitrinaTV?'Да':'Нет',
+    s.ymCount, s.yiDesign, s.antiTheftGates,
+    s.hasKH?'Да':'Нет', s.khMeters,
+    s.hasCosmetics?'Да':'Нет', s.cosmeticsMeters,
+    s.hasClothes?'Да':'Нет', s.clothesMeters,
+    s.hasSport?'Да':'Нет', s.sportMeters, s.sportLocation,
+    s.lightSigns?'Да':'Нет', s.lightboxesCount,
+    s.facadeType, s.hasTimeRelay?'Да':'Нет',
+    s.workHourSignsCount, s.workHourSignsSize, s.workHourSignsFormat,
+    s.hasBaskets?'Да':'Нет', s.areaTotal||0, s.areaTrade||0
+  ]);
+
+  // Use SheetJS if available, otherwise fallback to CSV with BOM
+  if (typeof XLSX !== 'undefined') {
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    // Column widths
+    ws['!cols'] = headers.map((h,i) => ({wch: i < 2 ? 14 : Math.max(h.length, 10)}));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Сводные данные');
+    XLSX.writeFile(wb, 'Сводные_данные_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  } else {
+    // Fallback: CSV with BOM for Excel
+    const bom = '\uFEFF';
+    const csv = bom + [headers, ...rows].map(r => r.map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(';')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'Сводные_данные_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+  }
+}
+
 function exportCSV() {
   const headers = ['№ магазина','Магазин','Город','Подразделение','Категория','Вид','Торцы X','Торцы G','Витрина','Мод.витрины','ТВ витрина','ЮМ','Оформл.ЮИ','Ворота','КХ','КХ м','Косметика','Косм.м','Одежда','Одежда м','Спорт','Спорт м','Расп.спорт','Св.таблички','Лайтбоксы','Фасад','Реле вр.','Табл.реж.кол','Размер','Формат','Корзины'];
   const rows = filteredStores.map(s => [
