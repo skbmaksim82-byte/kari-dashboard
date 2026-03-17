@@ -557,13 +557,14 @@ header {
   background: linear-gradient(160deg,#fff9fb,#fff0f7);
   border-radius: 24px 24px 0 0;
   border: 1.5px solid #F8BBD9;
-  width: 100%; max-width: 720px;
+  width: 100%; max-width: 98vw;
   max-height: 92vh; display: flex; flex-direction: column;
   box-shadow: 0 -8px 40px rgba(194,24,91,0.2);
   transform: translateY(40px); transition: transform .3s cubic-bezier(.32,.72,0,1);
+  resize: both; overflow: hidden;
 }
 @media(min-width:600px){
-  .modal-box { border-radius: 20px; transform: scale(0.95); max-height: 85vh; }
+  .modal-box { border-radius: 20px; transform: scale(0.95); max-height: 90vh; min-width: 600px; }
 }
 .modal-overlay.open .modal-box { transform: translateY(0) scale(1); }
 .modal-head {
@@ -602,12 +603,12 @@ header {
 }
 .modal-xl-btn:hover { transform: translateY(-1px); box-shadow: 3px 5px 12px rgba(46,125,50,0.4); }
 .modal-xl-btn:active { transform: translateY(0); }
-.modal-body { flex: 1; overflow-y: auto; padding: 12px 16px 20px; -webkit-overflow-scrolling: touch; }
+.modal-body { flex: 1; overflow: auto; padding: 12px 16px 20px; -webkit-overflow-scrolling: touch; }
 .modal-body::-webkit-scrollbar { width: 4px; }
 .modal-body::-webkit-scrollbar-thumb { background: #F8BBD9; border-radius: 2px; }
 
 /* Drill-down table */
-.dd-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dd-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
 .dd-table th {
   position: sticky; top: 0; z-index: 2;
   background: rgba(255,240,247,0.97);
@@ -615,6 +616,7 @@ header {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .5px; color: var(--red);
   border-bottom: 2px solid #F8BBD9;
+  white-space: nowrap;
 }
 .dd-table td { padding: 10px 12px; border-bottom: 1px solid rgba(248,187,217,0.4); vertical-align: middle; }
 .dd-table tr:last-child td { border-bottom: none; }
@@ -740,10 +742,10 @@ header {
   /* Order table → cards */
   .order-section { padding: 14px; border-radius: 14px; }
   .order-section h2 { font-size: 15px; }
-  .order-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .order-table { min-width: 700px; font-size: 11px; }
-  .order-table th { padding: 8px; font-size: 9px; }
-  .order-table td { padding: 8px; }
+  .order-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .order-table { min-width: max-content; width: max-content; font-size: 11px; white-space: nowrap; border-collapse: collapse; }
+  .order-table th { padding: 8px; font-size: 9px; white-space: nowrap; }
+  .order-table td { padding: 8px; white-space: nowrap; }
 
   /* Detail panel */
   .detail-panel { padding: 14px; border-radius: 14px; }
@@ -833,15 +835,9 @@ header {
       <p>Консолидированный заказ рекламных материалов</p>
     </div>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button class="upload-btn" onclick="refreshFromGoogleSheets()" title="Загрузить актуальные данные из GitHub">
-      ☁️ Обновить из GitHub
-    </button>
-    <label class="upload-btn" title="Загрузить Excel-файл с компьютера" style="cursor:pointer">
-      📂 Загрузить файл
-      <input type="file" id="xlsxUpload" accept=".xlsx,.xls" onchange="handleXLSXUpload(this)">
-    </label>
-  </div>
+  <button class="upload-btn" onclick="refreshFromGoogleSheets()" title="Обновить данные и планировки из GitHub" id="mainRefreshBtn">
+    ☁️ Обновить
+  </button>
   <div class="header-stats">
     <div class="hstat">
       <div class="hstat-val" id="h-total">80</div>
@@ -936,7 +932,7 @@ header {
     <div class="drawer-chips" id="mZoneChips">
       <button class="drawer-chip active" data-zone="all">Все</button>
       <button class="drawer-chip" data-zone="hasVitrina">🪟 Витрина</button>
-      <button class="drawer-chip" data-zone="hasKH">🧒 КХ</button>
+      <button class="drawer-chip" data-zone="hasKH">🏠 Кари Хоме</button>
       <button class="drawer-chip" data-zone="hasCosmetics">💄 Косметика</button>
       <button class="drawer-chip" data-zone="hasClothes">👗 Одежда</button>
       <button class="drawer-chip" data-zone="hasSport">🏃 Спорт</button>
@@ -991,7 +987,7 @@ header {
       <div class="zone-filters" id="zoneFilters">
         <button class="zone-btn active" data-zone="all">Все</button>
         <button class="zone-btn" data-zone="hasVitrina">Витрина</button>
-        <button class="zone-btn" data-zone="hasKH">КХ</button>
+        <button class="zone-btn" data-zone="hasKH">Кари Хоме</button>
         <button class="zone-btn" data-zone="hasCosmetics">Косметика</button>
         <button class="zone-btn" data-zone="hasClothes">Одежда</button>
         <button class="zone-btn" data-zone="hasSport">Спорт</button>
@@ -1106,7 +1102,11 @@ function applyFilters() {
     }
     return true;
   });
-  document.getElementById('h-selected').textContent = filteredStores.length < STORES.length ? filteredStores.length : '—';
+  const selCount = filteredStores.length;
+  document.getElementById('h-selected').textContent = selCount < STORES.length ? selCount : '—';
+  // Update total count always
+  document.getElementById('h-total').textContent = STORES.length;
+  document.getElementById('h-divs').textContent = [...new Set(STORES.map(s=>s.division))].length;
   renderStoreList();
   renderMain();
 }
@@ -1225,8 +1225,8 @@ function renderOverview() {
   const divMax = Math.max(...Object.values(divCounts));
 
   // Category breakdown
-  const catCounts = {1:0,2:0,3:0,4:0,5:0};
-  stores.forEach(s => { catCounts[s.category]++; });
+  const catCounts = {};
+  stores.forEach(s => { catCounts[s.category] = (catCounts[s.category]||0)+1; });
 
   return `
     <div class="summary-cards">
@@ -1248,7 +1248,7 @@ function renderOverview() {
         <div class="card-accent" style="background:var(--green)"></div>
         <div class="card-icon">🧒</div>
         <div class="card-val" style="color:var(--green)">${withKH}</div>
-        <div class="card-lbl">Зона КХ</div>
+        <div class="card-lbl">Зона Кари Хоме</div>
         <div class="card-click-hint">📋 детальный список</div>
       </div>
       <div class="card clickable" onclick="openDrill('cosmetics')">
@@ -1276,22 +1276,9 @@ function renderOverview() {
         <div class="card-accent" style="background:var(--red)"></div>
         <div class="card-icon">📌</div>
         <div class="card-val" style="color:var(--red)">${totalTortsX+totalTortsG}</div>
-        <div class="card-lbl">Торцов ПОСМ (X+G)</div>
-        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:4px">
-          <span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 6px;border-radius:4px">X: ${totalTortsX}</span>
-          <span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 6px;border-radius:4px">G: ${totalTortsG}</span>
-        </div>
+        <div class="card-lbl">Торцы</div>
+        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:4px"><span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 6px;border-radius:4px">X: ${totalTortsX}</span><span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 6px;border-radius:4px">G: ${totalTortsG}</span><span style="font-size:10px;background:rgba(139,69,19,0.1);color:#8B4513;padding:2px 6px;border-radius:4px">Кожа: ${totalTortsLeather}</span><span style="font-size:10px;background:rgba(212,160,0,0.1);color:#D4A000;padding:2px 6px;border-radius:4px">Зол: ${totalTortsGold}</span></div>
         <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('torts')">
-        <div class="card-accent" style="background:linear-gradient(135deg,#8B4513,#D4A000)"></div>
-        <div class="card-icon">🥇</div>
-        <div class="card-lbl" style="font-size:11px;font-weight:700;margin-top:4px">Торцы Кожа и Золото</div>
-        <div style="display:flex;gap:6px;justify-content:center;margin-top:6px;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:700;background:rgba(212,160,0,0.15);color:#D4A000;padding:3px 8px;border-radius:6px">🥇 ${totalTortsGold}</span>
-          <span style="font-size:12px;font-weight:700;background:rgba(139,69,19,0.15);color:#8B4513;padding:3px 8px;border-radius:6px">🟫 ${totalTortsLeather}</span>
-        </div>
-        <div class="card-click-hint" style="margin-top:6px">📋 детальный список</div>
       </div>
       <div class="card clickable" onclick="openDrill('ym')">
         <div class="card-accent" style="background:var(--blue)"></div>
@@ -1338,11 +1325,13 @@ function renderOverview() {
             ${renderPie(catCounts, total, 60)}
           </svg>
           <div class="pie-legend">
-            ${Object.entries(catCounts).filter(([,v])=>v>0).map(([cat,cnt], i) => {
-              const colors = ['#E8162A','#FF9F43','#00B4D8','#9B5DE5','#28C76F'];
+            ${Object.entries(catCounts).filter(([,v])=>v>0).sort((a,b)=>+a[0]-+b[0]).map(([cat,cnt], i) => {
+              const colors = ['#888888','#E8162A','#FF9F43','#00B4D8','#9B5DE5','#28C76F'];
+              const colorIdx = Math.min(i, colors.length-1);
+              const label = cat==='0' ? 'Без кат.' : 'Кат. '+cat;
               return `<div class="pie-legend-item">
-                <div class="pie-dot" style="background:${colors[i]}"></div>
-                <span>Кат. ${cat}: <strong>${cnt}</strong></span>
+                <div class="pie-dot" style="background:${colors[colorIdx]}"></div>
+                <span>${label}: <strong>${cnt}</strong></span>
               </div>`;
             }).join('')}
           </div>
@@ -1355,7 +1344,7 @@ function renderOverview() {
       ${[
         {label:'Зона спорта', val: withSport, color:'#FF6B9D'},
         {label:'Зона косметики', val: withCosmetics, color:'var(--amber)'},
-        {label:'Зона КХ', val: withKH, color:'var(--green)'},
+        {label:'Зона Кари Хоме', val: withKH, color:'var(--green)'},
         {label:'Зона одежды', val: withClothes, color:'var(--purple)'},
         {label:'Витрина', val: withVitrina, color:'var(--blue)'},
       ].map(item => `
@@ -1375,10 +1364,10 @@ function renderOverview() {
 
 function renderPie(catCounts, total, cx) {
   if (!total) return '';
-  const colors = ['#E8162A','#FF9F43','#00B4D8','#9B5DE5','#28C76F'];
+  const colors = ['#888888','#E8162A','#FF9F43','#00B4D8','#9B5DE5','#28C76F'];
   let startAngle = -Math.PI/2;
   const r = 50, cx2 = cx, cy = 60;
-  return Object.entries(catCounts).map(([,cnt], i) => {
+  return Object.entries(catCounts).sort((a,b)=>+a[0]-+b[0]).map(([,cnt], i) => {
     if (!cnt) return '';
     const angle = (cnt/total) * Math.PI * 2;
     const x1 = cx2 + r * Math.cos(startAngle);
@@ -1421,7 +1410,7 @@ function renderOrderTable() {
         </div>
         <button class="export-btn" onclick="exportCSV()">⬇ Экспорт CSV</button>
       </div>
-      <div style="overflow-x:auto">
+      <div style="overflow-x:auto;max-width:100%">
         <table class="order-table">
           <thead>
             <tr>
@@ -1510,12 +1499,16 @@ function renderStoreDetail() {
     <div class="detail-panel">
       <div class="detail-header">
         <div>
-          <div class="detail-name" style="font-size:17px;line-height:1.4">
-            <span style="color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.3px">№ ${s.id} · ${s.city}</span><br>
-            ${s.name}
-            ${(s.areaTotal||s.areaTrade) ? '<span style="font-size:12px;font-weight:600;color:var(--blue);margin-left:8px;vertical-align:middle">📐 '+(s.areaTotal?s.areaTotal+'м²':'')+(s.areaTotal&&s.areaTrade?' / ':'')+(s.areaTrade?s.areaTrade+'м² торг.':'')+'</span>' : ''}
+          <div class="detail-name" style="font-size:15px;line-height:1.6">
+            <span style="color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">№ ${s.id}</span>
+            <span style="color:var(--muted);font-size:11px;margin:0 3px">·</span>
+            <span style="color:var(--muted);font-size:11px;font-weight:600">${s.city}</span>
+            <span style="color:var(--muted);font-size:11px;margin:0 3px">·</span>
+            <span style="font-weight:700">${s.name}</span>
+            ${(s.areaTotal||s.areaTrade) ? '<span style="font-size:11px;font-weight:600;color:var(--blue);margin-left:8px">📐 '+(s.areaTotal?s.areaTotal+' м²':'')+(s.areaTotal&&s.areaTrade?' / ':'')+(s.areaTrade?s.areaTrade+' м² торг.':'')+'</span>' : ''}
+            ${FP_MAP[s.id] ? `<a href="${GH_PLANS_URL+s.id+'.pdf'}" target="_blank" style="margin-left:10px;font-size:11px;color:var(--red);text-decoration:none;font-weight:600;background:rgba(194,24,91,0.08);padding:2px 8px;border-radius:5px">🗺️ Планировка ↗</a>` : ''}
           </div>
-          <div class="detail-badges">
+          <div class="detail-badges" style="margin-top:4px">
             <span class="badge badge-div">📍 ${s.division}</span>
             <span class="badge badge-cat">Категория ${s.category}</span>
             ${s.kind !== '-' ? `<span class="badge ${s.kind==='остановлен'?'badge-stopped':'badge-kind'}">${s.kind}</span>` : ''}
@@ -1552,8 +1545,8 @@ function renderStoreDetail() {
         </div>
 
         <div class="detail-section">
-          <h4>🧒 Зона КХ (детская)</h4>
-          ${row('Наличие зоны КХ', s.hasKH, 'bool')}
+          <h4>🏠 Зона Кари Хоме</h4>
+          ${row('Наличие зоны', s.hasKH, 'bool')}
           ${row('Площадь, м', s.hasKH ? s.khMeters : 0, 'num')}
         </div>
 
@@ -2194,7 +2187,7 @@ let FP_APPS_SCRIPT_URL = localStorage.getItem('fp_apps_script_url') || '';
 // ─── Обновление FP_MAP через Google Apps Script прокси ───
 async function refreshPlansFromDrive() {
   const btn = document.getElementById('planRefreshBtn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Загружаем...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Обновляем...'; }
 
   try {
     const apiUrl = 'https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/plans';
@@ -2592,7 +2585,7 @@ const GH_PLANS_URL = 'https://raw.githubusercontent.com/skbmaksim82-byte/kari-da
 
 async function refreshFromGoogleSheets() {
   const btn = document.querySelector('.upload-btn[onclick="refreshFromGoogleSheets()"]');
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Загружаем...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Обновляем...'; }
 
   try {
     const resp = await fetch(GSHEET_URL, { signal: AbortSignal.timeout(15000) });
@@ -2639,13 +2632,33 @@ async function refreshFromGoogleSheets() {
     populateStoreFilter();
     applyFilters();
     renderMain();
-
-    showToast('✅ Данные обновлены из Google Sheets: ' + parsed.length + ' магазинов');
+    dataOk = true;
   } catch(e) {
-    showToast('❌ Ошибка загрузки: ' + e.message, true);
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '☁️ Обновить из GitHub'; }
+    showToast('❌ Ошибка загрузки таблицы: ' + e.message, true);
   }
+
+  // ── Загрузка планировок из GitHub ─────────────────────────────
+  try {
+    const apiUrl = 'https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/plans';
+    const plResp = await fetch(apiUrl, { signal: AbortSignal.timeout(10000) });
+    if (plResp.ok) {
+      const files = await plResp.json();
+      if (Array.isArray(files)) {
+        files.forEach(f => {
+          const m = f.name.match(/^(\d+)\.(pdf|png|jpg)$/i);
+          if (m) FP_MAP[parseInt(m[1])] = GH_PLANS_URL + f.name;
+        });
+        updatePlansCardCounter();
+        if (activeTab === 'store') renderMain();
+      }
+    }
+  } catch(e) { /* тихо */ }
+
+  if (dataOk) {
+    showToast('✅ Обновлено: ' + STORES.length + ' магазинов, ' + Object.keys(FP_MAP).length + ' планировок');
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '☁️ Обновить'; }
 }
 
 // ═══════════════════════════════════════
@@ -2879,11 +2892,11 @@ const DD_CFG = {
       {h:'№ магазина',     v: s=>s.id},
       {h:'Магазин / Адрес',v: s=>s.name},
     ],
-    qty: s=>s.vitrinaModules||0, qh:'Модулей',
+    qty: s=>s.vitrinaModules||0, qh:'Количество витринных модулей (шт)',
     total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.vitrinaModules||0),0)} модулей в ${rows.length} маг.`
   },
   kh: {
-    icon:'🧒', title:'Зона КХ (детская)',
+    icon:'🏠', title:'Зона Кари Хоме',
     filter: s=>s.hasKH,
     cols: [
       {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
@@ -2891,8 +2904,8 @@ const DD_CFG = {
       {h:'№ магазина',     v: s=>s.id},
       {h:'Магазин / Адрес',v: s=>s.name},
     ],
-    qty: s=>s.khMeters||0, qh:'Площадь, м²',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.khMeters||0),0).toFixed(1)} м² в ${rows.length} маг.`
+    qty: s=>s.khMeters||0, qh:'Количество в метрах (шт)',
+    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.khMeters||0),0).toFixed(1)} м в ${rows.length} маг.`
   },
   cosmetics: {
     icon:'💄', title:'Зона косметики',
@@ -2903,8 +2916,8 @@ const DD_CFG = {
       {h:'№ магазина',     v: s=>s.id},
       {h:'Магазин / Адрес',v: s=>s.name},
     ],
-    qty: s=>s.cosmeticsMeters||0, qh:'Площадь, м²',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.cosmeticsMeters||0),0).toFixed(1)} м² в ${rows.length} маг.`
+    qty: s=>s.cosmeticsMeters||0, qh:'Количество в метрах (шт)',
+    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.cosmeticsMeters||0),0).toFixed(1)} м в ${rows.length} маг.`
   },
   clothes: {
     icon:'👗', title:'Зона одежды',
@@ -2915,8 +2928,8 @@ const DD_CFG = {
       {h:'№ магазина',     v: s=>s.id},
       {h:'Магазин / Адрес',v: s=>s.name},
     ],
-    qty: s=>s.clothesMeters||0, qh:'Площадь, м²',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.clothesMeters||0),0).toFixed(1)} м² в ${rows.length} маг.`
+    qty: s=>s.clothesMeters||0, qh:'Количество в метрах (шт)',
+    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.clothesMeters||0),0).toFixed(1)} м в ${rows.length} маг.`
   },
   sport: {
     icon:'🏃', title:'Зона спорта',
@@ -2928,24 +2941,24 @@ const DD_CFG = {
       {h:'Магазин / Адрес',v: s=>s.name},
       {h:'Расположение',   v: s=>s.sportLocation||'—'},
     ],
-    qty: s=>s.sportMeters||0, qh:'Площадь, м²',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.sportMeters||0),0).toFixed(1)} м² в ${rows.length} маг.`
+    qty: s=>s.sportMeters||0, qh:'Количество в метрах (шт)',
+    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.sportMeters||0),0).toFixed(1)} м в ${rows.length} маг.`
   },
   torts: {
-    icon:'📌', title:'Торцы ПОСМ + Кожа и Золото',
-    filter: s=>(s.tortsX+s.tortsG+(s.tortsGold||0)+(s.tortsLeather||0))>0,
+    icon:'📌', title:'Торцы',
+    filter: s=>(s.tortsX+s.tortsG+(s.tortsLeather||0))>0,
     cols: [
       {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
       {h:'Подразделение',  v: s=>s.division},
       {h:'№ магазина',     v: s=>s.id},
       {h:'Магазин / Адрес',v: s=>s.name},
-      {h:'Торцы X',        v: s=>s.tortsX},
-      {h:'Торцы G',        v: s=>s.tortsG},
-      {h:'Торец Золотой',  v: s=>s.tortsGold||0},
-      {h:'Торец Кожа',     v: s=>s.tortsLeather||0},
+      {h:'Торцы X',        v: s=>s.tortsX||0, num:true},
+      {h:'Торцы G',        v: s=>s.tortsG||0, num:true},
+      {h:'Торцы Кожа',     v: s=>s.tortsLeather||0, num:true},
+      {h:'Торцы Золотой',  v: s=>s.tortsGold||0, num:true},
     ],
-    qty: s=>s.tortsX+s.tortsG+(s.tortsGold||0)+(s.tortsLeather||0), qh:'Всего торцов',
-    total: rows=>`Итого: X=${rows.reduce((a,s)=>a+s.tortsX,0)} G=${rows.reduce((a,s)=>a+s.tortsG,0)} Золото=${rows.reduce((a,s)=>a+(s.tortsGold||0),0)} Кожа=${rows.reduce((a,s)=>a+(s.tortsLeather||0),0)} в ${rows.length} маг.`
+    qty: s=>s.tortsX+s.tortsG+(s.tortsLeather||0)+(s.tortsGold||0), qh:'Всего торцов',
+    total: rows=>`Итого: X=${rows.reduce((a,s)=>a+s.tortsX,0)} G=${rows.reduce((a,s)=>a+s.tortsG,0)} Кожа=${rows.reduce((a,s)=>a+(s.tortsLeather||0),0)} Золото=${rows.reduce((a,s)=>a+(s.tortsGold||0),0)} в ${rows.length} маг.`
   },
   ym: {
     icon:'🔷', title:'Юнит-марки (ЮМ)',
