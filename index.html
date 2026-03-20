@@ -174,6 +174,24 @@ header {
 .order-section h2 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 4px; }
 .order-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
 
+/* ─── Обёртка таблицы Сводные данные: прокрутка во все стороны ─── */
+#orderTableWrap {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  flex: 1;
+  min-height: 0;
+}
+#orderTableWrap::-webkit-scrollbar { width: 8px; height: 8px; }
+#orderTableWrap::-webkit-scrollbar-track { background: var(--surface2); border-radius: 4px; }
+#orderTableWrap::-webkit-scrollbar-thumb { background: rgba(194,24,91,0.3); border-radius: 4px; }
+#orderTableWrap::-webkit-scrollbar-thumb:hover { background: rgba(194,24,91,0.55); }
+#orderTableWrap::-webkit-scrollbar-corner { background: var(--surface2); }
+
+.order-section { display: flex; flex-direction: column; height: calc(100vh - 130px); padding: 16px; }
+
 .order-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .order-table th {
   text-align: left; padding: 10px 12px; font-size: 10px; text-transform: uppercase;
@@ -1132,6 +1150,7 @@ const DIVISION_COLORS = {
 };
 
 let filteredStores = [...STORES];
+window.RAW_XLSX_ROWS = null; // Сырые строки из xlsx для таблицы Сводные данные
 
 const FP_MAP = {
   13187: '1tvSB-Byqz5SeYtAuXu_nc3AV4ntLmm6Y',
@@ -1582,77 +1601,204 @@ function renderPie(catCounts, total, cx) {
 
 // ─── ORDER TABLE ───
 function renderOrderTable() {
+  // ── Если есть сырые строки xlsx — рендерим точно как в Excel ──
+  if (window.RAW_XLSX_ROWS && window.RAW_XLSX_ROWS.length >= 3) {
+    return renderOrderTableRaw();
+  }
+  // ── Fallback: рендер из объектов STORES ───────────────────────
+  return renderOrderTableFallback();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// РЕНДЕР ТАБЛИЦЫ ПРЯМО ИЗ СЫРЫХ СТРОК XLSX (точно как в Excel)
+// ─────────────────────────────────────────────────────────────────
+function renderOrderTableRaw() {
+  var rows = window.RAW_XLSX_ROWS;
+  // Строка 0 — группы/блоки, строка 1 — заголовки, строки 2+ — данные
+  // Определяем индекс строки заголовков
+  var hdrIdx = 0;
+  for (var ri = 0; ri < Math.min(rows.length, 5); ri++) {
+    var r = rows[ri];
+    if (r && r.some && r.some(function(v){ return v && String(v).includes('\u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430'); })) { hdrIdx = ri; break; }
+    if (r && r.some && r.some(function(v){ return v && String(v).includes('\u041f\u043e\u0434\u0440\u0430\u0437\u0434\u0435\u043b\u0435\u043d\u0438\u0435'); })) { hdrIdx = ri; break; }
+  }
+
+  var grpRow = hdrIdx > 0 ? rows[hdrIdx - 1] : null; // строка с группами (Данные магазина, Торцы…)
+  var hdrRow = rows[hdrIdx];                           // строка с заголовками колонок
+  var colCount = hdrRow.length;
+
+  // Собираем colspan для групп (строка 0)
+  var groups = [];
+  if (grpRow) {
+    var gi = 0;
+    while (gi < colCount) {
+      var gVal = String(grpRow[gi] || '').trim();
+      var span = 1;
+      while (gi + span < colCount && (!grpRow[gi + span] || String(grpRow[gi + span]).trim() === '')) span++;
+      groups.push({ label: gVal, span: span });
+      gi += span;
+    }
+  }
+
+  // Определяем id-колонку (для клика → паспорт)
+  var idColIdx = hdrRow.findIndex(function(h){ return h && String(h).includes('\u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430'); });
+  var nameColIdx = hdrRow.findIndex(function(h){ return h && String(h).includes('\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435'); });
+
+  // Фильтрация: только строки магазинов из filteredStores
+  var allowedIds = new Set(filteredStores.map(function(s){ return String(s.id); }));
+  var dataRows = [];
+  for (var di = hdrIdx + 1; di < rows.length; di++) {
+    var dr = rows[di];
+    if (!dr) continue;
+    var idVal = idColIdx >= 0 ? String(dr[idColIdx] || '').trim() : '';
+    if (!idVal || idVal === '0') continue;
+    if (!allowedIds.has(idVal)) continue;
+    dataRows.push(dr);
+  }
+
+  // ── Стили ──
+  var thBaseStyle = [
+    'white-space:nowrap',
+    'padding:8px 11px',
+    'font-size:11px',
+    'font-weight:700',
+    'border-right:1px solid rgba(194,24,91,0.2)',
+    'border-bottom:1px solid rgba(194,24,91,0.3)',
+    'background:var(--surface2)',
+    'position:sticky',
+    'z-index:3',
+    'cursor:pointer',
+    'user-select:none',
+  ].join(';');
+
+  var thGrpStyle = [
+    'white-space:nowrap',
+    'padding:7px 11px',
+    'font-size:10px',
+    'font-weight:700',
+    'text-transform:uppercase',
+    'letter-spacing:.5px',
+    'color:var(--red)',
+    'border-right:2px solid rgba(194,24,91,0.25)',
+    'border-bottom:1px solid rgba(194,24,91,0.2)',
+    'background:linear-gradient(135deg,rgba(252,228,236,0.6),rgba(248,200,220,0.4))',
+    'text-align:center',
+    'position:sticky',
+    'top:0',
+    'z-index:4',
+  ].join(';');
+
+  var tdStyle = [
+    'white-space:nowrap',
+    'padding:7px 11px',
+    'font-size:12px',
+    'vertical-align:middle',
+    'border-right:1px solid rgba(248,187,217,0.25)',
+    'border-bottom:1px solid rgba(248,187,217,0.2)',
+    'max-width:240px',
+    'overflow:hidden',
+    'text-overflow:ellipsis',
+  ].join(';');
+
+  // ── Строим HTML ──
+  var html = '';
+
+  // Строка групп (если есть)
+  if (grpRow) {
+    html += '<tr>';
+    groups.forEach(function(g) {
+      var border = g.span > 1 ? 'border-right:2px solid rgba(194,24,91,0.25);' : 'border-right:1px solid rgba(194,24,91,0.15);';
+      html += '<th style="' + thGrpStyle + ';' + border + '" colspan="' + g.span + '">' + (g.label || '') + '</th>';
+    });
+    html += '</tr>';
+  }
+
+  // Строка заголовков
+  html += '<tr>';
+  for (var ci = 0; ci < colCount; ci++) {
+    var hText = String(hdrRow[ci] || '').trim();
+    var topOff = grpRow ? '36px' : '0';
+    html += '<th style="' + thBaseStyle + ';top:' + topOff + ';color:var(--red);" onclick="sortOrderTable(' + ci + ')" title="' + hText + '">' + hText + '</th>';
+  }
+  html += '</tr>';
+
+  // Строки данных
+  var tbody = '';
+  dataRows.forEach(function(dr, si) {
+    var bg = si % 2 === 0 ? 'rgba(255,255,255,0.72)' : 'rgba(252,228,236,0.18)';
+    tbody += '<tr style="background:' + bg + '" onmouseover="this.style.background=\'rgba(232,22,42,0.06)\'" onmouseout="this.style.background=\'' + bg + '\'">';
+    for (var ci = 0; ci < colCount; ci++) {
+      var cell = dr[ci];
+      var val = (cell === null || cell === undefined || cell === '') ? '' : String(cell);
+      // Кликабельные колонки: № Магазина и Наименование
+      if (ci === idColIdx || ci === nameColIdx) {
+        var storeId = idColIdx >= 0 ? parseInt(dr[idColIdx]) || 0 : 0;
+        tbody += '<td style="' + tdStyle + ';cursor:pointer;font-weight:600;color:var(--red)" onclick="selectStoreAndTab(' + storeId + ')" title="Открыть паспорт">' + val + '</td>';
+      } else {
+        tbody += '<td style="' + tdStyle + '">' + val + '</td>';
+      }
+    }
+    tbody += '</tr>';
+  });
+
+  return '<div class="order-section" style="padding:16px;display:flex;flex-direction:column;height:calc(100vh - 130px)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;flex-shrink:0">'
+    + '<div><h2 style="font-size:16px;margin:0">\u0421\u0432\u043e\u0434\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435</h2>'
+    + '<p class="order-subtitle" style="margin:3px 0 0">' + dataRows.length + ' \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u043e\u0432 &middot; ' + colCount + ' \u0441\u0442\u043e\u043b\u0431\u0446\u043e\u0432 &middot; \u0434\u0430\u043d\u043d\u044b\u0435 \u0438\u0437 xlsx</p></div>'
+    + '<button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,#1D6F42,#196040);display:flex;align-items:center;gap:7px;padding:8px 16px;font-size:13px">&#128202; \u0412\u044b\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0432 Excel</button>'
+    + '</div>'
+    + '<div id="orderTableWrap" style="flex:1;overflow:auto;border:1px solid var(--border);border-radius:10px;position:relative">'
+    + '<table id="orderTable" style="border-collapse:collapse;width:max-content;min-width:100%;font-size:12px">'
+    + '<thead>' + html + '</thead>'
+    + '<tbody>' + tbody + '</tbody>'
+    + '</table></div>'
+    + '<div style="margin-top:6px;font-size:11px;color:var(--muted);flex-shrink:0">'
+    + '\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430: \u043a\u043b\u0438\u043a \u043f\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u0443 &nbsp;|&nbsp; '
+    + '\u041f\u0430\u0441\u043f\u043e\u0440\u0442: \u043a\u043b\u0438\u043a \u043f\u043e \u043d\u043e\u043c\u0435\u0440\u0443 \u0438\u043b\u0438 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u044e &nbsp;|&nbsp; '
+    + '\u041f\u0440\u043e\u043a\u0440\u0443\u0442\u043a\u0430: \u043c\u044b\u0448\u044c / \u0442\u0440\u0435\u043a\u043f\u0430\u0434 \u0432\u043e \u0432\u0441\u0435 \u0441\u0442\u043e\u0440\u043e\u043d\u044b'
+    + '</div>'
+    + '</div>';
+}
+
+// ─── FALLBACK: рендер из объектов STORES ─────────────────────────
+function renderOrderTableFallback() {
   var stores = filteredStores;
 
   var COLS = [
-    { h: 'Регион',                      v: function(s){ return s.region||'—'; } },
-    { h: '№ Магазина',               v: function(s){ return s.id; } },
-    { h: 'Город',                          v: function(s){ return s.city; } },
-    { h: 'Наименование магазина',        v: function(s){ return s.name + (s.top20 ? ' ★' : ''); } },
-    { h: 'Юр лицо',                    v: function(s){ return s.legalEntity||'—'; } },
-    { h: 'Вид магазина',                 v: function(s){ return s.kind||'—'; } },
-    { h: 'Категория',                   v: function(s){ return s.category; } },
-    { h: 'TOP 20',                       v: function(s){ return s.top20 ? 'да' : '—'; } },
-    { h: 'Площадь общая (м2)',          v: function(s){ return s.areaTotal||'—'; } },
-    { h: 'Площадь торговая (м2)',       v: function(s){ return s.areaTrade||'—'; } },
-    { h: 'Площадь Кидс (м2)',            v: function(s){ return s.areaKids||'—'; } },
-    { h: 'Торцы X',                         v: function(s){ return s.tortsX||'—'; } },
-    { h: 'Торцы G',                         v: function(s){ return s.tortsG||'—'; } },
-    { h: 'Золотой торец',            v: function(s){ return s.tortsGold||'—'; } },
-    { h: 'Торец Кожа',                 v: function(s){ return s.tortsLeather||'—'; } },
-    { h: 'Наличие витрины',            v: function(s){ return s.hasVitrina ? 'да' : '—'; } },
-    { h: 'Кол-во витр. модулей',         v: function(s){ return s.vitrinaModules||'—'; } },
-    { h: 'Модули (тип)',                v: function(s){ return s.vitrinaType||'—'; } },
-    { h: 'Сплошных мод.',              v: function(s){ return s.vitrinaFull||'—'; } },
-    { h: 'Раздельных мод.',           v: function(s){ return s.vitrinaSplit||'—'; } },
-    { h: 'Наличие ТВ (шт)',              v: function(s){ return s.vitrinaTV||'—'; } },
-    { h: 'Кол-во ЮМ',                    v: function(s){ return s.ymCount||'—'; } },
-    { h: 'Оформление ЮИ',              v: function(s){ return s.yiDesign||'—'; } },
-    { h: 'Антикраж. ворота',         v: function(s){ return s.antiTheftGates||'—'; } },
-    { h: 'Наличие зоны КХ',          v: function(s){ return s.hasKH ? 'да' : '—'; } },
-    { h: 'Метров Кари Хоме',         v: function(s){ return s.khMeters||'—'; } },
-    { h: 'Наличие косметики',        v: function(s){ return s.hasCosmetics ? 'да' : '—'; } },
-    { h: 'Стол космет. GS',           v: function(s){ return s.cosmeticsGS ? 'да' : '—'; } },
-    { h: 'Метров косметики',          v: function(s){ return s.cosmeticsMeters||'—'; } },
-    { h: 'Наличие одежды',             v: function(s){ return s.hasClothes ? 'да' : '—'; } },
-    { h: 'Метров (одежда)',            v: function(s){ return s.clothesMeters||'—'; } },
-    { h: 'Наличие зоны спорта',        v: function(s){ return s.hasSport ? 'да' : '—'; } },
-    { h: 'Метров (спорт)',            v: function(s){ return s.sportMeters||'—'; } },
-    { h: 'Расположение спорт',         v: function(s){ return s.sportLocation||'—'; } },
-    { h: 'Свет. таблички',            v: function(s){ return s.lightSigns ? 'да' : '—'; } },
-    { h: 'Лайтбоксы',                   v: function(s){ return s.lightboxesCount||'—'; } },
-    { h: 'Фасад',                          v: function(s){ return s.facadeType||'—'; } },
-    { h: 'Реле времени',                v: function(s){ return s.hasTimeRelay ? 'да' : '—'; } },
-    { h: 'Кол-во табл. режима',        v: function(s){ return s.workHourSignsCount||'—'; } },
-    { h: 'Размер табличек',           v: function(s){ return s.workHourSignsSize||'—'; } },
-    { h: 'Формат табличек',           v: function(s){ return s.workHourSignsFormat||'—'; } },
-    { h: 'Корзины',                      v: function(s){ return s.hasBaskets ? 'да' : '—'; } },
-    { h: 'Корз. с надстр.',             v: function(s){ return s.basketsNad||'—'; } },
-    { h: 'Корз. Кидс',                 v: function(s){ return s.basketsKids||'—'; } },
-    { h: 'Корз. Кари',                 v: function(s){ return s.basketsKari||'—'; } },
-    { h: 'Стеллаж 400х650',             v: function(s){ return s.shelfMobile||'—'; } },
-    { h: 'Стойка Crocs',                  v: function(s){ return s.shelfCrocs||'—'; } },
-    { h: 'Тележка',                      v: function(s){ return s.trolley||'—'; } },
-    { h: 'Kari Wood',                    v: function(s){ return s.kariWood||'—'; } },
-    { h: 'Новая касса 2 м.',             v: function(s){ return s.cash2new ? 'да' : '—'; } },
-    { h: 'Новая касса 3 м.',             v: function(s){ return s.cash3new ? 'да' : '—'; } },
-    { h: 'Новая касса 4 м.',             v: function(s){ return s.cash4new ? 'да' : '—'; } },
-    { h: 'Станд. касса 2 м.',          v: function(s){ return s.cash2std ? 'да' : '—'; } },
-    { h: 'Станд. касса 3 м.',          v: function(s){ return s.cash3std ? 'да' : '—'; } },
-    { h: 'Касса 4 м. (2 станд.)',       v: function(s){ return s.cash4std ? 'да' : '—'; } }
+    { h: '\u0420\u0435\u0433\u0438\u043e\u043d',                      v: function(s){ return s.region||'\u2014'; } },
+    { h: '\u2116 \u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430',               v: function(s){ return s.id; } },
+    { h: '\u0413\u043e\u0440\u043e\u0434',                          v: function(s){ return s.city; } },
+    { h: '\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430',        v: function(s){ return s.name + (s.top20 ? ' \u2605' : ''); } },
+    { h: '\u042e\u0440 \u043b\u0438\u0446\u043e',                    v: function(s){ return s.legalEntity||'\u2014'; } },
+    { h: '\u0412\u0438\u0434 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430',                 v: function(s){ return s.kind||'\u2014'; } },
+    { h: '\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f',                   v: function(s){ return s.category; } },
+    { h: 'TOP 20',                       v: function(s){ return s.top20 ? '\u0434\u0430' : '\u2014'; } },
+    { h: '\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u043e\u0431\u0449\u0430\u044f (\u043c2)',          v: function(s){ return s.areaTotal||'\u2014'; } },
+    { h: '\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u0442\u043e\u0440\u0433\u043e\u0432\u0430\u044f (\u043c2)',       v: function(s){ return s.areaTrade||'\u2014'; } },
+    { h: '\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u041a\u0438\u0434\u0441 (\u043c2)',            v: function(s){ return s.areaKids||'\u2014'; } },
+    { h: '\u0422\u043e\u0440\u0446\u044b X',                         v: function(s){ return s.tortsX||'\u2014'; } },
+    { h: '\u0422\u043e\u0440\u0446\u044b G',                         v: function(s){ return s.tortsG||'\u2014'; } },
+    { h: '\u0417\u043e\u043b\u043e\u0442\u043e\u0439 \u0442\u043e\u0440\u0435\u0446',            v: function(s){ return s.tortsGold||'\u2014'; } },
+    { h: '\u0422\u043e\u0440\u0435\u0446 \u041a\u043e\u0436\u0430',                 v: function(s){ return s.tortsLeather||'\u2014'; } },
+    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u0432\u0438\u0442\u0440\u0438\u043d\u044b',            v: function(s){ return s.hasVitrina ? '\u0434\u0430' : '\u2014'; } },
+    { h: '\u041a\u043e\u043b-\u0432\u043e \u0432\u0438\u0442\u0440. \u043c\u043e\u0434\u0443\u043b\u0435\u0439',         v: function(s){ return s.vitrinaModules||'\u2014'; } },
+    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u0437\u043e\u043d\u044b \u041a\u0425',          v: function(s){ return s.hasKH ? '\u0434\u0430' : '\u2014'; } },
+    { h: '\u041c\u0435\u0442\u0440\u043e\u0432 \u041a\u0430\u0440\u0438 \u0425\u043e\u043c\u0435',         v: function(s){ return s.khMeters||'\u2014'; } },
+    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u043a\u043e\u0441\u043c\u0435\u0442\u0438\u043a\u0438',        v: function(s){ return s.hasCosmetics ? '\u0434\u0430' : '\u2014'; } },
+    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u043e\u0434\u0435\u0436\u0434\u044b',             v: function(s){ return s.hasClothes ? '\u0434\u0430' : '\u2014'; } },
+    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u0437\u043e\u043d\u044b \u0441\u043f\u043e\u0440\u0442\u0430',        v: function(s){ return s.hasSport ? '\u0434\u0430' : '\u2014'; } },
+    { h: '\u0424\u0430\u0441\u0430\u0434',                          v: function(s){ return s.facadeType||'\u2014'; } },
   ];
 
   var thS = 'white-space:nowrap;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--red);font-weight:700;background:var(--surface2);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;border-right:1px solid var(--border);cursor:pointer;user-select:none';
   var tdS = 'white-space:nowrap;padding:8px 12px;font-size:12px;vertical-align:middle;border-right:1px solid rgba(248,187,217,0.3);border-bottom:1px solid rgba(248,187,217,0.25)';
 
-  // Build thead
   var thead = '<thead><tr>';
   for (var ci = 0; ci < COLS.length; ci++) {
     thead += '<th style="' + thS + '" onclick="sortOrderTable(' + ci + ')" title="' + COLS[ci].h + '">' + COLS[ci].h + '</th>';
   }
   thead += '</tr></thead>';
 
-  // Build tbody
   var tbody = '<tbody>';
   for (var si = 0; si < stores.length; si++) {
     var s = stores[si];
@@ -1661,8 +1807,7 @@ function renderOrderTable() {
     for (var cj = 0; cj < COLS.length; cj++) {
       var val = COLS[cj].v(s);
       if (val === null || val === undefined) val = '\u2014';
-      var col = COLS[cj];
-      if (col.h === '\u2116 \u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430' || col.h === '\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430') {
+      if (COLS[cj].h.includes('\u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430') || COLS[cj].h.includes('\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435')) {
         tbody += '<td style="' + tdS + ';cursor:pointer;font-weight:500" onclick="selectStoreAndTab(' + s.id + ')" title="\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043f\u0430\u0441\u043f\u043e\u0440\u0442">' + val + '</td>';
       } else {
         tbody += '<td style="' + tdS + '">' + val + '</td>';
@@ -1672,20 +1817,19 @@ function renderOrderTable() {
   }
   tbody += '</tbody>';
 
-  return '<div class="order-section" style="padding:16px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">'
+  return '<div class="order-section" style="padding:16px;display:flex;flex-direction:column;height:calc(100vh - 130px)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;flex-shrink:0">'
     + '<div><h2 style="font-size:16px;margin:0">\u0421\u0432\u043e\u0434\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435</h2>'
     + '<p class="order-subtitle" style="margin:3px 0 0">' + stores.length + ' \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u043e\u0432 &middot; ' + COLS.length + ' \u0441\u0442\u043e\u043b\u0431\u0446\u043e\u0432</p></div>'
     + '<button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,#1D6F42,#196040);display:flex;align-items:center;gap:7px;padding:8px 16px;font-size:13px">&#128202; \u0412\u044b\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0432 Excel</button>'
     + '</div>'
-    + '<div style="overflow:auto;max-height:calc(100vh - 220px);border:1px solid var(--border);border-radius:8px">'
+    + '<div id="orderTableWrap" style="flex:1;overflow:auto;border:1px solid var(--border);border-radius:10px">'
     + '<table id="orderTable" style="border-collapse:collapse;width:max-content;min-width:100%;font-size:12px">'
     + thead + tbody
     + '</table></div>'
-    + '<div style="margin-top:8px;font-size:11px;color:var(--muted)">\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430: \u043a\u043b\u0438\u043a \u043f\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u0443 &nbsp;|&nbsp; \u041f\u0430\u0441\u043f\u043e\u0440\u0442: \u043a\u043b\u0438\u043a \u043f\u043e \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0443</div>'
+    + '<div style="margin-top:6px;font-size:11px;color:var(--muted);flex-shrink:0">\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430: \u043a\u043b\u0438\u043a \u043f\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u0443 &nbsp;|&nbsp; \u041f\u0430\u0441\u043f\u043e\u0440\u0442: \u043a\u043b\u0438\u043a \u043f\u043e \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0443</div>'
     + '</div>';
 }
-
 // Сортировка таблицы
 var _sortCol = -1, _sortAsc = true;
 function sortOrderTable(colIdx) {
@@ -3273,6 +3417,7 @@ function num(v, def) {
 }
 
 function parseXLSXRows(rows) {
+  window.RAW_XLSX_ROWS = rows; // Сохраняем сырые строки для вкладки Сводные данные
   // Новая структура: строка 1 = группы, строка 2 = заголовки, данные с строки 3
   // Но XLSX.utils.sheet_to_json возвращает все строки — определяем сами
   // rows[0] = группы (Данные магазина, Торцы, Витрина...)
