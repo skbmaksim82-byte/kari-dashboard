@@ -1000,13 +1000,15 @@ window._xlsxReady = typeof XLSX !== 'undefined';
       <div class="zone-filters" id="zoneFilters">
         <button class="zone-btn active" data-zone="all">Все</button>
         <button class="zone-btn" data-zone="hasVitrina">Витрина</button>
+        <button class="zone-btn" data-zone="ymCount">ЮМ</button>
+        <button class="zone-btn" data-zone="antiTheftGates">Антикражные рамки</button>
         <button class="zone-btn" data-zone="hasKH">Кари Хоме</button>
         <button class="zone-btn" data-zone="hasCosmetics">Косметика</button>
         <button class="zone-btn" data-zone="hasClothes">Одежда</button>
-        <button class="zone-btn" data-zone="hasSport">Спорт</button>
-        <button class="zone-btn" data-zone="lightSigns">Таблички</button>
+        <button class="zone-btn" data-zone="hasSport">Зона спорта</button>
+        <button class="zone-btn" data-zone="lightSigns">Световые таблички</button>
         <button class="zone-btn" data-zone="lightboxesCount">Лайтбоксы</button>
-        <button class="zone-btn" data-zone="antiTheftGates">🚧 Антикражные рамки</button>
+        <button class="zone-btn" data-zone="top20">⭐ TOP 20</button>
       </div>
     </div>
     <div id="clearSelectionWrap" style="display:none;padding:6px 8px 2px">
@@ -1138,6 +1140,8 @@ function applyFilters() {
     if (activeZoneFilter !== 'all') {
       if (activeZoneFilter === 'lightboxesCount') { if (!s.lightboxesCount) return false; }
       else if (activeZoneFilter === 'antiTheftGates') { if (!s.antiTheftGates) return false; }
+      else if (activeZoneFilter === 'ymCount') { if (!s.ymCount) return false; }
+      else if (activeZoneFilter === 'top20') { if (!s.top20) return false; }
       else if (!s[activeZoneFilter]) return false;
     }
     return true;
@@ -1171,11 +1175,12 @@ document.getElementById('zoneFilters').addEventListener('click', e => {
 // ─── STORE LIST ───
 function zoneDots(s) {
   const zones = [
-    { key: 'hasVitrina', label: 'В', color: '#00B4D8' },
-    { key: 'hasKH', label: 'КХ', color: '#28C76F' },
-    { key: 'hasCosmetics', label: 'К', color: '#FF9F43' },
-    { key: 'hasClothes', label: 'О', color: '#9B5DE5' },
-    { key: 'hasSport', label: 'С', color: '#E8162A' },
+    { key: 'top20',       label: '★', color: '#E8162A' },
+    { key: 'hasVitrina',  label: 'В', color: '#00B4D8' },
+    { key: 'hasKH',       label: 'КХ', color: '#28C76F' },
+    { key: 'hasCosmetics',label: 'К', color: '#FF9F43' },
+    { key: 'hasClothes',  label: 'О', color: '#9B5DE5' },
+    { key: 'hasSport',    label: 'С', color: '#FF6B35' },
   ];
   return zones.filter(z => s[z.key]).map(z =>
     `<div class="zone-dot" style="background:${z.color}20;color:${z.color}">${z.label}</div>`
@@ -1190,7 +1195,7 @@ function renderStoreList() {
   }
   el.innerHTML = filteredStores.map(s => `
     <div class="store-item ${selectedStore && selectedStore.id === s.id ? 'active' : ''}" onclick="selectStore(${s.id})">
-      <div class="store-item-name">${s.name}</div>
+      <div class="store-item-name">${s.name}${s.top20 ? '<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">TOP20</span>' : ''}</div>
       <div class="store-item-meta">
         <span class="store-cat">Кат. ${s.category}</span>
         <span class="store-div">${s.division}</span>
@@ -1211,6 +1216,14 @@ function selectStore(id) {
   // Показать кнопку сброса
   const wrap = document.getElementById('clearSelectionWrap');
   if (wrap) wrap.style.display = 'block';
+}
+
+function applyTop20Filter() {
+  activeZoneFilter = 'top20';
+  document.querySelectorAll('.zone-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.zone === 'top20');
+  });
+  applyFilters();
 }
 
 function clearStoreSelection() {
@@ -1276,6 +1289,13 @@ function renderOverview() {
         <div class="card-val" style="color:var(--red)">${total}</div>
         <div class="card-lbl">Магазинов</div>
         <div class="card-click-hint">📋 все магазины</div>
+      </div>
+      <div class="card clickable" onclick="applyTop20Filter()" id="cardTop20" style="border:2px solid transparent">
+        <div class="card-accent" style="background:linear-gradient(135deg,#E8162A,#C2185B)"></div>
+        <div class="card-icon">⭐</div>
+        <div class="card-val" id="ct-top20" style="color:#E8162A">${stores.filter(s=>s.top20).length}</div>
+        <div class="card-lbl">TOP 20</div>
+        <div class="card-click-hint">📋 фильтр TOP 20</div>
       </div>
       <div class="card clickable" onclick="openDrill('vitrina')">
         <div class="card-accent" style="background:var(--blue)"></div>
@@ -1423,100 +1443,131 @@ function renderPie(catCounts, total, cx) {
 
 // ─── ORDER TABLE ───
 function renderOrderTable() {
-  const stores = filteredStores;
-  const totals = {tortsX:0, tortsG:0, vitrinaModules:0, ymCount:0, antiTheftGates:0, lightboxesCount:0, workHourSigns:0};
-  stores.forEach(s => {
-    totals.tortsX += s.tortsX;
-    totals.tortsG += s.tortsG;
-    totals.vitrinaModules += s.vitrinaModules||0;
-    totals.ymCount += s.ymCount;
-    totals.antiTheftGates += s.antiTheftGates;
-    totals.lightboxesCount += s.lightboxesCount||0;
-    totals.workHourSigns += s.workHourSignsCount||0;
-  });
+  var stores = filteredStores;
 
-  function qty(v, threshold=5) {
-    if (!v) return `<span class="qty-badge qty-0">—</span>`;
-    if (v >= threshold) return `<span class="qty-badge qty-high">${v}</span>`;
-    return `<span class="qty-badge qty-pos">${v}</span>`;
+  var COLS = [
+    { h: 'Регион',                      v: function(s){ return s.region||'—'; } },
+    { h: '№ Магазина',               v: function(s){ return s.id; } },
+    { h: 'Город',                          v: function(s){ return s.city; } },
+    { h: 'Наименование магазина',        v: function(s){ return s.name + (s.top20 ? ' ★' : ''); } },
+    { h: 'Юр лицо',                    v: function(s){ return s.legalEntity||'—'; } },
+    { h: 'Вид магазина',                 v: function(s){ return s.kind||'—'; } },
+    { h: 'Категория',                   v: function(s){ return s.category; } },
+    { h: 'TOP 20',                       v: function(s){ return s.top20 ? 'да' : '—'; } },
+    { h: 'Площадь общая (м2)',          v: function(s){ return s.areaTotal||'—'; } },
+    { h: 'Площадь торговая (м2)',       v: function(s){ return s.areaTrade||'—'; } },
+    { h: 'Площадь Кидс (м2)',            v: function(s){ return s.areaKids||'—'; } },
+    { h: 'Торцы X',                         v: function(s){ return s.tortsX||'—'; } },
+    { h: 'Торцы G',                         v: function(s){ return s.tortsG||'—'; } },
+    { h: 'Золотой торец',            v: function(s){ return s.tortsGold||'—'; } },
+    { h: 'Торец Кожа',                 v: function(s){ return s.tortsLeather||'—'; } },
+    { h: 'Наличие витрины',            v: function(s){ return s.hasVitrina ? 'да' : '—'; } },
+    { h: 'Кол-во витр. модулей',         v: function(s){ return s.vitrinaModules||'—'; } },
+    { h: 'Модули (тип)',                v: function(s){ return s.vitrinaType||'—'; } },
+    { h: 'Сплошных мод.',              v: function(s){ return s.vitrinaFull||'—'; } },
+    { h: 'Раздельных мод.',           v: function(s){ return s.vitrinaSplit||'—'; } },
+    { h: 'Наличие ТВ (шт)',              v: function(s){ return s.vitrinaTV||'—'; } },
+    { h: 'Кол-во ЮМ',                    v: function(s){ return s.ymCount||'—'; } },
+    { h: 'Оформление ЮИ',              v: function(s){ return s.yiDesign||'—'; } },
+    { h: 'Антикраж. ворота',         v: function(s){ return s.antiTheftGates||'—'; } },
+    { h: 'Наличие зоны КХ',          v: function(s){ return s.hasKH ? 'да' : '—'; } },
+    { h: 'Метров Кари Хоме',         v: function(s){ return s.khMeters||'—'; } },
+    { h: 'Наличие косметики',        v: function(s){ return s.hasCosmetics ? 'да' : '—'; } },
+    { h: 'Стол космет. GS',           v: function(s){ return s.cosmeticsGS ? 'да' : '—'; } },
+    { h: 'Метров косметики',          v: function(s){ return s.cosmeticsMeters||'—'; } },
+    { h: 'Наличие одежды',             v: function(s){ return s.hasClothes ? 'да' : '—'; } },
+    { h: 'Метров (одежда)',            v: function(s){ return s.clothesMeters||'—'; } },
+    { h: 'Наличие зоны спорта',        v: function(s){ return s.hasSport ? 'да' : '—'; } },
+    { h: 'Метров (спорт)',            v: function(s){ return s.sportMeters||'—'; } },
+    { h: 'Расположение спорт',         v: function(s){ return s.sportLocation||'—'; } },
+    { h: 'Свет. таблички',            v: function(s){ return s.lightSigns ? 'да' : '—'; } },
+    { h: 'Лайтбоксы',                   v: function(s){ return s.lightboxesCount||'—'; } },
+    { h: 'Фасад',                          v: function(s){ return s.facadeType||'—'; } },
+    { h: 'Реле времени',                v: function(s){ return s.hasTimeRelay ? 'да' : '—'; } },
+    { h: 'Кол-во табл. режима',        v: function(s){ return s.workHourSignsCount||'—'; } },
+    { h: 'Размер табличек',           v: function(s){ return s.workHourSignsSize||'—'; } },
+    { h: 'Формат табличек',           v: function(s){ return s.workHourSignsFormat||'—'; } },
+    { h: 'Корзины',                      v: function(s){ return s.hasBaskets ? 'да' : '—'; } },
+    { h: 'Корз. с надстр.',             v: function(s){ return s.basketsNad||'—'; } },
+    { h: 'Корз. Кидс',                 v: function(s){ return s.basketsKids||'—'; } },
+    { h: 'Корз. Кари',                 v: function(s){ return s.basketsKari||'—'; } },
+    { h: 'Стеллаж 400х650',             v: function(s){ return s.shelfMobile||'—'; } },
+    { h: 'Стойка Crocs',                  v: function(s){ return s.shelfCrocs||'—'; } },
+    { h: 'Тележка',                      v: function(s){ return s.trolley||'—'; } },
+    { h: 'Kari Wood',                    v: function(s){ return s.kariWood||'—'; } },
+    { h: 'Новая касса 2 м.',             v: function(s){ return s.cash2new ? 'да' : '—'; } },
+    { h: 'Новая касса 3 м.',             v: function(s){ return s.cash3new ? 'да' : '—'; } },
+    { h: 'Новая касса 4 м.',             v: function(s){ return s.cash4new ? 'да' : '—'; } },
+    { h: 'Станд. касса 2 м.',          v: function(s){ return s.cash2std ? 'да' : '—'; } },
+    { h: 'Станд. касса 3 м.',          v: function(s){ return s.cash3std ? 'да' : '—'; } },
+    { h: 'Касса 4 м. (2 станд.)',       v: function(s){ return s.cash4std ? 'да' : '—'; } }
+  ];
+
+  var thS = 'white-space:nowrap;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--red);font-weight:700;background:var(--surface2);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;border-right:1px solid var(--border);cursor:pointer;user-select:none';
+  var tdS = 'white-space:nowrap;padding:8px 12px;font-size:12px;vertical-align:middle;border-right:1px solid rgba(248,187,217,0.3);border-bottom:1px solid rgba(248,187,217,0.25)';
+
+  // Build thead
+  var thead = '<thead><tr>';
+  for (var ci = 0; ci < COLS.length; ci++) {
+    thead += '<th style="' + thS + '" onclick="sortOrderTable(' + ci + ')" title="' + COLS[ci].h + '">' + COLS[ci].h + '</th>';
   }
+  thead += '</tr></thead>';
 
-  const thStyle = 'white-space:nowrap;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--red);font-weight:700;background:var(--surface2);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;';
-  const tdStyle = 'white-space:nowrap;padding:9px 12px;vertical-align:middle;';
-  const tdCenter = 'white-space:nowrap;padding:9px 12px;vertical-align:middle;text-align:center;';
+  // Build tbody
+  var tbody = '<tbody>';
+  for (var si = 0; si < stores.length; si++) {
+    var s = stores[si];
+    var bg = si % 2 === 0 ? 'rgba(255,255,255,0.7)' : 'rgba(252,228,236,0.2)';
+    tbody += '<tr style="background:' + bg + '" onmouseover="this.style.background='rgba(232,22,42,0.06)'" onmouseout="this.style.background='' + bg + ''">';
+    for (var cj = 0; cj < COLS.length; cj++) {
+      var val = COLS[cj].v(s);
+      if (val === null || val === undefined) val = '\u2014';
+      var col = COLS[cj];
+      if (col.h === '\u2116 \u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430' || col.h === '\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430') {
+        tbody += '<td style="' + tdS + ';cursor:pointer;font-weight:500" onclick="selectStoreAndTab(' + s.id + ')" title="\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043f\u0430\u0441\u043f\u043e\u0440\u0442">' + val + '</td>';
+      } else {
+        tbody += '<td style="' + tdS + '">' + val + '</td>';
+      }
+    }
+    tbody += '</tr>';
+  }
+  tbody += '</tbody>';
 
-  return `
-    <div class="order-section">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
-        <div>
-          <h2>Сводная таблица</h2>
-          <p class="order-subtitle">${stores.length} магазинов · Применены текущие фильтры</p>
-        </div>
-        <button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,#1D6F42,#196040);display:flex;align-items:center;gap:7px">
-          📊 Выгрузить в Excel
-        </button>
-      </div>
-      <div style="overflow-x:auto;max-width:100%;max-height:calc(100vh - 280px);overflow-y:auto;border-radius:8px;border:1px solid var(--border)">
-        <table style="border-collapse:collapse;font-size:12px;width:max-content;min-width:100%">
-          <thead>
-            <tr>
-              <th style="${thStyle}">Номер магазина</th>
-              <th style="${thStyle}">Магазин / Адрес</th>
-              <th style="${thStyle}">Подразделение</th>
-              <th style="${thStyle}">Кат.</th>
-              <th style="${thStyle}">Торцы X</th>
-              <th style="${thStyle}">Торцы G</th>
-              <th style="${thStyle}">Витр. модули</th>
-              <th style="${thStyle}">ЮМ</th>
-              <th style="${thStyle}">Ворота</th>
-              <th style="${thStyle}">Лайтбоксы</th>
-              <th style="${thStyle}">Таблички реж.</th>
-              <th style="${thStyle}">Витрина</th>
-              <th style="${thStyle}">КХ</th>
-              <th style="${thStyle}">Косм.</th>
-              <th style="${thStyle}">Одежда</th>
-              <th style="${thStyle}">Спорт</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${stores.map(s => `
-              <tr style="border-bottom:1px solid rgba(248,187,217,0.35)">
-                <td style="${tdCenter}font-size:12px;font-weight:500;color:var(--text)">${s.id}</td>
-                <td style="${tdStyle}"><span class="store-link" onclick="selectStoreAndTab(${s.id})" style="font-size:12px;font-weight:500">${s.name}</span></td>
-                <td style="${tdStyle}"><span style="font-size:11px;padding:2px 6px;border-radius:4px;background:${DIVISION_COLORS[s.division]||'#333'}20;color:${DIVISION_COLORS[s.division]||'#aaa'}">${s.division}</span></td>
-                <td style="${tdCenter}"><span class="badge badge-cat">${s.category}</span></td>
-                <td style="${tdCenter}">${qty(s.tortsX)}</td>
-                <td style="${tdCenter}">${qty(s.tortsG)}</td>
-                <td style="${tdCenter}">${qty(s.vitrinaModules, 3)}</td>
-                <td style="${tdCenter}">${qty(s.ymCount, 10)}</td>
-                <td style="${tdCenter}">${qty(s.antiTheftGates, 8)}</td>
-                <td style="${tdCenter}">${qty(s.lightboxesCount, 2)}</td>
-                <td style="${tdCenter}">${qty(s.workHourSignsCount, 3)}</td>
-                <td style="${tdCenter}">${s.hasVitrina ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
-                <td style="${tdCenter}">${s.hasKH ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
-                <td style="${tdCenter}">${s.hasCosmetics ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
-                <td style="${tdCenter}">${s.hasClothes ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
-                <td style="${tdCenter}">${s.hasSport ? '✅' : '<span style="color:var(--border)">—</span>'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-          <tfoot>
-            <tr style="background:rgba(194,24,91,0.07);border-top:2px solid var(--red)">
-              <td colspan="4" style="${tdStyle}font-weight:700;color:var(--red)">ИТОГО (${stores.length} маг.)</td>
-              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.tortsX}</td>
-              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.tortsG}</td>
-              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.vitrinaModules.toFixed(1)}</td>
-              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.ymCount}</td>
-              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.antiTheftGates}</td>
-              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.lightboxesCount}</td>
-              <td style="${tdCenter}font-weight:700;color:var(--red)">${totals.workHourSigns}</td>
-              <td colspan="5"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-  `;
+  return '<div class="order-section" style="padding:16px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">'
+    + '<div><h2 style="font-size:16px;margin:0">\u0421\u0432\u043e\u0434\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435</h2>'
+    + '<p class="order-subtitle" style="margin:3px 0 0">' + stores.length + ' \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u043e\u0432 &middot; ' + COLS.length + ' \u0441\u0442\u043e\u043b\u0431\u0446\u043e\u0432</p></div>'
+    + '<button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,#1D6F42,#196040);display:flex;align-items:center;gap:7px;padding:8px 16px;font-size:13px">&#128202; \u0412\u044b\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0432 Excel</button>'
+    + '</div>'
+    + '<div style="overflow:auto;max-height:calc(100vh - 220px);border:1px solid var(--border);border-radius:8px">'
+    + '<table id="orderTable" style="border-collapse:collapse;width:max-content;min-width:100%;font-size:12px">'
+    + thead + tbody
+    + '</table></div>'
+    + '<div style="margin-top:8px;font-size:11px;color:var(--muted)">\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430: \u043a\u043b\u0438\u043a \u043f\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u0443 &nbsp;|&nbsp; \u041f\u0430\u0441\u043f\u043e\u0440\u0442: \u043a\u043b\u0438\u043a \u043f\u043e \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0443</div>'
+    + '</div>';
+}
+
+// Сортировка таблицы
+var _sortCol = -1, _sortAsc = true;
+function sortOrderTable(colIdx) {
+  if (_sortCol === colIdx) { _sortAsc = !_sortAsc; } else { _sortCol = colIdx; _sortAsc = true; }
+  var table = document.getElementById('orderTable');
+  if (!table) return;
+  var tbody = table.querySelector('tbody');
+  var rows = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort(function(a, b) {
+    var av = (a.cells[colIdx] ? a.cells[colIdx].textContent : '').trim();
+    var bv = (b.cells[colIdx] ? b.cells[colIdx].textContent : '').trim();
+    var an = parseFloat(av), bn = parseFloat(bv);
+    if (!isNaN(an) && !isNaN(bn)) return _sortAsc ? an - bn : bn - an;
+    return _sortAsc ? av.localeCompare(bv, 'ru') : bv.localeCompare(av, 'ru');
+  });
+  rows.forEach(function(r){ tbody.appendChild(r); });
+  var ths = table.querySelectorAll('th');
+  ths.forEach(function(th, i){
+    th.textContent = th.textContent.replace(/ [\u2191\u2193]$/, '');
+    if (i === colIdx) th.textContent += _sortAsc ? ' \u2191' : ' \u2193';
+  });
 }
 
 function selectStoreAndTab(id) {
@@ -1550,7 +1601,7 @@ function renderStoreDetail() {
             <span style="color:var(--muted);font-size:11px;margin:0 3px">·</span>
             <span style="color:var(--muted);font-size:11px;font-weight:600">${s.city}</span>
             <span style="color:var(--muted);font-size:11px;margin:0 3px">·</span>
-            <span style="font-weight:700">${s.name}</span>
+            <span style="font-weight:700">${s.name}</span>${s.top20 ? '<span style="display:inline-block;margin-left:8px;font-size:10px;font-weight:800;color:#fff;background:linear-gradient(135deg,#E8162A,#C2185B);padding:2px 8px;border-radius:4px;vertical-align:middle;letter-spacing:.5px">⭐ TOP 20</span>' : ''}</span>
             ${(s.areaTotal||s.areaTrade) ? '<span style="font-size:11px;font-weight:600;color:var(--blue);margin-left:8px">📐 '+(s.areaTotal?s.areaTotal+' м²':'')+(s.areaTotal&&s.areaTrade?' / ':'')+(s.areaTrade?s.areaTrade+' м² торг.':'')+'</span>' : ''}
             ${FP_MAP[s.id] ? `<a href="${GH_PLANS_URL+s.id+'.pdf'}" target="_blank" style="margin-left:10px;font-size:11px;color:var(--red);text-decoration:none;font-weight:600;background:rgba(194,24,91,0.08);padding:2px 8px;border-radius:5px">🗺️ Планировка ↗</a>` : ''}
           </div>
@@ -1679,52 +1730,62 @@ function renderStoreDetail() {
 async function exportExcel() {
   const stores = filteredStores;
   const xlsxOk = await ensureXLSX();
-  if (!xlsxOk) {
-    // fallback to CSV
-    const bom = '\uFEFF';
-    const headers = ['Номер магазина','Магазин','Город','Подразделение'];
-    const rows = stores.map(s => [s.id, s.name, s.city, s.division]);
-    const csv = bom + [headers,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('\n');
-    const a = document.createElement('a');
-    a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-    a.download = 'Сводные_данные.csv'; a.click();
-    return;
-  }
-  // Build data array
-  const headers = ['Номер магазина','Магазин / Адрес','Город','Подразделение','Категория','Вид',
-    'Торцы X','Торцы G','Витрина','Мод.витрины','ТВ витрина','ЮМ','Оформл.ЮИ','Ворота',
-    'КХ','КХ м','Косметика','Косм.м','Одежда','Одежда м','Спорт','Спорт м','Расп.спорт',
-    'Св.таблички','Лайтбоксы','Фасад','Реле вр.','Табл.реж.кол','Размер','Формат',
-    'Корзины','Площадь общ.','Площадь торг.'];
+
+  const headers = [
+    'Подразделение','№ Магазина','Город','Наименование магазина','Юр лицо','Вид магазина',
+    'Категория магазина','Площадь магазина общая (м2)','Площадь магазина торговая (м2)',
+    'Кол-во торцов Х(которые оформляем ПОСМ)','Кол-во торцов G(которые оформляем ПОСМ)',
+    'Золотой торец','Торец Кожа','Наличие витрины','Кол-во витринных модулей',
+    'Модули слошные/раздельные','Наличие ТВ в магазине на витрине','Кол-во ЮМ',
+    'Оформление зоны ЮИ (лайтбокс/ПВХ)','Кол-во антикражных ворот',
+    'Наличие зоны КХ','Кол-во метров зоны Кари Хоме (шт)','Наличие зоны косметики',
+    'кол-во метров уходовой косметики','Наличие одежды','Кол-во метров (одежда)',
+    'Наличие зоны спорта','Кол-во метров (спорт)','Расположение зоны спорта (остров/пристенок)',
+    'Установлены световые таблички(home, кидс,спорт)','Наличие лайтбоксов в зале(кол-во)',
+    'Оформление фасада(вывеска/банер)','Наличие реле времени на фасадной вывеске(да/нет)',
+    'Кол-во табличек о режиме работы','Размер табличек режим работы','Формат табличек(наклейка/ПВХ)',
+    'Наличие корзин в магазине','Стеллаж мобильный металлический новая поставка 400х650х1650',
+    'Стойка перфорированная 625*800*1736 (Crocs)','Тележка ТС 1150х640х1950',
+    'Новая касса на 2 рабочих места','Новая касса на 3 рабочих места','Новая касса на 4 рабочих места',
+    'Стандартная касса на 2 рабочих места',
+    'Стандартная касса на 3 рабочих места (доп модуль справа либо слева)',
+    'Касса на 4 рабочих места (2 стандартные кассы)'
+  ];
+
   const rows = stores.map(s => [
-    s.id, s.name, s.city, s.division, s.category, s.kind,
-    s.tortsX, s.tortsG, s.hasVitrina?'Да':'Нет', s.vitrinaModules, s.vitrinaTV?'Да':'Нет',
-    s.ymCount, s.yiDesign, s.antiTheftGates,
-    s.hasKH?'Да':'Нет', s.khMeters,
-    s.hasCosmetics?'Да':'Нет', s.cosmeticsMeters,
-    s.hasClothes?'Да':'Нет', s.clothesMeters,
-    s.hasSport?'Да':'Нет', s.sportMeters, s.sportLocation,
-    s.lightSigns?'Да':'Нет', s.lightboxesCount,
-    s.facadeType, s.hasTimeRelay?'Да':'Нет',
-    s.workHourSignsCount, s.workHourSignsSize, s.workHourSignsFormat,
-    s.hasBaskets?'Да':'Нет', s.areaTotal||0, s.areaTrade||0
+    s.division, s.id, s.city, s.name, s.legalEntity||'', s.kind||'',
+    s.category, s.areaTotal||'', s.areaTrade||'',
+    s.tortsX||'', s.tortsG||'', s.tortsGold||'', s.tortsLeather||'',
+    s.hasVitrina?'да':'', s.vitrinaModules||'', s.vitrinaType||'', s.vitrinaTV?'да':'',
+    s.ymCount||'', s.yiDesign||'', s.antiTheftGates||'',
+    s.hasKH?'да':'', s.khMeters||'',
+    s.hasCosmetics?'да':'', s.cosmeticsMeters||'',
+    s.hasClothes?'да':'', s.clothesMeters||'',
+    s.hasSport?'да':'', s.sportMeters||'', s.sportLocation||'',
+    s.lightSigns?'да':'', s.lightboxesCount||'',
+    s.facadeType||'', s.hasTimeRelay?'да':'',
+    s.workHourSignsCount||'', s.workHourSignsSize||'', s.workHourSignsFormat||'',
+    s.hasBaskets?'да':'',
+    s.shelfMobile||'', s.shelfCrocs||'', s.trolley||'',
+    s.cash2new?'да':'', s.cash3new?'да':'', s.cash4new?'да':'',
+    s.cash2std?'да':'', s.cash3std?'да':'', s.cash4std?'да':''
   ]);
 
-  // Use SheetJS if available, otherwise fallback to CSV with BOM
-  if (typeof XLSX !== 'undefined') {
+  if (xlsxOk) {
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    // Column widths
-    ws['!cols'] = headers.map((h,i) => ({wch: i < 2 ? 14 : Math.max(h.length, 10)}));
+    ws['!cols'] = headers.map(h => ({wch: Math.min(Math.max(h.length, 8), 40)}));
+    // Freeze first row
+    ws['!freeze'] = {xSplit: 0, ySplit: 1};
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Сводные данные');
-    XLSX.writeFile(wb, 'Сводные_данные_' + new Date().toISOString().slice(0,10) + '.xlsx');
+    XLSX.writeFile(wb, 'Паспорт_магазинов_' + new Date().toISOString().slice(0,10) + '.xlsx');
   } else {
-    // Fallback: CSV with BOM for Excel
-    const bom = '\uFEFF';
-    const csv = bom + [headers, ...rows].map(r => r.map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(';')).join('\n');
+    const bom = '﻿';
+    const csv = bom + [headers,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('
+');
     const a = document.createElement('a');
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = 'Сводные_данные_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+    a.download = 'Паспорт_магазинов_' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
   }
 }
@@ -1866,6 +1927,8 @@ function mApplyFilters(){
     if(mZoneFilter!=='all'){
       if(mZoneFilter==='lightboxesCount'){if(!s.lightboxesCount)return false;}
       else if(mZoneFilter==='antiTheftGates'){if(!s.antiTheftGates)return false;}
+      else if(mZoneFilter==='ymCount'){if(!s.ymCount)return false;}
+      else if(mZoneFilter==='top20'){if(!s.top20)return false;}
       else if(!s[mZoneFilter])return false;
     }
     return true;
@@ -1925,7 +1988,7 @@ function mRenderStores(){
   }
   mainEl.innerHTML = '<div style="padding:14px 12px">' + mFiltered.map(s=>`
     <div class="mobile-store-card ${selectedStore&&selectedStore.id===s.id?'sel':''}" onclick="mOpenPassport(${s.id})">
-      <div class="mobile-store-name">${s.name}</div>
+      <div class="mobile-store-name">${s.name}${s.top20 ? '<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">TOP20</span>' : ''}</div>
       <div class="mobile-store-meta">
         <span class="store-cat">Кат. ${s.category}</span>
         <span class="store-div" style="font-size:11px;padding:2px 7px;border-radius:4px;background:${DC2[s.division]||'#333'}20;color:${DC2[s.division]||'#aaa'}">${s.division}</span>
@@ -2687,12 +2750,16 @@ const GSHEET_URL = 'https://raw.githubusercontent.com/skbmaksim82-byte/kari-dash
 const GH_PLANS_URL = 'https://raw.githubusercontent.com/skbmaksim82-byte/kari-dashboard/main/plans/'; // GitHub raw планировки
 
 async function refreshFromGoogleSheets() {
-  const btn = document.querySelector('.upload-btn[onclick="refreshFromGoogleSheets()"]');
+  const btn = document.getElementById('mainRefreshBtn');
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Обновляем...'; }
 
+  let dataOk = false;
+
+  // ── Загрузка таблицы ──────────────────────────────────────────
   try {
     const xlsxOk = await ensureXLSX();
     if (!xlsxOk) throw new Error('Библиотека XLSX недоступна — проверьте интернет-соединение');
+
     const resp = await fetch(GSHEET_URL, { signal: AbortSignal.timeout(15000) });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
@@ -2704,7 +2771,18 @@ async function refreshFromGoogleSheets() {
 
     if (rows.length < 2) throw new Error('Файл пуст');
 
-    const hdr = rows[0].map(h => String(h||'').trim());
+    // Поддержка новой структуры: строка 0 = группы, строка 1 = заголовки
+    // Ищем строку с реальными заголовками
+    let hdrRow = rows[0];
+    for (let ri = 0; ri < Math.min(rows.length, 4); ri++) {
+      if (rows[ri] && rows[ri].some(v => v && String(v).includes('Магазин'))) {
+        hdrRow = rows[ri]; break;
+      }
+      if (rows[ri] && rows[ri].some(v => v && String(v).includes('Подразделение'))) {
+        hdrRow = rows[ri]; break;
+      }
+    }
+    const hdr = hdrRow.map(h => String(h||'').trim());
     const hasDiv  = hdr.some(h => h.includes('Подразделение'));
     const hasId   = hdr.some(h => h.includes('Магазин'));
     const hasName = hdr.some(h => h.includes('Наименование'));
@@ -2739,7 +2817,8 @@ async function refreshFromGoogleSheets() {
     renderMain();
     dataOk = true;
   } catch(e) {
-    flyEmoji(false); showToast('❌ Ошибка загрузки таблицы: ' + e.message, true);
+    flyEmoji(false);
+    showToast('❌ Ошибка загрузки таблицы: ' + e.message, true);
   }
 
   // ── Загрузка планировок из GitHub ─────────────────────────────
@@ -2760,7 +2839,8 @@ async function refreshFromGoogleSheets() {
   } catch(e) { /* тихо */ }
 
   if (dataOk) {
-    flyEmoji(true); showToast('✅ Обновлено: ' + STORES.length + ' магазинов, ' + Object.keys(FP_MAP).length + ' планировок');
+    flyEmoji(true);
+    showToast('✅ Обновлено: ' + STORES.length + ' магазинов, ' + Object.keys(FP_MAP).length + ' планировок');
   }
 
   if (btn) { btn.disabled = false; btn.innerHTML = '☁️ Обновить'; }
@@ -2880,121 +2960,159 @@ function num(v, def) {
 }
 
 function parseXLSXRows(rows) {
-  const hdr = rows[0].map(h => String(h||'').trim());
-  const ci = (name) => hdr.findIndex(h => h.includes(name));
+  // Новая структура: строка 1 = группы, строка 2 = заголовки, данные с строки 3
+  // Но XLSX.utils.sheet_to_json возвращает все строки — определяем сами
+  // rows[0] = группы (Данные магазина, Торцы, Витрина...)
+  // rows[1] = реальные заголовки (Подразделение, № Магазина, Город...)
+  // rows[2+] = данные
 
-  // Маппинг под актуальную структуру (47 колонок, файл паспорт_магазина.xlsx)
+  // Ищем строку с реальными заголовками (содержит '№ Магазина' или 'Подразделение')
+  let hdrIdx = 0;
+  for (let ri = 0; ri < Math.min(rows.length, 5); ri++) {
+    const r = rows[ri];
+    if (r && r.some && r.some(v => v && String(v).includes('Магазина'))) {
+      hdrIdx = ri; break;
+    }
+    if (r && Array.isArray(r)) {
+      for (let ci = 0; ci < r.length; ci++) {
+        if (r[ci] && String(r[ci]).includes('Подразделение')) { hdrIdx = ri; break; }
+      }
+    }
+  }
+
+  const hdr = rows[hdrIdx].map(h => String(h || '').trim());
+  const ci = (name) => hdr.findIndex(h => h.includes(name));
+  const cif = (fn) => hdr.findIndex(fn);
+
   const C = {
-    division:     ci('Подразделение'),           // 0
-    id:           ci('Магазина'),                // 1  «№ Магазина»
-    city:         ci('Город'),                   // 2
-    name:         ci('Наименование'),            // 3
-    legalEntity:  ci('Юр'),                      // 4  «Юр лицо»
-    kind:         ci('Вид магазина'),            // 5
-    category:     ci('Категория'),               // 6
-    areaTotal:    ci('общая'),                   // 7
-    areaTrade:    ci('торговая'),                // 8
-    tortsX:       ci('торцов Х'),               // 9
-    tortsG:       ci('торцов G'),               // 10
-    tortsGold:    ci('Золотой торец'),           // 11
-    tortsLeather: ci('Торец Кожа'),             // 12
-    hasVitrina:   ci('Наличие витрины'),         // 13
-    vitrinaModules: ci('витринных модулей'),     // 14
-    vitrinaTV:    ci('ТВ в магазине'),           // 16
-    ymCount:      ci('Кол-во ЮМ'),              // 17
-    yiDesign:     ci('Оформление зоны ЮИ'),     // 18
-    gates:        ci('антикражных ворот'),       // 19
-    hasKH:        ci('зоны КХ'),                // 20
-    khMeters:     ci('Кари Хоме'),              // 21
-    hasCosmetics: ci('зоны косметики'),          // 22
-    cosmeticsM:   ci('уходовой косметики'),     // 23
-    hasClothes:   ci('одежды'),                 // 24
-    sportM:       hdr.findIndex((h,i) => h.includes('Кол-во метров') && i > ci('одежды') && i < ci('Наличие зоны спорта')), // 25
-    hasSport:     ci('зоны спорта'),            // 26
-    sportM2:      hdr.findIndex((h,i) => h.includes('Кол-во метров') && i > ci('зоны спорта')), // 27
-    sportLoc:     ci('Расположение зоны спорта'), // 28
-    lightSigns:   ci('световые таблички'),      // 29
-    lightboxes:   ci('лайтбоксов'),             // 30
-    facade:       ci('фасада'),                 // 31
-    timeRelay:    ci('реле времени'),           // 32
-    workSignsCnt: ci('табличек о режиме'),      // 33
-    workSignsSize:ci('Размер табличек'),        // 34
-    workSignsFmt: ci('Формат табличек'),        // 35
-    baskets:      ci('корзин'),                 // 36
-    shelfMobile:  ci('400'),                    // 37  стеллаж 400х650
-    shelfCrocs:   ci('Crocs'),                  // 38
-    trolley:      ci('Тележка'),               // 39
-    cash2new:     hdr.findIndex(h => h.includes('Новая касса') && h.includes('2')),   // 40
-    cash3new:     hdr.findIndex(h => h.includes('Новая касса') && h.includes('3')),   // 41
-    cash4new:     hdr.findIndex(h => h.includes('Новая касса') && h.includes('4')),   // 42
-    cash2std:     hdr.findIndex(h => h.includes('Стандартная касса') && h.includes('2')), // 43
-    cash3std:     hdr.findIndex(h => h.includes('Стандартная касса') && h.includes('3')), // 44
-    cash4std:     hdr.findIndex(h => h.includes('4 рабочих места') && h.includes('2 стандарт')), // 45
+    region:       ci('Регион'),
+    division:     ci('Подразделение'),
+    id:           ci('Магазина'),
+    city:         ci('Город'),
+    name:         ci('Наименование'),
+    legalEntity:  ci('Юр'),
+    kind:         ci('Вид магазина'),
+    category:     ci('Категория'),
+    top20:        ci('TOP 20'),
+    areaTotal:    ci('общая'),
+    areaTrade:    ci('торговая'),
+    areaKids:     ci('Кидс (м2)'),
+    tortsX:       ci('торцов Х'),
+    tortsG:       ci('торцов G'),
+    tortsGold:    ci('Золотой торец'),
+    tortsLeather: ci('Торец Кожа'),
+    hasVitrina:   ci('Наличие витрины'),
+    vitrinaModules: ci('витринных модулей'),
+    vitrinaType:  ci('слошные/раздельные'),
+    vitrinaFull:  ci('сплошных витринных'),
+    vitrinaSplit: ci('раздельных витринных'),
+    vitrinaTV:    ci('ТВ в магазине'),
+    ymCount:      ci('Кол-во ЮМ'),
+    yiDesign:     ci('Оформление зоны ЮИ'),
+    gates:        ci('антикражных ворот'),
+    hasKH:        ci('зоны КХ'),
+    khMeters:     ci('Кари Хоме (шт)'),
+    hasCosmetics: ci('зоны косметики'),
+    cosmeticsGS:  ci('стола косметики GS'),
+    cosmeticsM:   ci('уходовой косметики'),
+    hasClothes:   ci('одежды'),
+    clothesM:     cif((h,i) => h.includes('Кол-во метров') && i > ci('одежды') && i < ci('спорта')),
+    hasSport:     ci('зоны спорта'),
+    sportM:       cif((h,i) => h.includes('Кол-во метров') && i > ci('зоны спорта') && i < ci('таблички')),
+    sportLoc:     ci('Расположение зоны спорта'),
+    lightSigns:   ci('световые таблички'),
+    lightboxes:   ci('лайтбоксов'),
+    facade:       ci('фасада'),
+    timeRelay:    ci('реле времени'),
+    workSignsCnt: ci('табличек о режиме'),
+    workSignsSize:ci('Размер табличек'),
+    workSignsFmt: ci('Формат табличек'),
+    baskets:      ci('корзин в магазине'),
+    basketsNad:   ci('корзин с надстройками'),
+    basketsKids:  ci('корзин с ассортиментом Кидс'),
+    basketsKari:  ci('корзин с ассортиментом Кари'),
+    shelfMobile:  ci('400х650'),
+    shelfCrocs:   ci('Crocs'),
+    trolley:      ci('Тележка'),
+    kariWood:     ci('Kari Wood'),
+    cash2new:     cif(h => h.includes('Новая касса') && h.includes('2')),
+    cash3new:     cif(h => h.includes('Новая касса') && h.includes('3')),
+    cash4new:     cif(h => h.includes('Новая касса') && h.includes('4')),
+    cash2std:     cif(h => h.includes('Стандартная касса') && h.includes('2')),
+    cash3std:     cif(h => h.includes('Стандартная касса') && h.includes('3')),
+    cash4std:     cif(h => h.includes('4 рабочих места') && h.includes('2 стандарт')),
   };
 
   const result = [];
-  for (let i = 1; i < rows.length; i++) {
+  for (let i = hdrIdx + 1; i < rows.length; i++) {
     const r = rows[i];
-    if (!r[C.name] && !r[C.id]) continue;
+    if (!r || (!r[C.name] && !r[C.id])) continue;
 
-    const txRaw = r[C.tortsX];
-    const tgRaw = r[C.tortsG];
-    const txVal = (!txRaw || String(txRaw).toLowerCase() === 'нет' || txRaw === '-') ? 0 : num(txRaw);
-    const tgVal = (!tgRaw || String(tgRaw).toLowerCase() === 'нет' || tgRaw === '-') ? 0 : num(tgRaw);
-    const vitrinaM = (!r[C.vitrinaModules] || String(r[C.vitrinaModules]).toLowerCase() === 'нет') ? 0 : num(r[C.vitrinaModules]);
-    const khM = bool(r[C.hasKH]) ? num(r[C.khMeters]) : 0;
-    const wsCnt = (!r[C.workSignsCnt] || String(r[C.workSignsCnt]).toLowerCase() === 'нет') ? 0 : num(r[C.workSignsCnt]);
-    const wsSize = (!r[C.workSignsSize] || String(r[C.workSignsSize]).toLowerCase() === 'нет') ? 'нет' : String(r[C.workSignsSize]);
-    const wsFmt  = (!r[C.workSignsFmt]  || String(r[C.workSignsFmt] ).toLowerCase() === 'нет') ? 'нет' : String(r[C.workSignsFmt]);
-    const clothesM = C.sportM >= 0 ? num(r[C.sportM]) : 0;
-    const sportM   = C.sportM2 >= 0 ? num(r[C.sportM2]) : 0;
+    const v  = (col) => col >= 0 ? r[col] : null;
+    const ns = (col) => { const x = v(col); return (!x || String(x).trim() === '-' || String(x).trim().toLowerCase() === 'нет') ? '' : String(x).trim(); };
+    const nb = (col) => { const x = v(col); if (!x) return 0; const n = parseFloat(String(x).replace(',','.')); return isNaN(n) ? 0 : n; };
+    const bl = (col) => { const x = v(col); if (!x) return false; const s = String(x).toLowerCase().trim(); return s === 'да' || s === '+' || s === 'true' || s === '1' || s === 'yes'; };
+    const top20raw = v(C.top20);
+    const isTop20 = top20raw && String(top20raw).toLowerCase().trim() !== '-' && String(top20raw).trim() !== '' && String(top20raw).trim() !== '0';
 
     result.push({
-      id:             num(r[C.id]) || 0,
-      division:       String(r[C.division]||'').trim(),
-      city:           String(r[C.city]||'').trim(),
-      name:           String(r[C.name]||'').trim(),
-      legalEntity:    String(r[C.legalEntity]||'').trim(),
-      kind:           String(r[C.kind]||'-').trim() || '-',
-      category:       num(r[C.category]),
-      areaTotal:      num(r[C.areaTotal]),
-      areaTrade:      num(r[C.areaTrade]),
-      tortsX:         txVal,
-      tortsG:         tgVal,
-      tortsGold:      num(r[C.tortsGold]),
-      tortsLeather:   num(r[C.tortsLeather]),
-      hasVitrina:     bool(r[C.hasVitrina]),
-      vitrinaModules: vitrinaM,
-      vitrinaTV:      bool(r[C.vitrinaTV]),
-      ymCount:        num(r[C.ymCount]),
-      yiDesign:       String(r[C.yiDesign]||'').trim(),
-      antiTheftGates: num(r[C.gates]),
-      hasKH:          bool(r[C.hasKH]),
-      khMeters:       khM,
-      hasCosmetics:   bool(r[C.hasCosmetics]),
-      cosmeticsMeters:num(r[C.cosmeticsM]),
-      hasClothes:     bool(r[C.hasClothes]),
-      clothesMeters:  clothesM,
-      hasSport:       bool(r[C.hasSport]),
-      sportMeters:    sportM,
-      sportLocation:  String(r[C.sportLoc]||'').trim(),
-      lightSigns:     bool(r[C.lightSigns]),
-      lightboxesCount:num(r[C.lightboxes]),
-      facadeType:     String(r[C.facade]||'').trim(),
-      hasTimeRelay:   bool(r[C.timeRelay]),
-      workHourSignsCount: wsCnt,
-      workHourSignsSize:  wsSize,
-      workHourSignsFormat:wsFmt,
-      hasBaskets:     bool(r[C.baskets]),
-      shelfMobile:    num(r[C.shelfMobile]),
-      shelfCrocs:     num(r[C.shelfCrocs]),
-      trolley:        num(r[C.trolley]),
-      cash2new:       bool(r[C.cash2new]),
-      cash3new:       bool(r[C.cash3new]),
-      cash4new:       bool(r[C.cash4new]),
-      cash2std:       bool(r[C.cash2std]),
-      cash3std:       bool(r[C.cash3std]),
-      cash4std:       bool(r[C.cash4std]),
+      id:             nb(C.id) || 0,
+      region:         ns(C.region),
+      division:       ns(C.division),
+      city:           ns(C.city),
+      name:           ns(C.name),
+      legalEntity:    ns(C.legalEntity),
+      kind:           ns(C.kind) || '-',
+      category:       nb(C.category),
+      top20:          isTop20,
+      top20val:       top20raw ? String(top20raw).trim() : '',
+      areaTotal:      nb(C.areaTotal),
+      areaTrade:      nb(C.areaTrade),
+      areaKids:       nb(C.areaKids),
+      tortsX:         nb(C.tortsX),
+      tortsG:         nb(C.tortsG),
+      tortsGold:      nb(C.tortsGold),
+      tortsLeather:   nb(C.tortsLeather),
+      hasVitrina:     bl(C.hasVitrina),
+      vitrinaModules: nb(C.vitrinaModules),
+      vitrinaType:    ns(C.vitrinaType),
+      vitrinaFull:    nb(C.vitrinaFull),
+      vitrinaSplit:   nb(C.vitrinaSplit),
+      vitrinaTV:      nb(C.vitrinaTV),
+      ymCount:        nb(C.ymCount),
+      yiDesign:       ns(C.yiDesign),
+      antiTheftGates: nb(C.gates),
+      hasKH:          bl(C.hasKH),
+      khMeters:       bl(C.hasKH) ? nb(C.khMeters) : 0,
+      hasCosmetics:   bl(C.hasCosmetics),
+      cosmeticsGS:    bl(C.cosmeticsGS),
+      cosmeticsMeters:nb(C.cosmeticsM),
+      hasClothes:     bl(C.hasClothes),
+      clothesMeters:  nb(C.clothesM),
+      hasSport:       bl(C.hasSport),
+      sportMeters:    nb(C.sportM),
+      sportLocation:  ns(C.sportLoc),
+      lightSigns:     bl(C.lightSigns),
+      lightboxesCount:nb(C.lightboxes),
+      facadeType:     ns(C.facade),
+      hasTimeRelay:   bl(C.timeRelay),
+      workHourSignsCount:  nb(C.workSignsCnt),
+      workHourSignsSize:   ns(C.workSignsSize) || '-',
+      workHourSignsFormat: ns(C.workSignsFmt) || '-',
+      hasBaskets:     bl(C.baskets),
+      basketsNad:     nb(C.basketsNad),
+      basketsKids:    nb(C.basketsKids),
+      basketsKari:    nb(C.basketsKari),
+      shelfMobile:    nb(C.shelfMobile),
+      shelfCrocs:     nb(C.shelfCrocs),
+      trolley:        nb(C.trolley),
+      kariWood:       ns(C.kariWood),
+      cash2new:       bl(C.cash2new),
+      cash3new:       bl(C.cash3new),
+      cash4new:       bl(C.cash4new),
+      cash2std:       bl(C.cash2std),
+      cash3std:       bl(C.cash3std),
+      cash4std:       bl(C.cash4std),
     });
   }
   return result;
