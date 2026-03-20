@@ -944,13 +944,21 @@ window._xlsxReady = typeof XLSX !== 'undefined';
     <div class="drawer-sec-lbl">Зоны оформления</div>
     <div class="drawer-chips" id="mZoneChips">
       <button class="drawer-chip active" data-zone="all">Все</button>
+      <button class="drawer-chip" data-zone="torts">📐 Торцы</button>
       <button class="drawer-chip" data-zone="hasVitrina">🪟 Витрина</button>
+      <button class="drawer-chip" data-zone="ymCount">💍 Ювелирный отдел</button>
       <button class="drawer-chip" data-zone="hasKH">🏠 Кари Хоме</button>
       <button class="drawer-chip" data-zone="hasCosmetics">💄 Косметика</button>
       <button class="drawer-chip" data-zone="hasClothes">👗 Одежда</button>
       <button class="drawer-chip" data-zone="hasSport">🏃 Спорт</button>
+      <button class="drawer-chip" data-zone="lightSigns">🔆 Световые таблички</button>
       <button class="drawer-chip" data-zone="lightboxesCount">💡 Лайтбоксы</button>
       <button class="drawer-chip" data-zone="antiTheftGates">🚧 Антикражные рамки</button>
+      <button class="drawer-chip" data-zone="facadeType">🏢 Фасад</button>
+      <button class="drawer-chip" data-zone="workHourSigns">🕐 Режимник</button>
+      <button class="drawer-chip" data-zone="equipment">🛒 Оборудование</button>
+      <button class="drawer-chip" data-zone="cashFormat">💰 Формат кассы</button>
+      <button class="drawer-chip" data-zone="top20">⭐ TOP 20</button>
     </div>
   </div>
   <div class="drawer-actions">
@@ -999,15 +1007,20 @@ window._xlsxReady = typeof XLSX !== 'undefined';
       <h3>Зоны оформления</h3>
       <div class="zone-filters" id="zoneFilters">
         <button class="zone-btn active" data-zone="all">Все</button>
-        <button class="zone-btn" data-zone="hasVitrina">Витрина</button>
-        <button class="zone-btn" data-zone="ymCount">ЮМ</button>
-        <button class="zone-btn" data-zone="antiTheftGates">Антикражные рамки</button>
-        <button class="zone-btn" data-zone="hasKH">Кари Хоме</button>
-        <button class="zone-btn" data-zone="hasCosmetics">Косметика</button>
-        <button class="zone-btn" data-zone="hasClothes">Одежда</button>
-        <button class="zone-btn" data-zone="hasSport">Зона спорта</button>
-        <button class="zone-btn" data-zone="lightSigns">Световые таблички</button>
-        <button class="zone-btn" data-zone="lightboxesCount">Лайтбоксы</button>
+        <button class="zone-btn" data-zone="torts">📐 Торцы</button>
+        <button class="zone-btn" data-zone="hasVitrina">🪟 Витрина</button>
+        <button class="zone-btn" data-zone="ymCount">💍 Ювелирный отдел</button>
+        <button class="zone-btn" data-zone="antiTheftGates">🚧 Антикражные рамки</button>
+        <button class="zone-btn" data-zone="hasKH">🏠 Кари Хоме</button>
+        <button class="zone-btn" data-zone="hasCosmetics">💄 Косметика</button>
+        <button class="zone-btn" data-zone="hasClothes">👗 Одежда</button>
+        <button class="zone-btn" data-zone="hasSport">🏃 Зона спорта</button>
+        <button class="zone-btn" data-zone="lightSigns">🔆 Световые таблички</button>
+        <button class="zone-btn" data-zone="lightboxesCount">💡 Лайтбоксы</button>
+        <button class="zone-btn" data-zone="facadeType">🏢 Фасад</button>
+        <button class="zone-btn" data-zone="workHourSigns">🕐 Режимник</button>
+        <button class="zone-btn" data-zone="equipment">🛒 Оборудование</button>
+        <button class="zone-btn" data-zone="cashFormat">💰 Формат кассы</button>
         <button class="zone-btn" data-zone="top20">⭐ TOP 20</button>
       </div>
     </div>
@@ -1138,10 +1151,15 @@ function applyFilters() {
     if (legal && s.legalEntity !== legal) return false;
     if (storeId && s.id !== parseInt(storeId)) return false;
     if (activeZoneFilter !== 'all') {
-      if (activeZoneFilter === 'lightboxesCount') { if (!s.lightboxesCount) return false; }
-      else if (activeZoneFilter === 'antiTheftGates') { if (!s.antiTheftGates) return false; }
-      else if (activeZoneFilter === 'ymCount') { if (!s.ymCount) return false; }
-      else if (activeZoneFilter === 'top20') { if (!s.top20) return false; }
+      if      (activeZoneFilter === 'torts')           { if (!s.tortsX && !s.tortsG && !s.tortsGold && !s.tortsLeather) return false; }
+      else if (activeZoneFilter === 'lightboxesCount') { if (!s.lightboxesCount) return false; }
+      else if (activeZoneFilter === 'antiTheftGates')  { if (!s.antiTheftGates) return false; }
+      else if (activeZoneFilter === 'ymCount')         { if (!s.ymCount) return false; }
+      else if (activeZoneFilter === 'top20')           { if (!s.top20) return false; }
+      else if (activeZoneFilter === 'facadeType')      { if (!s.facadeType || s.facadeType === '-' || s.facadeType === 'нет') return false; }
+      else if (activeZoneFilter === 'workHourSigns')   { if (!s.workHourSignsCount) return false; }
+      else if (activeZoneFilter === 'equipment')       { if (!s.hasBaskets && !s.shelfMobile && !s.shelfCrocs && !s.trolley && !s.kariWood) return false; }
+      else if (activeZoneFilter === 'cashFormat')      { if (!s.cash2new && !s.cash3new && !s.cash4new && !s.cash2std && !s.cash3std && !s.cash4std) return false; }
       else if (!s[activeZoneFilter]) return false;
     }
     return true;
@@ -1265,6 +1283,15 @@ function renderOverview() {
   const withSport = stores.filter(s => s.hasSport).length;
   const withCosmetics = stores.filter(s => s.hasCosmetics).length;
   const withClothes = stores.filter(s => s.hasClothes).length;
+  const withTorts = stores.filter(s => s.tortsX||s.tortsG||s.tortsGold||s.tortsLeather).length;
+  const withYM = stores.filter(s => s.ymCount > 0).length;
+  const withGatesF = stores.filter(s => s.antiTheftGates > 0).length;
+  const withLightSigns = stores.filter(s => s.lightSigns).length;
+  const withLightboxes = stores.filter(s => s.lightboxesCount > 0).length;
+  const withFacade = stores.filter(s => s.facadeType && s.facadeType !== '-' && s.facadeType !== 'нет').length;
+  const withRegim = stores.filter(s => s.workHourSignsCount > 0).length;
+  const withEquip = stores.filter(s => s.hasBaskets||s.shelfMobile||s.shelfCrocs||s.trolley||s.kariWood).length;
+  const withCash = stores.filter(s => s.cash2new||s.cash3new||s.cash4new||s.cash2std||s.cash3std||s.cash4std).length;
   const totalTortsX = stores.reduce((a,s)=>a+s.tortsX,0);
   const totalTortsG = stores.reduce((a,s)=>a+s.tortsG,0);
   const totalTortsGold = stores.reduce((a,s)=>a+(s.tortsGold||0),0);
@@ -1297,18 +1324,49 @@ function renderOverview() {
         <div class="card-lbl">TOP 20</div>
         <div class="card-click-hint">📋 фильтр TOP 20</div>
       </div>
+
+      <!-- ── 14 ЗОН ОФОРМЛЕНИЯ ───────────────────────────────── -->
+      <div class="card clickable" onclick="openDrill('torts')">
+        <div class="card-accent" style="background:#E8162A"></div>
+        <div class="card-icon">📐</div>
+        <div class="card-val" style="color:#E8162A">${withTorts}</div>
+        <div class="card-lbl">Торцы</div>
+        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:4px">
+          <span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 5px;border-radius:4px">X: ${totalTortsX}</span>
+          <span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 5px;border-radius:4px">G: ${totalTortsG}</span>
+          <span style="font-size:10px;background:rgba(139,69,19,0.1);color:#8B4513;padding:2px 5px;border-radius:4px">Кожа: ${totalTortsLeather}</span>
+          <span style="font-size:10px;background:rgba(212,160,0,0.1);color:#D4A000;padding:2px 5px;border-radius:4px">Зол: ${totalTortsGold}</span>
+        </div>
+        <div class="card-click-hint">📋 детальный список</div>
+      </div>
       <div class="card clickable" onclick="openDrill('vitrina')">
         <div class="card-accent" style="background:var(--blue)"></div>
         <div class="card-icon">🪟</div>
         <div class="card-val" style="color:var(--blue)">${withVitrina}</div>
-        <div class="card-lbl">С витриной</div>
+        <div class="card-lbl">Витрина</div>
+        <div class="card-click-hint">📋 детальный список</div>
+      </div>
+      <div class="card clickable" onclick="openDrill('ym')">
+        <div class="card-accent" style="background:#FFD700"></div>
+        <div class="card-icon">💍</div>
+        <div class="card-val" style="color:#B8860B">${withYM}</div>
+        <div class="card-lbl">Ювелирный отдел</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">ЮМ всего: ${totalYM}</div>
+        <div class="card-click-hint">📋 детальный список</div>
+      </div>
+      <div class="card clickable" onclick="openDrill('gates')">
+        <div class="card-accent" style="background:#795548"></div>
+        <div class="card-icon">🚧</div>
+        <div class="card-val" style="color:#795548">${withGatesF}</div>
+        <div class="card-lbl">Антикражные рамки</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">ворот всего: ${totalGates}</div>
         <div class="card-click-hint">📋 детальный список</div>
       </div>
       <div class="card clickable" onclick="openDrill('kh')">
         <div class="card-accent" style="background:var(--green)"></div>
-        <div class="card-icon">🧒</div>
+        <div class="card-icon">🏠</div>
         <div class="card-val" style="color:var(--green)">${withKH}</div>
-        <div class="card-lbl">Зона Кари Хоме</div>
+        <div class="card-lbl">Кари Хоме</div>
         <div class="card-click-hint">📋 детальный список</div>
       </div>
       <div class="card clickable" onclick="openDrill('cosmetics')">
@@ -1326,34 +1384,56 @@ function renderOverview() {
         <div class="card-click-hint">📋 детальный список</div>
       </div>
       <div class="card clickable" onclick="openDrill('sport')">
-        <div class="card-accent" style="background:#FF6B9D"></div>
+        <div class="card-accent" style="background:#FF6B35"></div>
         <div class="card-icon">🏃</div>
-        <div class="card-val" style="color:#FF6B9D">${withSport}</div>
-        <div class="card-lbl">Спорт</div>
+        <div class="card-val" style="color:#FF6B35">${withSport}</div>
+        <div class="card-lbl">Зона спорта</div>
         <div class="card-click-hint">📋 детальный список</div>
       </div>
-      <div class="card clickable" onclick="openDrill('torts')">
-        <div class="card-accent" style="background:var(--red)"></div>
-        <div class="card-icon">📌</div>
-        <div class="card-val" style="color:var(--red)">${totalTortsX+totalTortsG}</div>
-        <div class="card-lbl">Торцы</div>
-        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:4px"><span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 6px;border-radius:4px">X: ${totalTortsX}</span><span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 6px;border-radius:4px">G: ${totalTortsG}</span><span style="font-size:10px;background:rgba(139,69,19,0.1);color:#8B4513;padding:2px 6px;border-radius:4px">Кожа: ${totalTortsLeather}</span><span style="font-size:10px;background:rgba(212,160,0,0.1);color:#D4A000;padding:2px 6px;border-radius:4px">Зол: ${totalTortsGold}</span></div>
-        <div class="card-click-hint">📋 детальный список</div>
+      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='lightSigns'));activeZoneFilter='lightSigns';applyFilters();})()">
+        <div class="card-accent" style="background:#00C2FF"></div>
+        <div class="card-icon">🔆</div>
+        <div class="card-val" style="color:#00C2FF">${withLightSigns}</div>
+        <div class="card-lbl">Световые таблички</div>
+        <div class="card-click-hint">📋 фильтр по зоне</div>
       </div>
-      <div class="card clickable" onclick="openDrill('ym')">
-        <div class="card-accent" style="background:var(--blue)"></div>
-        <div class="card-icon">🔷</div>
-        <div class="card-val" style="color:var(--blue)">${totalYM}</div>
-        <div class="card-lbl">ЮМ всего</div>
-        <div class="card-click-hint">📋 детальный список</div>
+      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='lightboxesCount'));activeZoneFilter='lightboxesCount';applyFilters();})()">
+        <div class="card-accent" style="background:#00B4D8"></div>
+        <div class="card-icon">💡</div>
+        <div class="card-val" style="color:#00B4D8">${withLightboxes}</div>
+        <div class="card-lbl">Лайтбоксы</div>
+        <div class="card-click-hint">📋 фильтр по зоне</div>
       </div>
-      <div class="card clickable" onclick="openDrill('gates')">
-        <div class="card-accent" style="background:#795548"></div>
-        <div class="card-icon">🚧</div>
-        <div class="card-val" style="color:#795548">${totalGates}</div>
-        <div class="card-lbl">Антикражных ворот</div>
-        <div class="card-click-hint">📋 детальный список</div>
+      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='facadeType'));activeZoneFilter='facadeType';applyFilters();})()">
+        <div class="card-accent" style="background:#8B4513"></div>
+        <div class="card-icon">🏢</div>
+        <div class="card-val" style="color:#8B4513">${withFacade}</div>
+        <div class="card-lbl">Фасад</div>
+        <div class="card-click-hint">📋 фильтр по зоне</div>
       </div>
+      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='workHourSigns'));activeZoneFilter='workHourSigns';applyFilters();})()">
+        <div class="card-accent" style="background:#6C757D"></div>
+        <div class="card-icon">🕐</div>
+        <div class="card-val" style="color:#6C757D">${withRegim}</div>
+        <div class="card-lbl">Режимник</div>
+        <div class="card-click-hint">📋 фильтр по зоне</div>
+      </div>
+      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='equipment'));activeZoneFilter='equipment';applyFilters();})()">
+        <div class="card-accent" style="background:var(--green)"></div>
+        <div class="card-icon">🛒</div>
+        <div class="card-val" style="color:var(--green)">${withEquip}</div>
+        <div class="card-lbl">Оборудование</div>
+        <div class="card-click-hint">📋 фильтр по зоне</div>
+      </div>
+      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='cashFormat'));activeZoneFilter='cashFormat';applyFilters();})()">
+        <div class="card-accent" style="background:var(--purple)"></div>
+        <div class="card-icon">💰</div>
+        <div class="card-val" style="color:var(--purple)">${withCash}</div>
+        <div class="card-lbl">Формат кассы</div>
+        <div class="card-click-hint">📋 фильтр по зоне</div>
+      </div>
+      <!-- ── конец 14 зон ────────────────────────────────────── -->
+
       <div class="card clickable" onclick="openPlansGallery()">
         <div class="card-accent" style="background:linear-gradient(135deg,#880E4F,#C2185B)"></div>
         <div class="card-icon">🗺️</div>
@@ -1402,13 +1482,24 @@ function renderOverview() {
     <div class="chart-card" style="margin-bottom:28px">
       <h3>Оснащённость зонами оформления (%)</h3>
       ${[
-        {label:'Зона спорта', val: withSport, color:'#FF6B9D'},
-        {label:'Зона косметики', val: withCosmetics, color:'var(--amber)'},
-        {label:'Зона Кари Хоме', val: withKH, color:'var(--green)'},
-        {label:'Зона одежды', val: withClothes, color:'var(--purple)'},
-        {label:'Витрина', val: withVitrina, color:'var(--blue)'},
+        {label:'Торцы',             val: withTorts,     color:'#E8162A'},
+        {label:'Витрина',           val: withVitrina,   color:'var(--blue)'},
+        {label:'Ювелирный отдел',   val: withYM,        color:'#FFD700'},
+        {label:'Антикражные рамки', val: withGatesF,    color:'#FF6B9D'},
+        {label:'Кари Хоме',         val: withKH,        color:'var(--green)'},
+        {label:'Косметика',         val: withCosmetics, color:'var(--amber)'},
+        {label:'Одежда',            val: withClothes,   color:'var(--purple)'},
+        {label:'Зона спорта',       val: withSport,     color:'#FF6B35'},
+        {label:'Световые таблички', val: withLightSigns,color:'#00C2FF'},
+        {label:'Лайтбоксы',        val: withLightboxes,color:'#00B4D8'},
+        {label:'Фасад',             val: withFacade,    color:'#8B4513'},
+        {label:'Режимник',          val: withRegim,     color:'#6C757D'},
+        {label:'Оборудование',      val: withEquip,     color:'#28C76F'},
+        {label:'Формат кассы',      val: withCash,      color:'#9B5DE5'},
       ].map(item => `
-        <div class="bar-row">
+        <div class="bar-row" style="cursor:pointer" onclick="document.querySelector('[data-zone=\\'${
+          item.label==='Торцы'?'torts':item.label==='Витрина'?'hasVitrina':item.label==='Ювелирный отдел'?'ymCount':item.label==='Антикражные рамки'?'antiTheftGates':item.label==='Кари Хоме'?'hasKH':item.label==='Косметика'?'hasCosmetics':item.label==='Одежда'?'hasClothes':item.label==='Зона спорта'?'hasSport':item.label==='Световые таблички'?'lightSigns':item.label==='Лайтбоксы'?'lightboxesCount':item.label==='Фасад'?'facadeType':item.label==='Режимник'?'workHourSigns':item.label==='Оборудование'?'equipment':'cashFormat'
+        }\\'].click()">
           <div class="bar-label">${item.label}</div>
           <div class="bar-track">
             <div class="bar-fill" style="width:${total ? (item.val/total*100).toFixed(0) : 0}%;background:${item.color}">
@@ -1803,8 +1894,7 @@ async function exportExcel() {
     XLSX.writeFile(wb, 'Паспорт_магазинов_' + new Date().toISOString().slice(0,10) + '.xlsx');
   } else {
     const bom = '﻿';
-    const csv = bom + [headers,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('
-');
+    const csv = bom + [headers,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('\n');
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
     a.download = 'Паспорт_магазинов_' + new Date().toISOString().slice(0,10) + '.csv';
@@ -1947,10 +2037,15 @@ function mApplyFilters(){
     if(mkind && s.kind!==mkind) return false;
     if(sid && s.id!==+sid) return false;
     if(mZoneFilter!=='all'){
-      if(mZoneFilter==='lightboxesCount'){if(!s.lightboxesCount)return false;}
-      else if(mZoneFilter==='antiTheftGates'){if(!s.antiTheftGates)return false;}
-      else if(mZoneFilter==='ymCount'){if(!s.ymCount)return false;}
-      else if(mZoneFilter==='top20'){if(!s.top20)return false;}
+      if      (mZoneFilter==='torts')           {if(!s.tortsX&&!s.tortsG&&!s.tortsGold&&!s.tortsLeather)return false;}
+      else if (mZoneFilter==='lightboxesCount') {if(!s.lightboxesCount)return false;}
+      else if (mZoneFilter==='antiTheftGates')  {if(!s.antiTheftGates)return false;}
+      else if (mZoneFilter==='ymCount')         {if(!s.ymCount)return false;}
+      else if (mZoneFilter==='top20')           {if(!s.top20)return false;}
+      else if (mZoneFilter==='facadeType')      {if(!s.facadeType||s.facadeType==='-'||s.facadeType==='нет')return false;}
+      else if (mZoneFilter==='workHourSigns')   {if(!s.workHourSignsCount)return false;}
+      else if (mZoneFilter==='equipment')       {if(!s.hasBaskets&&!s.shelfMobile&&!s.shelfCrocs&&!s.trolley&&!s.kariWood)return false;}
+      else if (mZoneFilter==='cashFormat')      {if(!s.cash2new&&!s.cash3new&&!s.cash4new&&!s.cash2std&&!s.cash3std&&!s.cash4std)return false;}
       else if(!s[mZoneFilter])return false;
     }
     return true;
