@@ -1518,7 +1518,7 @@ function renderOrderTable() {
   for (var si = 0; si < stores.length; si++) {
     var s = stores[si];
     var bg = si % 2 === 0 ? 'rgba(255,255,255,0.7)' : 'rgba(252,228,236,0.2)';
-    tbody += '<tr style="background:' + bg + '" onmouseover="this.style.background='rgba(232,22,42,0.06)'" onmouseout="this.style.background='' + bg + ''">';
+    tbody += '<tr style="background:' + bg + '" onmouseover="this.style.background=\'rgba(232,22,42,0.06)\'" onmouseout="this.style.background=\'' + bg + '\'">';
     for (var cj = 0; cj < COLS.length; cj++) {
       var val = COLS[cj].v(s);
       if (val === null || val === undefined) val = '\u2014';
