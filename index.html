@@ -1390,47 +1390,47 @@ function renderOverview() {
         <div class="card-lbl">Зона спорта</div>
         <div class="card-click-hint">📋 детальный список</div>
       </div>
-      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='lightSigns'));activeZoneFilter='lightSigns';applyFilters();})()">
+      <div class="card clickable" onclick="openDrill('lightSigns')">
         <div class="card-accent" style="background:#00C2FF"></div>
         <div class="card-icon">🔆</div>
         <div class="card-val" style="color:#00C2FF">${withLightSigns}</div>
         <div class="card-lbl">Световые таблички</div>
-        <div class="card-click-hint">📋 фильтр по зоне</div>
+        <div class="card-click-hint">📋 детальный список</div>
       </div>
-      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='lightboxesCount'));activeZoneFilter='lightboxesCount';applyFilters();})()">
+      <div class="card clickable" onclick="openDrill('lightboxes')">
         <div class="card-accent" style="background:#00B4D8"></div>
         <div class="card-icon">💡</div>
         <div class="card-val" style="color:#00B4D8">${withLightboxes}</div>
         <div class="card-lbl">Лайтбоксы</div>
-        <div class="card-click-hint">📋 фильтр по зоне</div>
+        <div class="card-click-hint">📋 детальный список</div>
       </div>
-      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='facadeType'));activeZoneFilter='facadeType';applyFilters();})()">
+      <div class="card clickable" onclick="openDrill('facade')">
         <div class="card-accent" style="background:#8B4513"></div>
         <div class="card-icon">🏢</div>
         <div class="card-val" style="color:#8B4513">${withFacade}</div>
         <div class="card-lbl">Фасад</div>
-        <div class="card-click-hint">📋 фильтр по зоне</div>
+        <div class="card-click-hint">📋 детальный список</div>
       </div>
-      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='workHourSigns'));activeZoneFilter='workHourSigns';applyFilters();})()">
+      <div class="card clickable" onclick="openDrill('regim')">
         <div class="card-accent" style="background:#6C757D"></div>
         <div class="card-icon">🕐</div>
         <div class="card-val" style="color:#6C757D">${withRegim}</div>
         <div class="card-lbl">Режимник</div>
-        <div class="card-click-hint">📋 фильтр по зоне</div>
+        <div class="card-click-hint">📋 детальный список</div>
       </div>
-      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='equipment'));activeZoneFilter='equipment';applyFilters();})()">
+      <div class="card clickable" onclick="openDrill('equip')">
         <div class="card-accent" style="background:var(--green)"></div>
         <div class="card-icon">🛒</div>
         <div class="card-val" style="color:var(--green)">${withEquip}</div>
         <div class="card-lbl">Оборудование</div>
-        <div class="card-click-hint">📋 фильтр по зоне</div>
+        <div class="card-click-hint">📋 детальный список</div>
       </div>
-      <div class="card clickable" onclick="(function(){document.querySelectorAll('.zone-btn').forEach(b=>b.classList.toggle('active',b.dataset.zone==='cashFormat'));activeZoneFilter='cashFormat';applyFilters();})()">
+      <div class="card clickable" onclick="openDrill('cash')">
         <div class="card-accent" style="background:var(--purple)"></div>
         <div class="card-icon">💰</div>
         <div class="card-val" style="color:var(--purple)">${withCash}</div>
         <div class="card-lbl">Формат кассы</div>
-        <div class="card-click-hint">📋 фильтр по зоне</div>
+        <div class="card-click-hint">📋 детальный список</div>
       </div>
       <!-- ── конец 14 зон ────────────────────────────────────── -->
 
@@ -3356,6 +3356,88 @@ const DD_CFG = {
     ],
     qty: s=>s.antiTheftGates, qh:'Антикражные рамки',
     total: rows=>`Итого: ${rows.reduce((a,s)=>a+s.antiTheftGates,0)} рамок в ${rows.length} маг.`
+  },
+  lightSigns: {
+    icon:'🔆', title:'Световые таблички',
+    filter: s=>s.lightSigns,
+    cols: [
+      {h:'Подразделение',  v: s=>s.division},
+      {h:'№ магазина',     v: s=>s.id},
+      {h:'Магазин / Адрес',v: s=>s.name},
+      {h:'Световые таблички', v: s=>s.lightSigns?'да':'—'},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.length} магазинов со световыми табличками`
+  },
+  lightboxes: {
+    icon:'💡', title:'Лайтбоксы',
+    filter: s=>s.lightboxesCount>0,
+    cols: [
+      {h:'Подразделение',  v: s=>s.division},
+      {h:'№ магазина',     v: s=>s.id},
+      {h:'Магазин / Адрес',v: s=>s.name},
+    ],
+    qty: s=>s.lightboxesCount||0, qh:'Кол-во лайтбоксов',
+    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.lightboxesCount||0),0)} лайтбоксов в ${rows.length} маг.`
+  },
+  facade: {
+    icon:'🏢', title:'Фасад',
+    filter: s=>s.facadeType&&s.facadeType!=='-'&&s.facadeType!=='нет',
+    cols: [
+      {h:'Подразделение',  v: s=>s.division},
+      {h:'№ магазина',     v: s=>s.id},
+      {h:'Магазин / Адрес',v: s=>s.name},
+      {h:'Тип оформления', v: s=>s.facadeType||'—'},
+      {h:'Реле времени',   v: s=>s.hasTimeRelay?'да':'—'},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.length} магазинов с оформлением фасада`
+  },
+  regim: {
+    icon:'🕐', title:'Режимник',
+    filter: s=>s.workHourSignsCount>0,
+    cols: [
+      {h:'Подразделение',  v: s=>s.division},
+      {h:'№ магазина',     v: s=>s.id},
+      {h:'Магазин / Адрес',v: s=>s.name},
+      {h:'Размер',         v: s=>s.workHourSignsSize||'—'},
+      {h:'Формат',         v: s=>s.workHourSignsFormat||'—'},
+    ],
+    qty: s=>s.workHourSignsCount||0, qh:'Кол-во табличек',
+    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.workHourSignsCount||0),0)} табличек в ${rows.length} маг.`
+  },
+  equip: {
+    icon:'🛒', title:'Оборудование',
+    filter: s=>s.hasBaskets||s.shelfMobile||s.shelfCrocs||s.trolley||s.kariWood,
+    cols: [
+      {h:'Подразделение',  v: s=>s.division},
+      {h:'№ магазина',     v: s=>s.id},
+      {h:'Магазин / Адрес',v: s=>s.name},
+      {h:'Корзины',        v: s=>s.hasBaskets?'да':'—'},
+      {h:'Стеллаж 400×650',v: s=>s.shelfMobile||'—'},
+      {h:'Стойка Crocs',   v: s=>s.shelfCrocs||'—'},
+      {h:'Тележка',        v: s=>s.trolley||'—'},
+      {h:'Kari Wood',      v: s=>s.kariWood||'—'},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.length} магазинов с оборудованием`
+  },
+  cash: {
+    icon:'💰', title:'Формат кассы',
+    filter: s=>s.cash2new||s.cash3new||s.cash4new||s.cash2std||s.cash3std||s.cash4std,
+    cols: [
+      {h:'Подразделение',  v: s=>s.division},
+      {h:'№ магазина',     v: s=>s.id},
+      {h:'Магазин / Адрес',v: s=>s.name},
+      {h:'Новая 2 м.',     v: s=>s.cash2new?'✓':'—'},
+      {h:'Новая 3 м.',     v: s=>s.cash3new?'✓':'—'},
+      {h:'Новая 4 м.',     v: s=>s.cash4new?'✓':'—'},
+      {h:'Станд. 2 м.',    v: s=>s.cash2std?'✓':'—'},
+      {h:'Станд. 3 м.',    v: s=>s.cash3std?'✓':'—'},
+      {h:'Станд. 4 м.',    v: s=>s.cash4std?'✓':'—'},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.length} магазинов с данными по кассам`
   },
 };
 
