@@ -570,6 +570,34 @@ header {
 .upload-toast.error { background: #B71C1C; }
 .upload-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ─── ОКНО СТАТУСА ОБНОВЛЕНИЯ ─── */
+#refreshStatus {
+  position: fixed; bottom: 24px; right: 24px; z-index: 1200;
+  background: #1a1a2e; color: #fff; border-radius: 14px;
+  padding: 16px 20px; min-width: 280px; max-width: 340px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  font-family: 'Inter', sans-serif; font-size: 13px;
+  transform: translateX(120%); opacity: 0;
+  transition: transform .35s cubic-bezier(.25,.8,.25,1), opacity .35s;
+  pointer-events: none;
+}
+#refreshStatus.rs-show { transform: translateX(0); opacity: 1; pointer-events: all; }
+.rs-title { font-size: 12px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 12px; }
+.rs-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.rs-row:last-child { margin-bottom: 0; }
+.rs-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+.rs-label { flex: 1; font-size: 12px; color: #ddd; }
+.rs-badge {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;
+  background: rgba(255,255,255,0.1); color: #aaa; white-space: nowrap;
+}
+.rs-badge.rs-ok    { background: rgba(46,204,113,0.25); color: #2ecc71; }
+.rs-badge.rs-err   { background: rgba(231,76,60,0.25);  color: #e74c3c; }
+.rs-badge.rs-spin  { background: rgba(255,255,255,0.08); color: #aaa; animation: rs-blink .8s infinite; }
+@keyframes rs-blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+.rs-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 10px 0; }
+.rs-summary { font-size: 12px; color: #fff; font-weight: 600; text-align: center; padding-top: 2px; }
+
 /* ─── DRILL-DOWN MODAL ─── */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 800;
@@ -2991,55 +3019,77 @@ document.addEventListener('keydown', e => {
 
 const GSHEET_URL = 'https://raw.githubusercontent.com/skbmaksim82-byte/kari-dashboard/main/%D0%BF%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%82%20%D0%BC%D0%B0%D0%B3%D0%B0%D0%B7%D0%B8%D0%BD%D0%B0.xlsx'; // GitHub raw XLSX
 const GH_PLANS_URL = 'https://raw.githubusercontent.com/skbmaksim82-byte/kari-dashboard/main/plans/'; // GitHub raw планировки
+const GH_FOTO_URL  = 'https://raw.githubusercontent.com/skbmaksim82-byte/kari-dashboard/main/Foto%20Reklama/'; // GitHub raw фото рекламы
+const FOTO_MAP = {}; // sku/filename → URL фото
+
+// ── Хелперы статусного окна ───────────────────────────────────
+function rsShow() {
+  const el = document.getElementById('refreshStatus');
+  if (el) el.classList.add('rs-show');
+}
+function rsHide(delay) {
+  setTimeout(function() {
+    const el = document.getElementById('refreshStatus');
+    if (el) el.classList.remove('rs-show');
+  }, delay || 4000);
+}
+function rsSet(id, state, text) {
+  const el = document.getElementById('rs-' + id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'rs-badge' + (state === 'ok' ? ' rs-ok' : state === 'err' ? ' rs-err' : state === 'spin' ? ' rs-spin' : '');
+}
+function rsSummary(text) {
+  const el = document.getElementById('rs-summary');
+  if (el) el.textContent = text;
+}
+function rsReset() {
+  ['xlsx','plans','foto'].forEach(function(id) { rsSet(id, '', 'ожидание'); });
+  rsSummary('Загрузка...');
+}
 
 async function refreshFromGoogleSheets() {
   const btn = document.getElementById('mainRefreshBtn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Обновляем...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳'; }
 
-  let dataOk = false;
+  rsReset();
+  rsShow();
 
-  // ── Загрузка таблицы ──────────────────────────────────────────
+  let xlsxOk = false, plansCount = 0, fotoCount = 0;
+
+  // ── 1. Таблица xlsx ───────────────────────────────────────────
+  rsSet('xlsx', 'spin', 'загрузка...');
   try {
-    const xlsxOk = await ensureXLSX();
-    if (!xlsxOk) throw new Error('Библиотека XLSX недоступна — проверьте интернет-соединение');
+    const ok = await ensureXLSX();
+    if (!ok) throw new Error('Библиотека XLSX недоступна');
 
     const resp = await fetch(GSHEET_URL, { signal: AbortSignal.timeout(15000) });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-    const arrayBuffer = await resp.arrayBuffer();
-    const data = new Uint8Array(arrayBuffer);
+    const data = new Uint8Array(await resp.arrayBuffer());
     const wb = XLSX.read(data, { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
     if (rows.length < 2) throw new Error('Файл пуст');
 
-    // Поддержка новой структуры: строка 0 = группы, строка 1 = заголовки
-    // Ищем строку с реальными заголовками
     let hdrRow = rows[0];
     for (let ri = 0; ri < Math.min(rows.length, 4); ri++) {
-      if (rows[ri] && rows[ri].some(v => v && String(v).includes('Магазин'))) {
-        hdrRow = rows[ri]; break;
-      }
-      if (rows[ri] && rows[ri].some(v => v && String(v).includes('Подразделение'))) {
-        hdrRow = rows[ri]; break;
-      }
+      if (rows[ri] && rows[ri].some(function(v){ return v && String(v).includes('Магазин'); })) { hdrRow = rows[ri]; break; }
+      if (rows[ri] && rows[ri].some(function(v){ return v && String(v).includes('Подразделение'); })) { hdrRow = rows[ri]; break; }
     }
-    const hdr = hdrRow.map(h => String(h||'').trim());
-    const hasDiv  = hdr.some(h => h.includes('Подразделение'));
-    const hasId   = hdr.some(h => h.includes('Магазин'));
-    const hasName = hdr.some(h => h.includes('Наименование'));
-    if (!hasDiv || !hasId || !hasName) throw new Error('Неверная структура файла');
+    const hdr = hdrRow.map(function(h){ return String(h||'').trim(); });
+    if (!hdr.some(function(h){ return h.includes('Подразделение'); }) ||
+        !hdr.some(function(h){ return h.includes('Магазин'); }) ||
+        !hdr.some(function(h){ return h.includes('Наименование'); }))
+      throw new Error('Неверная структура файла');
 
     const parsed = parseXLSXRows(rows);
     if (!parsed.length) throw new Error('Нет данных');
 
-    // Обновляем данные
     STORES.length = 0;
-    parsed.forEach(s => STORES.push(s));
+    parsed.forEach(function(s){ STORES.push(s); });
     filteredStores = [...STORES];
 
-    // Сбрасываем фильтры
     document.getElementById('searchInput').value = '';
     document.getElementById('filterDiv').value = '';
     document.getElementById('filterCat').value = '';
@@ -3047,45 +3097,72 @@ async function refreshFromGoogleSheets() {
     if (document.getElementById('filterLegal')) document.getElementById('filterLegal').value = '';
     document.getElementById('filterStore').value = '';
 
-    // Перестраиваем список подразделений
     const divSel = document.getElementById('filterDiv');
     while (divSel.options.length > 1) divSel.remove(1);
-    [...new Set(STORES.map(s => s.division))].sort().forEach(d => {
+    [...new Set(STORES.map(function(s){ return s.division; }))].sort().forEach(function(d) {
       const o = document.createElement('option'); o.value = d; o.textContent = d;
       divSel.appendChild(o);
     });
-
     populateStoreFilter();
     applyFilters();
     renderMain();
-    dataOk = true;
+
+    xlsxOk = true;
+    rsSet('xlsx', 'ok', STORES.length + ' магазинов');
   } catch(e) {
-    flyEmoji(false);
-    showToast('❌ Ошибка загрузки таблицы: ' + e.message, true);
+    rsSet('xlsx', 'err', e.message.slice(0, 28));
   }
 
-  // ── Загрузка планировок из GitHub ─────────────────────────────
+  // ── 2. Планировки (plans/) ────────────────────────────────────
+  rsSet('plans', 'spin', 'загрузка...');
   try {
-    const apiUrl = 'https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/plans';
-    const plResp = await fetch(apiUrl, { signal: AbortSignal.timeout(10000) });
-    if (plResp.ok) {
-      const files = await plResp.json();
-      if (Array.isArray(files)) {
-        files.forEach(f => {
-          const m = f.name.match(/^(\d+)\.(pdf|png|jpg)$/i);
-          if (m) FP_MAP[parseInt(m[1])] = GH_PLANS_URL + f.name;
-        });
-        updatePlansCardCounter();
-        if (activeTab === 'store') renderMain();
-      }
+    const resp = await fetch('https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/plans', { signal: AbortSignal.timeout(10000) });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const files = await resp.json();
+    if (Array.isArray(files)) {
+      files.forEach(function(f) {
+        const m = f.name.match(/^(\d+)\.(pdf|png|jpg)$/i);
+        if (m) { FP_MAP[parseInt(m[1])] = GH_PLANS_URL + f.name; plansCount++; }
+      });
+      updatePlansCardCounter();
+      if (activeTab === 'store') renderMain();
     }
-  } catch(e) { /* тихо */ }
-
-  if (dataOk) {
-    flyEmoji(true);
-    showToast('✅ Обновлено: ' + STORES.length + ' магазинов, ' + Object.keys(FP_MAP).length + ' планировок');
+    rsSet('plans', plansCount > 0 ? 'ok' : 'err', plansCount > 0 ? plansCount + ' файлов' : 'нет файлов');
+  } catch(e) {
+    rsSet('plans', 'err', e.message.slice(0, 28));
   }
 
+  // ── 3. Фото рекламы (Foto Reklama/) ──────────────────────────
+  rsSet('foto', 'spin', 'загрузка...');
+  try {
+    const resp = await fetch('https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/Foto%20Reklama', { signal: AbortSignal.timeout(10000) });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const files = await resp.json();
+    if (Array.isArray(files)) {
+      Object.keys(FOTO_MAP).forEach(function(k){ delete FOTO_MAP[k]; });
+      files.forEach(function(f) {
+        if (/\.(jpg|jpeg|png|webp|gif)$/i.test(f.name)) {
+          const key = f.name.replace(/\.[^.]+$/, '').toLowerCase();
+          FOTO_MAP[key] = GH_FOTO_URL + encodeURIComponent(f.name);
+          fotoCount++;
+        }
+      });
+    }
+    rsSet('foto', fotoCount > 0 ? 'ok' : 'err', fotoCount > 0 ? fotoCount + ' фото' : 'нет файлов');
+  } catch(e) {
+    rsSet('foto', 'err', e.message.slice(0, 28));
+  }
+
+  // ── Итог ──────────────────────────────────────────────────────
+  if (xlsxOk) {
+    flyEmoji(true);
+    rsSummary('✅ ' + new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}));
+  } else {
+    flyEmoji(false);
+    rsSummary('⚠️ Часть данных не загружена');
+  }
+
+  rsHide(5000);
   if (btn) { btn.disabled = false; btn.innerHTML = '☁️ Обновить'; }
 }
 
@@ -3706,6 +3783,28 @@ function exportDrillXLSX(){
 </script>
 
 <div class="upload-toast" id="uploadToast"></div>
+
+<!-- ОКНО СТАТУСА ОБНОВЛЕНИЯ -->
+<div id="refreshStatus">
+  <div class="rs-title">☁️ Обновление данных</div>
+  <div class="rs-row">
+    <span class="rs-icon">📊</span>
+    <span class="rs-label">Таблица магазинов</span>
+    <span class="rs-badge" id="rs-xlsx">ожидание</span>
+  </div>
+  <div class="rs-row">
+    <span class="rs-icon">🗺️</span>
+    <span class="rs-label">Планировки (plans/)</span>
+    <span class="rs-badge" id="rs-plans">ожидание</span>
+  </div>
+  <div class="rs-row">
+    <span class="rs-icon">🖼️</span>
+    <span class="rs-label">Фото рекламы (Foto Reklama/)</span>
+    <span class="rs-badge" id="rs-foto">ожидание</span>
+  </div>
+  <div class="rs-divider"></div>
+  <div class="rs-summary" id="rs-summary">Загрузка...</div>
+</div>
 
 
 <!-- FLOOR PLAN MODAL -->
