@@ -74,6 +74,25 @@ header {
 .search-box:focus { border-color: var(--red); }
 .search-box::placeholder { color: var(--muted); }
 
+/* ─── SEARCH AUTOCOMPLETE ─── */
+.search-wrap { position: relative; }
+.search-dropdown {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+  background: #fff; border: 1.5px solid var(--red-light); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(194,24,91,0.13); max-height: 280px; overflow-y: auto;
+}
+.search-dropdown.open { display: block; }
+.sd-item {
+  padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border);
+  font-size: 12px; line-height: 1.4; transition: background .12s;
+}
+.sd-item:last-child { border-bottom: none; }
+.sd-item:hover, .sd-item.sd-active { background: rgba(232,22,42,0.06); }
+.sd-item-name { font-weight: 600; color: var(--dark); }
+.sd-item-meta { color: var(--muted); font-size: 11px; margin-top: 1px; }
+.sd-item-match { background: rgba(232,22,42,0.15); border-radius: 2px; padding: 0 1px; font-weight: 700; color: var(--red); }
+.sd-empty { padding: 10px 12px; color: var(--muted); font-size: 12px; text-align: center; }
+
 .filter-group { display: flex; flex-direction: column; gap: 6px; }
 .filter-select {
   background: rgba(255,255,255,0.9); border: 1.5px solid var(--border);
@@ -173,24 +192,6 @@ header {
 .order-section { background: rgba(255,255,255,0.92); border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: 4px 4px 16px rgba(194,24,91,0.1), -2px -2px 10px rgba(255,255,255,0.9); }
 .order-section h2 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 4px; }
 .order-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-
-/* ─── Обёртка таблицы Сводные данные: прокрутка во все стороны ─── */
-#orderTableWrap {
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  flex: 1;
-  min-height: 0;
-}
-#orderTableWrap::-webkit-scrollbar { width: 8px; height: 8px; }
-#orderTableWrap::-webkit-scrollbar-track { background: var(--surface2); border-radius: 4px; }
-#orderTableWrap::-webkit-scrollbar-thumb { background: rgba(194,24,91,0.3); border-radius: 4px; }
-#orderTableWrap::-webkit-scrollbar-thumb:hover { background: rgba(194,24,91,0.55); }
-#orderTableWrap::-webkit-scrollbar-corner { background: var(--surface2); }
-
-.order-section { display: flex; flex-direction: column; height: calc(100vh - 130px); padding: 16px; }
 
 .order-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .order-table th {
@@ -306,54 +307,11 @@ header {
 .posm-grid tr:hover td { background: rgba(252,228,236,0.3); }
 .posm-grid tr:last-child td { border-bottom:none; }
 .posm-item-img {
-  width:56px; height:56px; border-radius:8px;
+  width:44px; height:44px; border-radius:8px; object-fit:cover;
   background: var(--surface2); border:1px solid var(--border);
   display:flex; align-items:center; justify-content:center;
-  font-size:20px; flex-shrink:0; overflow:hidden; cursor:pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-  position:relative;
+  font-size:20px; flex-shrink:0;
 }
-.posm-item-img:hover { transform:scale(1.07); box-shadow:0 4px 14px rgba(194,24,91,0.25); }
-.posm-item-img img {
-  width:100%; height:100%; object-fit:cover; border-radius:8px;
-  display:block;
-}
-.posm-item-img .posm-img-fallback {
-  display:flex; align-items:center; justify-content:center;
-  width:100%; height:100%; font-size:20px; color:var(--muted);
-}
-/* ─── Модал просмотра фото ПОСМ ─── */
-#posmPhotoModal {
-  display:none; position:fixed; inset:0; z-index:9999;
-  background:rgba(10,10,20,0.88); backdrop-filter:blur(6px);
-  align-items:center; justify-content:center; flex-direction:column;
-  gap:14px; padding:20px;
-}
-#posmPhotoModal.open { display:flex; }
-#posmPhotoModal .pm-img-wrap {
-  max-width:90vw; max-height:75vh;
-  background:var(--surface); border-radius:14px; overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,0.5);
-  display:flex; align-items:center; justify-content:center;
-}
-#posmPhotoModal .pm-img-wrap img {
-  max-width:90vw; max-height:75vh; object-fit:contain; display:block;
-}
-#posmPhotoModal .pm-caption {
-  color:#fff; font-size:14px; font-weight:600; text-align:center;
-  max-width:600px; line-height:1.4; text-shadow:0 1px 4px rgba(0,0,0,.6);
-}
-#posmPhotoModal .pm-sku {
-  color:rgba(255,255,255,0.6); font-size:11px; text-align:center; margin-top:2px;
-}
-#posmPhotoModal .pm-close {
-  position:fixed; top:18px; right:22px;
-  background:rgba(255,255,255,0.15); border:none; color:#fff;
-  font-size:22px; width:40px; height:40px; border-radius:50%;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  transition:background 0.15s;
-}
-#posmPhotoModal .pm-close:hover { background:rgba(194,24,91,0.7); }
 .posm-item-name { font-weight:600; font-size:12px; line-height:1.3; }
 .posm-item-sku { font-size:10px; color:var(--muted); margin-top:2px; }
 .posm-item-pack { font-size:11px; color:var(--blue); }
@@ -611,11 +569,6 @@ header {
 }
 .upload-toast.error { background: #B71C1C; }
 .upload-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-@keyframes toastSlideIn {
-  from { opacity: 0; transform: translateY(16px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    }
-}
 
 /* ─── DRILL-DOWN MODAL ─── */
 .modal-overlay {
@@ -1013,16 +966,16 @@ window._xlsxReady = typeof XLSX !== 'undefined';
       <button class="drawer-chip" data-zone="torts">📐 Торцы</button>
       <button class="drawer-chip" data-zone="hasVitrina">🪟 Витрина</button>
       <button class="drawer-chip" data-zone="ymCount">💍 Ювелирный отдел</button>
+      <button class="drawer-chip" data-zone="antiTheftGates">🚧 Антикражные рамки</button>
       <button class="drawer-chip" data-zone="hasKH">🏠 Кари Хоме</button>
       <button class="drawer-chip" data-zone="hasCosmetics">💄 Косметика</button>
       <button class="drawer-chip" data-zone="hasClothes">👗 Одежда</button>
-      <button class="drawer-chip" data-zone="hasSport">🏃 Спорт</button>
+      <button class="drawer-chip" data-zone="hasSport">🏃 Зона спорта</button>
       <button class="drawer-chip" data-zone="lightSigns">🔆 Световые таблички</button>
       <button class="drawer-chip" data-zone="lightboxesCount">💡 Лайтбоксы</button>
-      <button class="drawer-chip" data-zone="antiTheftGates">🚧 Антикражные рамки</button>
       <button class="drawer-chip" data-zone="facadeType">🏢 Фасад</button>
       <button class="drawer-chip" data-zone="workHourSigns">🕐 Режимник</button>
-      <button class="drawer-chip" data-zone="equipment">🛒 Оборудование</button>
+      <button class="drawer-chip" data-zone="equipment">🛒 Корзины, стойки, Бренд зона</button>
       <button class="drawer-chip" data-zone="cashFormat">💰 Формат кассы</button>
       <button class="drawer-chip" data-zone="top20">⭐ TOP 20</button>
     </div>
@@ -1038,7 +991,10 @@ window._xlsxReady = typeof XLSX !== 'undefined';
   <div class="sidebar">
     <div class="sb-section">
       <h3>Поиск</h3>
-      <input type="text" class="search-box" id="searchInput" placeholder="🔍  Название, город...">
+      <div class="search-wrap">
+        <input type="text" class="search-box" id="searchInput" placeholder="🔍  Название, город, №, подразделение..." autocomplete="off">
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
     </div>
     <div class="sb-section">
       <h3>Фильтры</h3>
@@ -1085,7 +1041,7 @@ window._xlsxReady = typeof XLSX !== 'undefined';
         <button class="zone-btn" data-zone="lightboxesCount">💡 Лайтбоксы</button>
         <button class="zone-btn" data-zone="facadeType">🏢 Фасад</button>
         <button class="zone-btn" data-zone="workHourSigns">🕐 Режимник</button>
-        <button class="zone-btn" data-zone="equipment">🛒 Оборудование</button>
+        <button class="zone-btn" data-zone="equipment">🛒 Корзины, стойки, Бренд зона</button>
         <button class="zone-btn" data-zone="cashFormat">💰 Формат кассы</button>
         <button class="zone-btn" data-zone="top20">⭐ TOP 20</button>
       </div>
@@ -1150,7 +1106,6 @@ const DIVISION_COLORS = {
 };
 
 let filteredStores = [...STORES];
-window.RAW_XLSX_ROWS = null; // Сырые строки из xlsx для таблицы Сводные данные
 
 const FP_MAP = {
   13187: '1tvSB-Byqz5SeYtAuXu_nc3AV4ntLmm6Y',
@@ -1211,7 +1166,14 @@ function applyFilters() {
   const legal = document.getElementById('filterLegal') ? document.getElementById('filterLegal').value : '';
   
   filteredStores = STORES.filter(s => {
-    if (search && !s.name.toLowerCase().includes(search) && !s.city.toLowerCase().includes(search)) return false;
+    if (search && !s.name.toLowerCase().includes(search) &&
+        !s.city.toLowerCase().includes(search) &&
+        !s.division.toLowerCase().includes(search) &&
+        !(s.region||'').toLowerCase().includes(search) &&
+        !(s.legalEntity||'').toLowerCase().includes(search) &&
+        !(s.kind||'').toLowerCase().includes(search) &&
+        !String(s.id).includes(search) &&
+        !String(s.category).includes(search)) return false;
     if (div && s.division !== div) return false;
     if (cat && s.category !== parseInt(cat)) return false;
     if (kind && s.kind !== kind) return false;
@@ -1227,7 +1189,7 @@ function applyFilters() {
       else if (activeZoneFilter === 'workHourSigns')   { if (!s.workHourSignsCount) return false; }
       else if (activeZoneFilter === 'equipment')       { if (!s.hasBaskets && !s.shelfMobile && !s.shelfCrocs && !s.trolley && !s.kariWood) return false; }
       else if (activeZoneFilter === 'cashFormat')      { if (!s.cash2new && !s.cash3new && !s.cash4new && !s.cash2std && !s.cash3std && !s.cash4std) return false; }
-      else if (!s[activeZoneFilter]) return false;
+      else if (activeZoneFilter === 'lightSigns')         { if (!s.lightSigns) return false; }
     }
     return true;
   });
@@ -1241,7 +1203,103 @@ function applyFilters() {
 }
 
 // Attach filter listeners
-document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('searchInput').addEventListener('input', () => { applyFilters(); renderSearchDropdown(); });
+document.getElementById('searchInput').addEventListener('focus', renderSearchDropdown);
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) closeSearchDropdown();
+});
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  const dd = document.getElementById('searchDropdown');
+  const items = dd.querySelectorAll('.sd-item');
+  const active = dd.querySelector('.sd-item.sd-active');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const next = active ? active.nextElementSibling : items[0];
+    if (next) { active && active.classList.remove('sd-active'); next.classList.add('sd-active'); next.scrollIntoView({block:'nearest'}); }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    const prev = active ? active.previousElementSibling : items[items.length-1];
+    if (prev) { active && active.classList.remove('sd-active'); prev.classList.add('sd-active'); prev.scrollIntoView({block:'nearest'}); }
+  } else if (e.key === 'Enter') {
+    if (active) { active.click(); }
+    else if (items.length === 1) { items[0].click(); }
+  } else if (e.key === 'Escape') {
+    closeSearchDropdown();
+  }
+});
+
+function closeSearchDropdown() {
+  document.getElementById('searchDropdown').classList.remove('open');
+}
+
+function highlight(text, query) {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return text.slice(0, idx) +
+    '<span class="sd-item-match">' + text.slice(idx, idx + query.length) + '</span>' +
+    text.slice(idx + query.length);
+}
+
+function renderSearchDropdown() {
+  const dd = document.getElementById('searchDropdown');
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) { dd.classList.remove('open'); return; }
+
+  const ql = q.toLowerCase();
+  // Собираем совпадения — поле совпадения + магазин
+  const matches = [];
+  for (const s of STORES) {
+    const fields = [
+      { label: 'Название', val: s.name },
+      { label: 'Город',    val: s.city },
+      { label: 'Подразделение', val: s.division },
+      { label: 'Регион',   val: s.region||'' },
+      { label: 'Юр лицо', val: s.legalEntity||'' },
+      { label: 'Вид',      val: s.kind||'' },
+      { label: '№',        val: String(s.id) },
+    ];
+    for (const f of fields) {
+      if (f.val && f.val.toLowerCase().includes(ql)) {
+        matches.push({ store: s, field: f.label, val: f.val });
+        break; // одно совпадение на магазин
+      }
+    }
+    if (matches.length >= 12) break;
+  }
+
+  if (!matches.length) {
+    dd.innerHTML = '<div class="sd-empty">Ничего не найдено</div>';
+    dd.classList.add('open');
+    return;
+  }
+
+  dd.innerHTML = matches.map(m => `
+    <div class="sd-item" onclick="selectStoreFromSearch(${m.store.id})">
+      <div class="sd-item-name">${highlight(m.store.name, q)}</div>
+      <div class="sd-item-meta">
+        ${m.field !== 'Название' ? '<span>'+m.field+': <b>'+highlight(m.val, q)+'</b> · </span>' : ''}
+        ${m.store.division} · №${m.store.id}
+      </div>
+    </div>
+  `).join('');
+  dd.classList.add('open');
+}
+
+function selectStoreFromSearch(id) {
+  document.getElementById('searchInput').value = '';
+  closeSearchDropdown();
+  // Сбрасываем фильтры и выбираем магазин
+  document.getElementById('filterDiv').value = '';
+  document.getElementById('filterCat').value = '';
+  document.getElementById('filterKind').value = '';
+  if (document.getElementById('filterLegal')) document.getElementById('filterLegal').value = '';
+  document.getElementById('filterStore').value = '';
+  activeZoneFilter = 'all';
+  document.querySelectorAll('.zone-btn').forEach(b => b.classList.toggle('active', b.dataset.zone === 'all'));
+  filteredStores = [...STORES];
+  selectStore(id);
+}
 document.getElementById('filterDiv').addEventListener('change', () => { populateStoreFilter(); applyFilters(); });
 document.getElementById('filterCat').addEventListener('change', () => { populateStoreFilter(); applyFilters(); });
 document.getElementById('filterKind').addEventListener('change', () => { populateStoreFilter(); applyFilters(); });
@@ -1384,7 +1442,7 @@ function renderOverview() {
         <div class="card-lbl">Магазинов</div>
         <div class="card-click-hint">📋 все магазины</div>
       </div>
-      <div class="card clickable" onclick="applyTop20Filter()" id="cardTop20" style="border:2px solid transparent">
+      <div class="card clickable" onclick="openDrill('top20')" id="cardTop20" style="border:2px solid transparent">
         <div class="card-accent" style="background:linear-gradient(135deg,#E8162A,#C2185B)"></div>
         <div class="card-icon">⭐</div>
         <div class="card-val" id="ct-top20" style="color:#E8162A">${stores.filter(s=>s.top20).length}</div>
@@ -1489,7 +1547,7 @@ function renderOverview() {
         <div class="card-accent" style="background:var(--green)"></div>
         <div class="card-icon">🛒</div>
         <div class="card-val" style="color:var(--green)">${withEquip}</div>
-        <div class="card-lbl">Оборудование</div>
+        <div class="card-lbl">Корзины, стойки, Бренд зона</div>
         <div class="card-click-hint">📋 детальный список</div>
       </div>
       <div class="card clickable" onclick="openDrill('cash')">
@@ -1601,204 +1659,77 @@ function renderPie(catCounts, total, cx) {
 
 // ─── ORDER TABLE ───
 function renderOrderTable() {
-  // ── Если есть сырые строки xlsx — рендерим точно как в Excel ──
-  if (window.RAW_XLSX_ROWS && window.RAW_XLSX_ROWS.length >= 3) {
-    return renderOrderTableRaw();
-  }
-  // ── Fallback: рендер из объектов STORES ───────────────────────
-  return renderOrderTableFallback();
-}
-
-// ─────────────────────────────────────────────────────────────────
-// РЕНДЕР ТАБЛИЦЫ ПРЯМО ИЗ СЫРЫХ СТРОК XLSX (точно как в Excel)
-// ─────────────────────────────────────────────────────────────────
-function renderOrderTableRaw() {
-  var rows = window.RAW_XLSX_ROWS;
-  // Строка 0 — группы/блоки, строка 1 — заголовки, строки 2+ — данные
-  // Определяем индекс строки заголовков
-  var hdrIdx = 0;
-  for (var ri = 0; ri < Math.min(rows.length, 5); ri++) {
-    var r = rows[ri];
-    if (r && r.some && r.some(function(v){ return v && String(v).includes('\u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430'); })) { hdrIdx = ri; break; }
-    if (r && r.some && r.some(function(v){ return v && String(v).includes('\u041f\u043e\u0434\u0440\u0430\u0437\u0434\u0435\u043b\u0435\u043d\u0438\u0435'); })) { hdrIdx = ri; break; }
-  }
-
-  var grpRow = hdrIdx > 0 ? rows[hdrIdx - 1] : null; // строка с группами (Данные магазина, Торцы…)
-  var hdrRow = rows[hdrIdx];                           // строка с заголовками колонок
-  var colCount = hdrRow.length;
-
-  // Собираем colspan для групп (строка 0)
-  var groups = [];
-  if (grpRow) {
-    var gi = 0;
-    while (gi < colCount) {
-      var gVal = String(grpRow[gi] || '').trim();
-      var span = 1;
-      while (gi + span < colCount && (!grpRow[gi + span] || String(grpRow[gi + span]).trim() === '')) span++;
-      groups.push({ label: gVal, span: span });
-      gi += span;
-    }
-  }
-
-  // Определяем id-колонку (для клика → паспорт)
-  var idColIdx = hdrRow.findIndex(function(h){ return h && String(h).includes('\u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430'); });
-  var nameColIdx = hdrRow.findIndex(function(h){ return h && String(h).includes('\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435'); });
-
-  // Фильтрация: только строки магазинов из filteredStores
-  var allowedIds = new Set(filteredStores.map(function(s){ return String(s.id); }));
-  var dataRows = [];
-  for (var di = hdrIdx + 1; di < rows.length; di++) {
-    var dr = rows[di];
-    if (!dr) continue;
-    var idVal = idColIdx >= 0 ? String(dr[idColIdx] || '').trim() : '';
-    if (!idVal || idVal === '0') continue;
-    if (!allowedIds.has(idVal)) continue;
-    dataRows.push(dr);
-  }
-
-  // ── Стили ──
-  var thBaseStyle = [
-    'white-space:nowrap',
-    'padding:8px 11px',
-    'font-size:11px',
-    'font-weight:700',
-    'border-right:1px solid rgba(194,24,91,0.2)',
-    'border-bottom:1px solid rgba(194,24,91,0.3)',
-    'background:var(--surface2)',
-    'position:sticky',
-    'z-index:3',
-    'cursor:pointer',
-    'user-select:none',
-  ].join(';');
-
-  var thGrpStyle = [
-    'white-space:nowrap',
-    'padding:7px 11px',
-    'font-size:10px',
-    'font-weight:700',
-    'text-transform:uppercase',
-    'letter-spacing:.5px',
-    'color:var(--red)',
-    'border-right:2px solid rgba(194,24,91,0.25)',
-    'border-bottom:1px solid rgba(194,24,91,0.2)',
-    'background:linear-gradient(135deg,rgba(252,228,236,0.6),rgba(248,200,220,0.4))',
-    'text-align:center',
-    'position:sticky',
-    'top:0',
-    'z-index:4',
-  ].join(';');
-
-  var tdStyle = [
-    'white-space:nowrap',
-    'padding:7px 11px',
-    'font-size:12px',
-    'vertical-align:middle',
-    'border-right:1px solid rgba(248,187,217,0.25)',
-    'border-bottom:1px solid rgba(248,187,217,0.2)',
-    'max-width:240px',
-    'overflow:hidden',
-    'text-overflow:ellipsis',
-  ].join(';');
-
-  // ── Строим HTML ──
-  var html = '';
-
-  // Строка групп (если есть)
-  if (grpRow) {
-    html += '<tr>';
-    groups.forEach(function(g) {
-      var border = g.span > 1 ? 'border-right:2px solid rgba(194,24,91,0.25);' : 'border-right:1px solid rgba(194,24,91,0.15);';
-      html += '<th style="' + thGrpStyle + ';' + border + '" colspan="' + g.span + '">' + (g.label || '') + '</th>';
-    });
-    html += '</tr>';
-  }
-
-  // Строка заголовков
-  html += '<tr>';
-  for (var ci = 0; ci < colCount; ci++) {
-    var hText = String(hdrRow[ci] || '').trim();
-    var topOff = grpRow ? '36px' : '0';
-    html += '<th style="' + thBaseStyle + ';top:' + topOff + ';color:var(--red);" onclick="sortOrderTable(' + ci + ')" title="' + hText + '">' + hText + '</th>';
-  }
-  html += '</tr>';
-
-  // Строки данных
-  var tbody = '';
-  dataRows.forEach(function(dr, si) {
-    var bg = si % 2 === 0 ? 'rgba(255,255,255,0.72)' : 'rgba(252,228,236,0.18)';
-    tbody += '<tr style="background:' + bg + '" onmouseover="this.style.background=\'rgba(232,22,42,0.06)\'" onmouseout="this.style.background=\'' + bg + '\'">';
-    for (var ci = 0; ci < colCount; ci++) {
-      var cell = dr[ci];
-      var val = (cell === null || cell === undefined || cell === '') ? '' : String(cell);
-      // Кликабельные колонки: № Магазина и Наименование
-      if (ci === idColIdx || ci === nameColIdx) {
-        var storeId = idColIdx >= 0 ? parseInt(dr[idColIdx]) || 0 : 0;
-        tbody += '<td style="' + tdStyle + ';cursor:pointer;font-weight:600;color:var(--red)" onclick="selectStoreAndTab(' + storeId + ')" title="Открыть паспорт">' + val + '</td>';
-      } else {
-        tbody += '<td style="' + tdStyle + '">' + val + '</td>';
-      }
-    }
-    tbody += '</tr>';
-  });
-
-  return '<div class="order-section" style="padding:16px;display:flex;flex-direction:column;height:calc(100vh - 130px)">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;flex-shrink:0">'
-    + '<div><h2 style="font-size:16px;margin:0">\u0421\u0432\u043e\u0434\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435</h2>'
-    + '<p class="order-subtitle" style="margin:3px 0 0">' + dataRows.length + ' \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u043e\u0432 &middot; ' + colCount + ' \u0441\u0442\u043e\u043b\u0431\u0446\u043e\u0432 &middot; \u0434\u0430\u043d\u043d\u044b\u0435 \u0438\u0437 xlsx</p></div>'
-    + '<button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,#1D6F42,#196040);display:flex;align-items:center;gap:7px;padding:8px 16px;font-size:13px">&#128202; \u0412\u044b\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0432 Excel</button>'
-    + '</div>'
-    + '<div id="orderTableWrap" style="flex:1;overflow:auto;border:1px solid var(--border);border-radius:10px;position:relative">'
-    + '<table id="orderTable" style="border-collapse:collapse;width:max-content;min-width:100%;font-size:12px">'
-    + '<thead>' + html + '</thead>'
-    + '<tbody>' + tbody + '</tbody>'
-    + '</table></div>'
-    + '<div style="margin-top:6px;font-size:11px;color:var(--muted);flex-shrink:0">'
-    + '\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430: \u043a\u043b\u0438\u043a \u043f\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u0443 &nbsp;|&nbsp; '
-    + '\u041f\u0430\u0441\u043f\u043e\u0440\u0442: \u043a\u043b\u0438\u043a \u043f\u043e \u043d\u043e\u043c\u0435\u0440\u0443 \u0438\u043b\u0438 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u044e &nbsp;|&nbsp; '
-    + '\u041f\u0440\u043e\u043a\u0440\u0443\u0442\u043a\u0430: \u043c\u044b\u0448\u044c / \u0442\u0440\u0435\u043a\u043f\u0430\u0434 \u0432\u043e \u0432\u0441\u0435 \u0441\u0442\u043e\u0440\u043e\u043d\u044b'
-    + '</div>'
-    + '</div>';
-}
-
-// ─── FALLBACK: рендер из объектов STORES ─────────────────────────
-function renderOrderTableFallback() {
   var stores = filteredStores;
 
   var COLS = [
-    { h: '\u0420\u0435\u0433\u0438\u043e\u043d',                      v: function(s){ return s.region||'\u2014'; } },
-    { h: '\u2116 \u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430',               v: function(s){ return s.id; } },
-    { h: '\u0413\u043e\u0440\u043e\u0434',                          v: function(s){ return s.city; } },
-    { h: '\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430',        v: function(s){ return s.name + (s.top20 ? ' \u2605' : ''); } },
-    { h: '\u042e\u0440 \u043b\u0438\u0446\u043e',                    v: function(s){ return s.legalEntity||'\u2014'; } },
-    { h: '\u0412\u0438\u0434 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430',                 v: function(s){ return s.kind||'\u2014'; } },
-    { h: '\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f',                   v: function(s){ return s.category; } },
-    { h: 'TOP 20',                       v: function(s){ return s.top20 ? '\u0434\u0430' : '\u2014'; } },
-    { h: '\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u043e\u0431\u0449\u0430\u044f (\u043c2)',          v: function(s){ return s.areaTotal||'\u2014'; } },
-    { h: '\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u0442\u043e\u0440\u0433\u043e\u0432\u0430\u044f (\u043c2)',       v: function(s){ return s.areaTrade||'\u2014'; } },
-    { h: '\u041f\u043b\u043e\u0449\u0430\u0434\u044c \u041a\u0438\u0434\u0441 (\u043c2)',            v: function(s){ return s.areaKids||'\u2014'; } },
-    { h: '\u0422\u043e\u0440\u0446\u044b X',                         v: function(s){ return s.tortsX||'\u2014'; } },
-    { h: '\u0422\u043e\u0440\u0446\u044b G',                         v: function(s){ return s.tortsG||'\u2014'; } },
-    { h: '\u0417\u043e\u043b\u043e\u0442\u043e\u0439 \u0442\u043e\u0440\u0435\u0446',            v: function(s){ return s.tortsGold||'\u2014'; } },
-    { h: '\u0422\u043e\u0440\u0435\u0446 \u041a\u043e\u0436\u0430',                 v: function(s){ return s.tortsLeather||'\u2014'; } },
-    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u0432\u0438\u0442\u0440\u0438\u043d\u044b',            v: function(s){ return s.hasVitrina ? '\u0434\u0430' : '\u2014'; } },
-    { h: '\u041a\u043e\u043b-\u0432\u043e \u0432\u0438\u0442\u0440. \u043c\u043e\u0434\u0443\u043b\u0435\u0439',         v: function(s){ return s.vitrinaModules||'\u2014'; } },
-    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u0437\u043e\u043d\u044b \u041a\u0425',          v: function(s){ return s.hasKH ? '\u0434\u0430' : '\u2014'; } },
-    { h: '\u041c\u0435\u0442\u0440\u043e\u0432 \u041a\u0430\u0440\u0438 \u0425\u043e\u043c\u0435',         v: function(s){ return s.khMeters||'\u2014'; } },
-    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u043a\u043e\u0441\u043c\u0435\u0442\u0438\u043a\u0438',        v: function(s){ return s.hasCosmetics ? '\u0434\u0430' : '\u2014'; } },
-    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u043e\u0434\u0435\u0436\u0434\u044b',             v: function(s){ return s.hasClothes ? '\u0434\u0430' : '\u2014'; } },
-    { h: '\u041d\u0430\u043b\u0438\u0447\u0438\u0435 \u0437\u043e\u043d\u044b \u0441\u043f\u043e\u0440\u0442\u0430',        v: function(s){ return s.hasSport ? '\u0434\u0430' : '\u2014'; } },
-    { h: '\u0424\u0430\u0441\u0430\u0434',                          v: function(s){ return s.facadeType||'\u2014'; } },
+    { h: 'Регион',                      v: function(s){ return s.region||'—'; } },
+    { h: '№ Магазина',               v: function(s){ return s.id; } },
+    { h: 'Город',                          v: function(s){ return s.city; } },
+    { h: 'Наименование магазина',        v: function(s){ return s.name + (s.top20 ? ' ★' : ''); } },
+    { h: 'Юр лицо',                    v: function(s){ return s.legalEntity||'—'; } },
+    { h: 'Вид магазина',                 v: function(s){ return s.kind||'—'; } },
+    { h: 'Категория',                   v: function(s){ return s.category; } },
+    { h: 'TOP 20',                       v: function(s){ return s.top20 ? 'да' : '—'; } },
+    { h: 'Площадь общая (м2)',          v: function(s){ return s.areaTotal||'—'; } },
+    { h: 'Площадь торговая (м2)',       v: function(s){ return s.areaTrade||'—'; } },
+    { h: 'Площадь Кидс (м2)',            v: function(s){ return s.areaKids||'—'; } },
+    { h: 'Торцы X',                         v: function(s){ return s.tortsX||'—'; } },
+    { h: 'Торцы G',                         v: function(s){ return s.tortsG||'—'; } },
+    { h: 'Золотой торец',            v: function(s){ return s.tortsGold||'—'; } },
+    { h: 'Торец Кожа',                 v: function(s){ return s.tortsLeather||'—'; } },
+    { h: 'Наличие витрины',            v: function(s){ return s.hasVitrina ? 'да' : '—'; } },
+    { h: 'Кол-во витр. модулей',         v: function(s){ return s.vitrinaModules||'—'; } },
+    { h: 'Модули (тип)',                v: function(s){ return s.vitrinaType||'—'; } },
+    { h: 'Сплошных мод.',              v: function(s){ return s.vitrinaFull||'—'; } },
+    { h: 'Раздельных мод.',           v: function(s){ return s.vitrinaSplit||'—'; } },
+    { h: 'Наличие ТВ (шт)',              v: function(s){ return s.vitrinaTV||'—'; } },
+    { h: 'Кол-во ЮМ',                    v: function(s){ return s.ymCount||'—'; } },
+    { h: 'Оформление ЮИ',              v: function(s){ return s.yiDesign||'—'; } },
+    { h: 'Антикраж. ворота',         v: function(s){ return s.antiTheftGates||'—'; } },
+    { h: 'Наличие зоны КХ',          v: function(s){ return s.hasKH ? 'да' : '—'; } },
+    { h: 'Метров Кари Хоме',         v: function(s){ return s.khMeters||'—'; } },
+    { h: 'Наличие косметики',        v: function(s){ return s.hasCosmetics ? 'да' : '—'; } },
+    { h: 'Стол космет. GS',           v: function(s){ return s.cosmeticsGS ? 'да' : '—'; } },
+    { h: 'Метров косметики',          v: function(s){ return s.cosmeticsMeters||'—'; } },
+    { h: 'Наличие одежды',             v: function(s){ return s.hasClothes ? 'да' : '—'; } },
+    { h: 'Метров (одежда)',            v: function(s){ return s.clothesMeters||'—'; } },
+    { h: 'Наличие зоны спорта',        v: function(s){ return s.hasSport ? 'да' : '—'; } },
+    { h: 'Метров (спорт)',            v: function(s){ return s.sportMeters||'—'; } },
+    { h: 'Расположение спорт',         v: function(s){ return s.sportLocation||'—'; } },
+    { h: 'Свет. таблички',            v: function(s){ return s.lightSigns ? 'да' : '—'; } },
+    { h: 'Лайтбоксы',                   v: function(s){ return s.lightboxesCount||'—'; } },
+    { h: 'Фасад',                          v: function(s){ return s.facadeType||'—'; } },
+    { h: 'Реле времени',                v: function(s){ return s.hasTimeRelay ? 'да' : '—'; } },
+    { h: 'Кол-во табл. режима',        v: function(s){ return s.workHourSignsCount||'—'; } },
+    { h: 'Размер табличек',           v: function(s){ return s.workHourSignsSize||'—'; } },
+    { h: 'Формат табличек',           v: function(s){ return s.workHourSignsFormat||'—'; } },
+    { h: 'Корзины',                      v: function(s){ return s.hasBaskets ? 'да' : '—'; } },
+    { h: 'Корз. с надстр.',             v: function(s){ return s.basketsNad||'—'; } },
+    { h: 'Корз. Кидс',                 v: function(s){ return s.basketsKids||'—'; } },
+    { h: 'Корз. Кари',                 v: function(s){ return s.basketsKari||'—'; } },
+    { h: 'Стеллаж 400х650',             v: function(s){ return s.shelfMobile||'—'; } },
+    { h: 'Стойка Crocs',                  v: function(s){ return s.shelfCrocs||'—'; } },
+    { h: 'Тележка',                      v: function(s){ return s.trolley||'—'; } },
+    { h: 'Kari Wood',                    v: function(s){ return s.kariWood||'—'; } },
+    { h: 'Новая касса 2 м.',             v: function(s){ return s.cash2new ? 'да' : '—'; } },
+    { h: 'Новая касса 3 м.',             v: function(s){ return s.cash3new ? 'да' : '—'; } },
+    { h: 'Новая касса 4 м.',             v: function(s){ return s.cash4new ? 'да' : '—'; } },
+    { h: 'Станд. касса 2 м.',          v: function(s){ return s.cash2std ? 'да' : '—'; } },
+    { h: 'Станд. касса 3 м.',          v: function(s){ return s.cash3std ? 'да' : '—'; } },
+    { h: 'Касса 4 м. (2 станд.)',       v: function(s){ return s.cash4std ? 'да' : '—'; } }
   ];
 
   var thS = 'white-space:nowrap;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--red);font-weight:700;background:var(--surface2);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;border-right:1px solid var(--border);cursor:pointer;user-select:none';
   var tdS = 'white-space:nowrap;padding:8px 12px;font-size:12px;vertical-align:middle;border-right:1px solid rgba(248,187,217,0.3);border-bottom:1px solid rgba(248,187,217,0.25)';
 
+  // Build thead
   var thead = '<thead><tr>';
   for (var ci = 0; ci < COLS.length; ci++) {
     thead += '<th style="' + thS + '" onclick="sortOrderTable(' + ci + ')" title="' + COLS[ci].h + '">' + COLS[ci].h + '</th>';
   }
   thead += '</tr></thead>';
 
+  // Build tbody
   var tbody = '<tbody>';
   for (var si = 0; si < stores.length; si++) {
     var s = stores[si];
@@ -1807,7 +1738,8 @@ function renderOrderTableFallback() {
     for (var cj = 0; cj < COLS.length; cj++) {
       var val = COLS[cj].v(s);
       if (val === null || val === undefined) val = '\u2014';
-      if (COLS[cj].h.includes('\u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430') || COLS[cj].h.includes('\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435')) {
+      var col = COLS[cj];
+      if (col.h === '\u2116 \u041c\u0430\u0433\u0430\u0437\u0438\u043d\u0430' || col.h === '\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430') {
         tbody += '<td style="' + tdS + ';cursor:pointer;font-weight:500" onclick="selectStoreAndTab(' + s.id + ')" title="\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043f\u0430\u0441\u043f\u043e\u0440\u0442">' + val + '</td>';
       } else {
         tbody += '<td style="' + tdS + '">' + val + '</td>';
@@ -1817,19 +1749,20 @@ function renderOrderTableFallback() {
   }
   tbody += '</tbody>';
 
-  return '<div class="order-section" style="padding:16px;display:flex;flex-direction:column;height:calc(100vh - 130px)">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;flex-shrink:0">'
+  return '<div class="order-section" style="padding:16px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">'
     + '<div><h2 style="font-size:16px;margin:0">\u0421\u0432\u043e\u0434\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435</h2>'
     + '<p class="order-subtitle" style="margin:3px 0 0">' + stores.length + ' \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u043e\u0432 &middot; ' + COLS.length + ' \u0441\u0442\u043e\u043b\u0431\u0446\u043e\u0432</p></div>'
     + '<button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,#1D6F42,#196040);display:flex;align-items:center;gap:7px;padding:8px 16px;font-size:13px">&#128202; \u0412\u044b\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0432 Excel</button>'
     + '</div>'
-    + '<div id="orderTableWrap" style="flex:1;overflow:auto;border:1px solid var(--border);border-radius:10px">'
+    + '<div style="overflow:auto;max-height:calc(100vh - 220px);border:1px solid var(--border);border-radius:8px">'
     + '<table id="orderTable" style="border-collapse:collapse;width:max-content;min-width:100%;font-size:12px">'
     + thead + tbody
     + '</table></div>'
-    + '<div style="margin-top:6px;font-size:11px;color:var(--muted);flex-shrink:0">\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430: \u043a\u043b\u0438\u043a \u043f\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u0443 &nbsp;|&nbsp; \u041f\u0430\u0441\u043f\u043e\u0440\u0442: \u043a\u043b\u0438\u043a \u043f\u043e \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0443</div>'
+    + '<div style="margin-top:8px;font-size:11px;color:var(--muted)">\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430: \u043a\u043b\u0438\u043a \u043f\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u0443 &nbsp;|&nbsp; \u041f\u0430\u0441\u043f\u043e\u0440\u0442: \u043a\u043b\u0438\u043a \u043f\u043e \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0443</div>'
     + '</div>';
 }
+
 // Сортировка таблицы
 var _sortCol = -1, _sortAsc = true;
 function sortOrderTable(colIdx) {
@@ -1877,154 +1810,139 @@ function renderStoreDetail() {
 
   return `
     <div class="detail-panel">
-      <div class="detail-header" style="flex-direction:column;align-items:stretch;gap:0">
 
-        <!-- ── БЛОК: ДАННЫЕ МАГАЗИНА ─────────────────────────────── -->
-        <div style="background:linear-gradient(135deg,rgba(232,22,42,0.06),rgba(194,24,91,0.04));border-radius:14px;padding:16px 20px;border:1px solid rgba(194,24,91,0.15);margin-bottom:14px">
+      <!-- ══ ЗАГОЛОВОК ══════════════════════════════════════════════ -->
+      <div style="margin-bottom:14px">
 
-          <!-- Строка 1: номер + TOP20 -->
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">№ ${s.id}</span>
-            ${s.top20 ? '<span style="font-size:10px;font-weight:800;color:#fff;background:linear-gradient(135deg,#E8162A,#C2185B);padding:2px 9px;border-radius:4px;letter-spacing:.5px">⭐ TOP 20</span>' : ''}
-          </div>
+        <!-- Одна строка жирным: всё главное -->
+        <div style="font-size:15px;font-weight:800;color:var(--dark);line-height:1.5;display:flex;flex-wrap:wrap;align-items:center;gap:6px 0">
+          <span style="color:var(--red)">№&nbsp;${s.id}</span>
+          <span style="color:var(--muted);margin:0 6px">·</span>
+          <span>${s.city}</span>
+          <span style="color:var(--muted);margin:0 6px">·</span>
+          <span>${s.name}</span>
+          ${s.areaTotal ? `<span style="color:var(--muted);margin:0 6px">·</span><span>${s.areaTotal} м²</span>` : ''}
+          ${s.category ? `<span style="color:var(--muted);margin:0 6px">·</span><span class="badge badge-cat" style="font-size:13px;padding:2px 10px">Категория ${s.category}</span>` : ''}
+          ${s.kind && s.kind !== '-' ? `<span style="color:var(--muted);margin:0 4px">·</span><span class="badge ${s.kind==='остановлен'?'badge-stopped':'badge-kind'}" style="font-size:13px;padding:2px 10px">${s.kind}</span>` : ''}
+          ${s.top20 ? '<span style="margin-left:6px;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(135deg,#E8162A,#C2185B);padding:2px 9px;border-radius:4px;letter-spacing:.5px">⭐ TOP 20</span>' : ''}
+        </div>
 
-          <!-- Строка 2: РЕГИОН · ПОДРАЗДЕЛЕНИЕ -->
-          <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">
-            ${s.region ? s.region : ''}${s.region && s.division ? ' · ' : ''}${s.division ? s.division : ''}
-          </div>
+        <!-- Подстрока: регион · подразделение · юрлицо -->
+        <div style="font-size:11px;color:var(--muted);font-weight:500;margin-top:4px;letter-spacing:.3px">
+          ${[s.region, s.division, s.legalEntity].filter(Boolean).join(' · ')}
+        </div>
 
-          <!-- Строка 3: Наименование магазина -->
-          <div style="font-size:16px;font-weight:800;color:var(--dark);line-height:1.3;margin-bottom:8px">
-            ${s.name}
-          </div>
-
-          <!-- Строка 4: Вид · Категория · Юрлицо -->
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center">
-            ${s.kind && s.kind !== '-' ? `<span class="badge ${s.kind==='остановлен'?'badge-stopped':'badge-kind'}">${s.kind}</span>` : ''}
-            ${s.category ? `<span class="badge badge-cat">Категория ${s.category}</span>` : ''}
-            ${s.legalEntity ? `<span style="font-size:11px;color:var(--muted);font-weight:500">${s.legalEntity}</span>` : ''}
-          </div>
-
-          <!-- Строка 5: Площади -->
-          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">
-            ${s.areaTotal ? `<div style="display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.7);border-radius:8px;padding:6px 14px;border:1px solid rgba(194,24,91,0.12)"><span style="font-size:18px;font-weight:800;color:var(--red)">${s.areaTotal}</span><span style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">м² общая</span></div>` : ''}
-            ${s.areaTrade ? `<div style="display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.7);border-radius:8px;padding:6px 14px;border:1px solid rgba(194,24,91,0.12)"><span style="font-size:18px;font-weight:800;color:var(--blue)">${s.areaTrade}</span><span style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">м² торговая</span></div>` : ''}
-            ${s.areaKids ? `<div style="display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.7);border-radius:8px;padding:6px 14px;border:1px solid rgba(194,24,91,0.12)"><span style="font-size:18px;font-weight:800;color:#7b5ea7">${s.areaKids}</span><span style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">м² кидс</span></div>` : ''}
-          </div>
-
-          <!-- Строка 6: Кнопка ПЛАНИРОВКА МАГАЗИНА -->
-          <button onclick="openPlanModal()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#E8162A,#C2185B);color:#fff;border:none;border-radius:9px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 12px rgba(232,22,42,0.3);transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        <!-- Кнопка планировки -->
+        <div style="margin-top:12px">
+          <button onclick="openPlanModal()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#E8162A,#C2185B);color:#fff;border:none;border-radius:9px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 12px rgba(232,22,42,0.25);transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
             🗺️ Планировка магазина
           </button>
-          ${FP_MAP[s.id] ? `<a href="${GH_PLANS_URL+s.id+'.pdf'}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;margin-left:10px;font-size:12px;color:var(--red);text-decoration:none;font-weight:600;background:rgba(194,24,91,0.08);padding:9px 14px;border-radius:9px;border:1px solid rgba(194,24,91,0.2)">↗ Открыть PDF</a>` : ''}
-
         </div>
-        <!-- ── конец ДАННЫЕ МАГАЗИНА ───────────────────────────────── -->
-
       </div>
-    </div>
 
+      <!-- ══ КАРТОЧКИ ЗОН ОФОРМЛЕНИЯ (порядок по таблице) ══════════ -->
       <div class="detail-grid">
+
         <div class="detail-section">
-          <h4>📌 ПОСМ — Торцы</h4>
-          ${row('Тип X (кол-во)', s.tortsX, 'num')}
-          ${row('Тип G (кол-во)', s.tortsG, 'num')}
+          <h4>📐 Торцы</h4>
+          ${row('Кол-во торцов Х', s.tortsX, 'num')}
+          ${row('Кол-во торцов G', s.tortsG, 'num')}
+          ${row('Золотой торец', s.tortsGold, 'num')}
+          ${row('Торец Кожа', s.tortsLeather, 'num')}
         </div>
 
         <div class="detail-section">
           <h4>🪟 Витрина</h4>
           ${row('Наличие витрины', s.hasVitrina, 'bool')}
-          ${row('Модули витрины', s.vitrinaModules, 'num')}
-          ${row('ТВ на витрине', s.vitrinaTV, 'bool')}
-          ${row('Тип модулей', s.vitrinaModules > 0 ? 'Витринные' : '—', 'tag')}
+          ${row('Кол-во модулей (шт)', s.vitrinaModules, 'num')}
+          ${row('Модули сплошные/раздельные', s.vitrinaType, 'tag')}
+          ${row('Кол-во сплошных', s.vitrinaFull, 'num')}
+          ${row('Кол-во раздельных', s.vitrinaSplit, 'num')}
+          ${row('ТВ на витрине (шт)', s.vitrinaTV, 'num')}
         </div>
 
         <div class="detail-section">
-          <h4>🔷 Зона ЮИ / ЮМ</h4>
+          <h4>💍 Ювелирный отдел</h4>
           ${row('Кол-во ЮМ', s.ymCount, 'num')}
-          ${row('Оформление ЮИ', s.yiDesign, 'tag')}
-          ${row('Антикражные ворота', s.antiTheftGates, 'num')}
+          ${row('Оформление зоны ЮИ', s.yiDesign, 'tag')}
         </div>
 
         <div class="detail-section">
-          <h4>🏠 Зона Кари Хоме</h4>
-          ${row('Наличие зоны', s.hasKH, 'bool')}
-          ${row('Площадь, м', s.hasKH ? s.khMeters : 0, 'num')}
+          <h4>🚧 Антикражные рамки</h4>
+          ${row('Кол-во антикражных ворот', s.antiTheftGates, 'num')}
+        </div>
+
+        <div class="detail-section">
+          <h4>🏠 Кари Хоме</h4>
+          ${row('Наличие зоны КХ', s.hasKH, 'bool')}
+          ${row('Кол-во метров зоны КХ (шт)', s.khMeters, 'num')}
         </div>
 
         <div class="detail-section">
           <h4>💄 Косметика</h4>
-          ${row('Наличие зоны', s.hasCosmetics, 'bool')}
-          ${row('Уходовая, м', s.hasCosmetics ? s.cosmeticsMeters : 0, 'num')}
+          ${row('Наличие зоны косметики', s.hasCosmetics, 'bool')}
+          ${row('Наличие стола косметики GS', s.cosmeticsGS, 'bool')}
+          ${row('Кол-во метров уходовой косметики', s.cosmeticsMeters, 'num')}
         </div>
 
         <div class="detail-section">
           <h4>👗 Одежда</h4>
-          ${row('Наличие зоны', s.hasClothes, 'bool')}
-          ${row('Площадь, м', s.hasClothes ? s.clothesMeters : 0, 'num')}
+          ${row('Наличие одежды', s.hasClothes, 'bool')}
+          ${row('Кол-во метров', s.clothesMeters, 'num')}
         </div>
 
         <div class="detail-section">
           <h4>🏃 Зона спорта</h4>
-          ${row('Наличие зоны', s.hasSport, 'bool')}
-          ${row('Площадь, м', s.hasSport ? s.sportMeters : 0, 'num')}
-          ${row('Расположение', s.hasSport ? s.sportLocation : '—', 'tag')}
+          ${row('Наличие зоны спорта', s.hasSport, 'bool')}
+          ${row('Кол-во метров', s.sportMeters, 'num')}
+          ${row('Расположение (остров/пристенок)', s.sportLocation, 'tag')}
         </div>
 
         <div class="detail-section">
-          <h4>💡 Световые элементы</h4>
-          ${row('Световые таблички', s.lightSigns, 'bool')}
-          ${row('Лайтбоксы в зале', s.lightboxesCount, 'num')}
+          <h4>🔆 Световые таблички</h4>
+          ${row('Установлены (home/кидс/спорт)', s.lightSigns || '—', 'tag')}
+        </div>
+
+        <div class="detail-section">
+          <h4>💡 Лайтбоксы</h4>
+          ${row('Наличие лайтбоксов в зале (кол-во)', s.lightboxesCount, 'num')}
         </div>
 
         <div class="detail-section">
           <h4>🏢 Фасад</h4>
-          ${row('Тип оформления', s.facadeType, 'tag')}
-          ${row('Реле времени', s.hasTimeRelay, 'bool')}
+          ${row('Оформление фасада (вывеска/банер)', s.facadeType, 'tag')}
+          ${row('Реле времени на вывеске', s.hasTimeRelay, 'bool')}
         </div>
 
         <div class="detail-section">
-          <h4>🕐 Таблички режима работы</h4>
-          ${row('Количество', s.workHourSignsCount, 'num')}
-          ${row('Размер', s.workHourSignsSize, 'tag')}
-          ${row('Формат', s.workHourSignsFormat, 'tag')}
+          <h4>🕐 Режимник</h4>
+          ${row('Кол-во табличек о режиме работы', s.workHourSignsCount, 'num')}
+          ${row('Размер табличек', s.workHourSignsSize, 'tag')}
+          ${row('Формат табличек', s.workHourSignsFormat, 'tag')}
         </div>
 
         <div class="detail-section">
-          <h4>🛒 Оборудование</h4>
-          ${row('Корзины в магазине', s.hasBaskets, 'bool')}
-        </div>
-
-        <div class="detail-section">
-          <h4>📐 Площадь</h4>
-          ${row('Общая (м²)', s.areaTotal || '—', 'num')}
-          ${row('Торговая (м²)', s.areaTrade || '—', 'num')}
-        </div>
-
-        <div class="detail-section">
-          <h4>🏷️ Стеллажи / тележки</h4>
-          ${row('Стеллаж мобильный 400×650×1650', s.shelfMobile, 'num')}
-          ${row('Стойка перфорированная (Crocs)', s.shelfCrocs, 'num')}
+          <h4>🛒 Корзины, стойки, Бренд зона</h4>
+          ${row('Наличие корзин', s.hasBaskets, 'bool')}
+          ${row('Корзины с надстройками', s.basketsNad, 'num')}
+          ${row('Корзины Кидс', s.basketsKids, 'num')}
+          ${row('Корзины Кари', s.basketsKari, 'num')}
+          ${row('Стеллаж 400×650×1650', s.shelfMobile, 'num')}
+          ${row('Стойка Crocs 625×800×1736', s.shelfCrocs, 'num')}
           ${row('Тележка ТС 1150×640×1950', s.trolley, 'num')}
+          ${row('Kari Wood', s.kariWood, 'tag')}
         </div>
 
         <div class="detail-section">
-          <h4>💰 Кассы</h4>
-          ${row('Новая 2 места', s.cash2new, 'bool')}
-          ${row('Новая 3 места', s.cash3new, 'bool')}
-          ${row('Новая 4 места', s.cash4new, 'bool')}
-          ${row('Стандартная 2 места', s.cash2std, 'bool')}
-          ${row('Стандартная 3 места', s.cash3std, 'bool')}
-          ${row('Стандартная 4 места', s.cash4std, 'bool')}
+          <h4>💰 Формат кассы</h4>
+          ${row('Новая касса на 2 р.м.', s.cash2new, 'bool')}
+          ${row('Новая касса на 3 р.м.', s.cash3new, 'bool')}
+          ${row('Новая касса на 4 р.м.', s.cash4new, 'bool')}
+          ${row('Стандартная касса на 2 р.м.', s.cash2std, 'bool')}
+          ${row('Стандартная касса на 3 р.м.', s.cash3std, 'bool')}
+          ${row('Касса на 4 р.м. (2 стандартные)', s.cash4std, 'bool')}
         </div>
 
-        <div class="detail-section">
-          <h4>🥇 Торцы</h4>
-          ${row('Торец X (ПОСМ)', s.tortsX, 'num')}
-          ${row('Торец G (ПОСМ)', s.tortsG, 'num')}
-          ${row('Золотой торец', s.tortsGold, 'num')}
-          ${row('Торец Кожа', s.tortsLeather, 'num')}
-        </div>
       </div>
     </div>
   `;
@@ -2234,6 +2152,7 @@ function mApplyFilters(){
       else if (mZoneFilter==='antiTheftGates')  {if(!s.antiTheftGates)return false;}
       else if (mZoneFilter==='ymCount')         {if(!s.ymCount)return false;}
       else if (mZoneFilter==='top20')           {if(!s.top20)return false;}
+      else if (mZoneFilter==='lightSigns')      {if(!s.lightSigns)return false;}
       else if (mZoneFilter==='facadeType')      {if(!s.facadeType||s.facadeType==='-'||s.facadeType==='нет')return false;}
       else if (mZoneFilter==='workHourSigns')   {if(!s.workHourSignsCount)return false;}
       else if (mZoneFilter==='equipment')       {if(!s.hasBaskets&&!s.shelfMobile&&!s.shelfCrocs&&!s.trolley&&!s.kariWood)return false;}
@@ -2422,16 +2341,7 @@ function renderPosmStandard(shops) {
               }).join('');
               
               return `<tr>
-                <td>
-                  <div class="posm-item-img" onclick="openPosmPhoto('${item.sku}','${(item.name||'').replace(/'/g,"&#39;")}')">
-                    ${item.sku ? `<img
-                      src="${GH_FOTO_URL}${item.sku}.jpg"
-                      alt="${(item.name||'').replace(/"/g,'&quot;')}"
-                      title="Нажмите для просмотра"
-                      onerror="this.onerror=null;this.src='${GH_FOTO_URL}${item.sku}.png';this.onerror=function(){this.onerror=null;this.src='${GH_FOTO_URL}${item.sku}.jpeg';this.onerror=function(){this.style.display='none';this.parentNode.innerHTML='<div class=\\'posm-img-fallback\\'>📄</div>';}};"
-                    >` : '<div class="posm-img-fallback">📄</div>'}
-                  </div>
-                </td>
+                <td><div class="posm-item-img">📄</div></td>
                 <td>
                   <div class="posm-item-name">${item.name}</div>
                   ${item.sku ? `<div class="posm-item-sku">${item.sku}</div>` : ''}
@@ -2537,56 +2447,6 @@ function renderPosmSummary(shops) {
       </div>
     </div>`;
 }
-
-// ─── ПОСМ: Фото ───────────────────────────────────────────────
-// Пробуем jpg, png, jpeg — возвращаем первый найденный URL
-const POSM_PHOTO_CACHE = {}; // sku → url | null
-
-function posmPhotoUrl(sku) {
-  if (!sku) return null;
-  // Файл называется по артикулу: RUM052754781b.jpg / .png / .jpeg
-  // Возвращаем url с расширением jpg (основной), fallback обработан в onerror
-  return GH_FOTO_URL + encodeURIComponent(sku) + '.jpg';
-}
-
-function openPosmPhoto(sku, name) {
-  const url = posmPhotoUrl(sku);
-  if (!url) return;
-  const modal = document.getElementById('posmPhotoModal');
-  const img   = document.getElementById('posmPhotoImg');
-  const cap   = document.getElementById('posmPhotoCaption');
-  const skuEl = document.getElementById('posmPhotoSku');
-  img.src = url;
-  // Если jpg не найден — пробуем png
-  img.onerror = function() {
-    const pngUrl = GH_FOTO_URL + encodeURIComponent(sku) + '.png';
-    if (img.src !== pngUrl) { img.src = pngUrl; return; }
-    const jpegUrl = GH_FOTO_URL + encodeURIComponent(sku) + '.jpeg';
-    if (img.src !== jpegUrl) { img.src = jpegUrl; return; }
-    img.alt = '📄';
-    img.style.display = 'none';
-  };
-  img.style.display = 'block';
-  cap.textContent = name || '';
-  skuEl.textContent = sku ? 'Артикул: ' + sku : '';
-  modal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closePosmPhoto(e) {
-  if (e && e.target !== document.getElementById('posmPhotoModal')) return;
-  closePosmPhotoForce();
-}
-
-function closePosmPhotoForce() {
-  document.getElementById('posmPhotoModal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-// Закрытие по Escape
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closePosmPhotoForce();
-});
 
 function setPosmTab(tab) {
   activePosmTab = tab;
@@ -2910,8 +2770,12 @@ function openPlanModalWithFile(storeId, fileId) {
 
   const dlBtn = document.getElementById('planDownloadBtn');
   const isUrl = fileId && fileId.startsWith('http');
-  dlBtn.href = isUrl ? fileId : `https://drive.google.com/uc?export=download&id=${fileId}`;
-  dlBtn.style.display = '';
+  if (fileId) {
+    dlBtn.href = isUrl ? fileId : `https://drive.google.com/uc?export=download&id=${fileId}`;
+    dlBtn.style.display = 'inline-flex';
+  } else {
+    dlBtn.style.display = 'none';
+  }
 
   const rfBtn = document.getElementById('planRefreshBtn');
   if (rfBtn) rfBtn.style.display = 'none';
@@ -2955,6 +2819,17 @@ function openPlanModalWithFile(storeId, fileId) {
 }
 
 function openPlanModalManual(storeId) { openPlanModalWithFile(storeId, FP_MAP[storeId]); }
+
+function openPlanModal() {
+  if (!selectedStore) return;
+  const fileId = FP_MAP[selectedStore.id];
+  if (fileId) {
+    openPlanModalWithFile(selectedStore.id, fileId);
+  } else {
+    // Показываем модал с сообщением "нет планировки"
+    openPlanModalWithFile(selectedStore.id, null);
+  }
+}
 
 function onPlanLoaded() {
   const sp = document.getElementById('planSpinner');
@@ -3116,18 +2991,14 @@ document.addEventListener('keydown', e => {
 
 const GSHEET_URL = 'https://raw.githubusercontent.com/skbmaksim82-byte/kari-dashboard/main/%D0%BF%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%82%20%D0%BC%D0%B0%D0%B3%D0%B0%D0%B7%D0%B8%D0%BD%D0%B0.xlsx'; // GitHub raw XLSX
 const GH_PLANS_URL = 'https://raw.githubusercontent.com/skbmaksim82-byte/kari-dashboard/main/plans/'; // GitHub raw планировки
-const GH_FOTO_URL  = 'https://raw.githubusercontent.com/skbmaksim82-byte/kari-dashboard/main/Foto%20Reklama/'; // GitHub raw фото ПОСМ
 
 async function refreshFromGoogleSheets() {
   const btn = document.getElementById('mainRefreshBtn');
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Обновляем...'; }
 
-  let dataOk = false, dataCount = 0, dataErr = '';
-  let plansOk = false, plansCount = 0, plansErr = '';
-  let fotosOk = false, fotosCount = 0, fotosErr = '';
+  let dataOk = false;
 
-  // ══ 1. ТАБЛИЦА ════════════════════════════════════════════════
-  if (btn) btn.innerHTML = '⏳ 1/3 Таблица…';
+  // ── Загрузка таблицы ──────────────────────────────────────────
   try {
     const xlsxOk = await ensureXLSX();
     if (!xlsxOk) throw new Error('Библиотека XLSX недоступна — проверьте интернет-соединение');
@@ -3143,22 +3014,32 @@ async function refreshFromGoogleSheets() {
 
     if (rows.length < 2) throw new Error('Файл пуст');
 
+    // Поддержка новой структуры: строка 0 = группы, строка 1 = заголовки
+    // Ищем строку с реальными заголовками
     let hdrRow = rows[0];
     for (let ri = 0; ri < Math.min(rows.length, 4); ri++) {
-      if (rows[ri] && rows[ri].some(v => v && String(v).includes('Магазин'))) { hdrRow = rows[ri]; break; }
-      if (rows[ri] && rows[ri].some(v => v && String(v).includes('Подразделение'))) { hdrRow = rows[ri]; break; }
+      if (rows[ri] && rows[ri].some(v => v && String(v).includes('Магазин'))) {
+        hdrRow = rows[ri]; break;
+      }
+      if (rows[ri] && rows[ri].some(v => v && String(v).includes('Подразделение'))) {
+        hdrRow = rows[ri]; break;
+      }
     }
     const hdr = hdrRow.map(h => String(h||'').trim());
-    if (!hdr.some(h => h.includes('Подразделение')) || !hdr.some(h => h.includes('Магазин')) || !hdr.some(h => h.includes('Наименование')))
-      throw new Error('Неверная структура файла');
+    const hasDiv  = hdr.some(h => h.includes('Подразделение'));
+    const hasId   = hdr.some(h => h.includes('Магазин'));
+    const hasName = hdr.some(h => h.includes('Наименование'));
+    if (!hasDiv || !hasId || !hasName) throw new Error('Неверная структура файла');
 
     const parsed = parseXLSXRows(rows);
     if (!parsed.length) throw new Error('Нет данных');
 
+    // Обновляем данные
     STORES.length = 0;
     parsed.forEach(s => STORES.push(s));
     filteredStores = [...STORES];
 
+    // Сбрасываем фильтры
     document.getElementById('searchInput').value = '';
     document.getElementById('filterDiv').value = '';
     document.getElementById('filterCat').value = '';
@@ -3166,6 +3047,7 @@ async function refreshFromGoogleSheets() {
     if (document.getElementById('filterLegal')) document.getElementById('filterLegal').value = '';
     document.getElementById('filterStore').value = '';
 
+    // Перестраиваем список подразделений
     const divSel = document.getElementById('filterDiv');
     while (divSel.options.length > 1) divSel.remove(1);
     [...new Set(STORES.map(s => s.division))].sort().forEach(d => {
@@ -3177,130 +3059,34 @@ async function refreshFromGoogleSheets() {
     applyFilters();
     renderMain();
     dataOk = true;
-    dataCount = parsed.length;
   } catch(e) {
-    dataErr = e.message;
+    flyEmoji(false);
+    showToast('❌ Ошибка загрузки таблицы: ' + e.message, true);
   }
 
-  // ══ 2. ПЛАНИРОВКИ (папка plans) ═══════════════════════════════
-  if (btn) btn.innerHTML = '⏳ 2/3 Планировки…';
+  // ── Загрузка планировок из GitHub ─────────────────────────────
   try {
     const apiUrl = 'https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/plans';
     const plResp = await fetch(apiUrl, { signal: AbortSignal.timeout(10000) });
-    if (!plResp.ok) throw new Error('HTTP ' + plResp.status);
-    const files = await plResp.json();
-    if (!Array.isArray(files)) throw new Error('Неверный формат ответа');
-    files.forEach(f => {
-      const m = f.name.match(/^(\d+)\.(pdf|png|jpg|jpeg)$/i);
-      if (m) FP_MAP[parseInt(m[1])] = GH_PLANS_URL + f.name;
-    });
-    updatePlansCardCounter();
-    if (activeTab === 'store') renderMain();
-    plansOk = true;
-    plansCount = Object.keys(FP_MAP).length;
-  } catch(e) {
-    plansErr = e.message;
-  }
-
-  // ══ 3. ФОТО (папка Foto Reklama) ══════════════════════════════
-  if (btn) btn.innerHTML = '⏳ 3/3 Фото…';
-  try {
-    const apiUrl = 'https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/Foto%20Reklama';
-    const ftResp = await fetch(apiUrl, { signal: AbortSignal.timeout(10000) });
-    if (!ftResp.ok) throw new Error('HTTP ' + ftResp.status);
-    const files = await ftResp.json();
-    if (!Array.isArray(files)) throw new Error('Неверный формат ответа');
-    window.POSM_FOTO_MAP = {};
-    files.forEach(f => {
-      const ext = f.name.split('.').pop().toLowerCase();
-      if (['jpg','jpeg','png','webp'].includes(ext)) {
-        const sku = f.name.replace(/\.[^.]+$/, '');
-        window.POSM_FOTO_MAP[sku] = GH_FOTO_URL + encodeURIComponent(f.name);
+    if (plResp.ok) {
+      const files = await plResp.json();
+      if (Array.isArray(files)) {
+        files.forEach(f => {
+          const m = f.name.match(/^(\d+)\.(pdf|png|jpg)$/i);
+          if (m) FP_MAP[parseInt(m[1])] = GH_PLANS_URL + f.name;
+        });
+        updatePlansCardCounter();
+        if (activeTab === 'store') renderMain();
       }
-    });
-    fotosOk = true;
-    fotosCount = Object.keys(window.POSM_FOTO_MAP).length;
-    if (activeTab === 'posm_order') renderMain();
-  } catch(e) {
-    fotosErr = e.message;
-  }
+    }
+  } catch(e) { /* тихо */ }
 
-  // ══ ИТОГОВОЕ УВЕДОМЛЕНИЕ ══════════════════════════════════════
-  const allOk = dataOk && plansOk && fotosOk;
-  flyEmoji(dataOk);
-  showRefreshResult([
-    { ok: dataOk,  label: '📊 Таблица',    detail: dataOk  ? dataCount  + ' магазинов' : dataErr  },
-    { ok: plansOk, label: '🗺️ Планировки', detail: plansOk ? plansCount + ' файлов'    : plansErr },
-    { ok: fotosOk, label: '🖼️ Фото',        detail: fotosOk ? fotosCount + ' файлов'   : fotosErr },
-  ]);
+  if (dataOk) {
+    flyEmoji(true);
+    showToast('✅ Обновлено: ' + STORES.length + ' магазинов, ' + Object.keys(FP_MAP).length + ' планировок');
+  }
 
   if (btn) { btn.disabled = false; btn.innerHTML = '☁️ Обновить'; }
-}
-
-// ─── Детальный тост с результатами обновления ─────────────────
-function showRefreshResult(blocks) {
-  const existing = document.getElementById('refreshResultToast');
-  if (existing) existing.remove();
-
-  const allOk = blocks.every(b => b.ok);
-
-  const toast = document.createElement('div');
-  toast.id = 'refreshResultToast';
-  toast.style.cssText = [
-    'position:fixed',
-    'bottom:24px',
-    'right:24px',
-    'z-index:9999',
-    'background:' + (allOk ? 'linear-gradient(135deg,rgba(40,199,111,0.97),rgba(30,180,90,0.97))' : 'rgba(255,255,255,0.98)'),
-    'color:' + (allOk ? '#fff' : '#1a1a2e'),
-    'border-radius:14px',
-    'box-shadow:0 8px 32px rgba(0,0,0,0.18)',
-    'padding:16px 20px',
-    'min-width:270px',
-    'max-width:350px',
-    'font-family:Montserrat,sans-serif',
-    'font-size:13px',
-    'border:1px solid ' + (allOk ? 'rgba(40,199,111,0.3)' : 'rgba(194,24,91,0.15)'),
-    'animation:toastSlideIn 0.3s ease',
-    'cursor:default',
-  ].join(';');
-
-  // Заголовок
-  const title = document.createElement('div');
-  title.style.cssText = 'font-weight:700;font-size:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;';
-  title.innerHTML = (allOk
-    ? '<span>✅ Все данные обновлены</span>'
-    : '<span>⚠️ Результат обновления</span>')
-    + '<button onclick="var t=document.getElementById(&quot;refreshResultToast&quot;);if(t)t.remove()" style="background:' + (allOk ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)') + ';border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;color:' + (allOk ? '#fff' : '#666') + ';flex-shrink:0;padding:0">✕</button>';
-  toast.appendChild(title);
-
-  // Строки блоков
-  blocks.forEach(b => {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;line-height:1.4;';
-    const statusIcon = b.ok ? '✅' : '❌';
-    const labelColor = allOk ? 'rgba(255,255,255,0.9)' : (b.ok ? '#1a1a2e' : '#c2185b');
-    const detailColor = allOk ? 'rgba(255,255,255,0.75)' : (b.ok ? '#555' : '#c2185b');
-    row.innerHTML =
-      '<span style="font-size:15px;line-height:1">' + statusIcon + '</span>' +
-      '<span style="flex:1">' +
-        '<span style="font-weight:700;color:' + labelColor + '">' + b.label + '</span>' +
-        '<br><span style="font-size:11px;color:' + detailColor + '">' + b.detail + '</span>' +
-      '</span>';
-    toast.appendChild(row);
-  });
-
-  document.body.appendChild(toast);
-
-  // Авто-закрытие через 5 сек
-  setTimeout(() => {
-    if (document.getElementById('refreshResultToast') === toast) {
-      toast.style.transition = 'opacity 0.4s,transform 0.4s';
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(10px)';
-      setTimeout(() => toast.remove(), 400);
-    }
-  }, 5000);
 }
 
 // ═══════════════════════════════════════
@@ -3417,7 +3203,6 @@ function num(v, def) {
 }
 
 function parseXLSXRows(rows) {
-  window.RAW_XLSX_ROWS = rows; // Сохраняем сырые строки для вкладки Сводные данные
   // Новая структура: строка 1 = группы, строка 2 = заголовки, данные с строки 3
   // Но XLSX.utils.sheet_to_json возвращает все строки — определяем сами
   // rows[0] = группы (Данные магазина, Торцы, Витрина...)
@@ -3510,6 +3295,8 @@ function parseXLSXRows(rows) {
     const ns = (col) => { const x = v(col); return (!x || String(x).trim() === '-' || String(x).trim().toLowerCase() === 'нет') ? '' : String(x).trim(); };
     const nb = (col) => { const x = v(col); if (!x) return 0; const n = parseFloat(String(x).replace(',','.')); return isNaN(n) ? 0 : n; };
     const bl = (col) => { const x = v(col); if (!x) return false; const s = String(x).toLowerCase().trim(); return s === 'да' || s === '+' || s === 'true' || s === '1' || s === 'yes'; };
+    // Число ИЛИ строка — для полей где могут быть и цифры и текст (торцы, лайтбоксы и т.д.)
+    const nbs = (col) => { const x = v(col); if (!x || String(x).trim() === '-' || String(x).trim() === '') return 0; const n = parseFloat(String(x).replace(',','.')); return isNaN(n) ? 0 : n; };
     const top20raw = v(C.top20);
     const isTop20 = top20raw && String(top20raw).toLowerCase().trim() !== '-' && String(top20raw).trim() !== '' && String(top20raw).trim() !== '0';
 
@@ -3532,39 +3319,39 @@ function parseXLSXRows(rows) {
       tortsGold:      nb(C.tortsGold),
       tortsLeather:   nb(C.tortsLeather),
       hasVitrina:     bl(C.hasVitrina),
-      vitrinaModules: nb(C.vitrinaModules),
+      vitrinaModules: nbs(C.vitrinaModules),
       vitrinaType:    ns(C.vitrinaType),
-      vitrinaFull:    nb(C.vitrinaFull),
-      vitrinaSplit:   nb(C.vitrinaSplit),
-      vitrinaTV:      nb(C.vitrinaTV),
-      ymCount:        nb(C.ymCount),
+      vitrinaFull:    nbs(C.vitrinaFull),
+      vitrinaSplit:   nbs(C.vitrinaSplit),
+      vitrinaTV:      nbs(C.vitrinaTV),   // число (кол-во ТВ) или 0
+      ymCount:        nbs(C.ymCount),
       yiDesign:       ns(C.yiDesign),
-      antiTheftGates: nb(C.gates),
+      antiTheftGates: nbs(C.gates),
       hasKH:          bl(C.hasKH),
-      khMeters:       bl(C.hasKH) ? nb(C.khMeters) : 0,
+      khMeters:       bl(C.hasKH) ? nbs(C.khMeters) : 0,
       hasCosmetics:   bl(C.hasCosmetics),
       cosmeticsGS:    bl(C.cosmeticsGS),
-      cosmeticsMeters:nb(C.cosmeticsM),
+      cosmeticsMeters:nbs(C.cosmeticsM),
       hasClothes:     bl(C.hasClothes),
-      clothesMeters:  nb(C.clothesM),
+      clothesMeters:  nbs(C.clothesM),
       hasSport:       bl(C.hasSport),
-      sportMeters:    nb(C.sportM),
+      sportMeters:    nbs(C.sportM),
       sportLocation:  ns(C.sportLoc),
-      lightSigns:     bl(C.lightSigns),
-      lightboxesCount:nb(C.lightboxes),
+      lightSigns:     ns(C.lightSigns),   // текст: 'home,кидс,спорт' / 'кидс' / '—'
+      lightboxesCount:nbs(C.lightboxes),  // число, мусор А4 → 0
       facadeType:     ns(C.facade),
       hasTimeRelay:   bl(C.timeRelay),
-      workHourSignsCount:  nb(C.workSignsCnt),
-      workHourSignsSize:   ns(C.workSignsSize) || '-',
-      workHourSignsFormat: ns(C.workSignsFmt) || '-',
-      hasBaskets:     bl(C.baskets),
-      basketsNad:     nb(C.basketsNad),
-      basketsKids:    nb(C.basketsKids),
-      basketsKari:    nb(C.basketsKari),
-      shelfMobile:    nb(C.shelfMobile),
-      shelfCrocs:     nb(C.shelfCrocs),
-      trolley:        nb(C.trolley),
-      kariWood:       ns(C.kariWood),
+      workHourSignsCount:  nbs(C.workSignsCnt),
+      workHourSignsSize:   ns(C.workSignsSize) || '—',
+      workHourSignsFormat: ns(C.workSignsFmt) || '—',
+      hasBaskets:     nbs(C.baskets) > 0 || bl(C.baskets), // число или да/нет
+      basketsNad:     nbs(C.basketsNad),
+      basketsKids:    nbs(C.basketsKids),
+      basketsKari:    nbs(C.basketsKari),
+      shelfMobile:    nbs(C.shelfMobile),
+      shelfCrocs:     nbs(C.shelfCrocs),
+      trolley:        nbs(C.trolley),
+      kariWood:       ns(C.kariWood),     // 'да' или ''
       cash2new:       bl(C.cash2new),
       cash3new:       bl(C.cash3new),
       cash4new:       bl(C.cash4new),
@@ -3585,203 +3372,236 @@ const DD_CFG = {
     icon:'🏪', title:'Все магазины',
     filter: ()=>true,
     cols: [
-      {h:'Вид',        v: s=>s.kind!=='-'?s.kind:'—'},
-      {h:'Подразделение', v: s=>s.division},
-      {h:'№ магазина', v: s=>s.id},
-      {h:'Магазин / Адрес', v: s=>s.name},
-      {h:'Категория',  v: s=>'Кат. '+s.category},
-      {h:'Площадь общ. м²', v: s=>s.areaTotal||'—', num:true},
-      {h:'Площадь торг. м²', v: s=>s.areaTrade||'—', num:true},
+      {h:'Регион',              v: s=>s.region||'—'},
+      {h:'Подразделение',       v: s=>s.division},
+      {h:'№ магазина',          v: s=>s.id,                  c:true},
+      {h:'Город',               v: s=>s.city},
+      {h:'Наименование магазина',v: s=>s.name},
+      {h:'Юр лицо',             v: s=>s.legalEntity||'—',    c:true},
+      {h:'Вид магазина',        v: s=>s.kind!=='-'?s.kind:'—', c:true},
+      {h:'Категория магазина',  v: s=>s.category||'—',       c:true},
+      {h:'TOP 20',              v: s=>s.top20?'да':'—',      c:true},
+      {h:'Площадь общая (м²)',  v: s=>s.areaTotal||'—',      c:true},
+      {h:'Площадь торговая (м²)',v: s=>s.areaTrade||'—',     c:true},
+      {h:'Площадь Кидс (м²)',   v: s=>s.areaKids||'—',      c:true},
     ],
     qty: null, qh: null,
     total: rows=>`${rows.length} магазинов`
   },
-  vitrina: {
-    icon:'🪟', title:'Витрина — модули',
-    filter: s=>s.hasVitrina,
+  top20: {
+    icon:'⭐', title:'TOP 20',
+    filter: s=>s.top20,
     cols: [
-      {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
+      {h:'Подразделение',        v: s=>s.division},
+      {h:'№ магазина',           v: s=>s.id,              c:true},
+      {h:'Город',                v: s=>s.city},
+      {h:'Наименование магазина',v: s=>s.name},
+      {h:'Категория',            v: s=>s.category||'—',   c:true},
+      {h:'Площадь общая (м²)',   v: s=>s.areaTotal||'—',  c:true},
+      {h:'Площадь торговая (м²)',v: s=>s.areaTrade||'—',  c:true},
     ],
-    qty: s=>s.vitrinaModules||0, qh:'Количество витринных модулей (шт)',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.vitrinaModules||0),0)} модулей в ${rows.length} маг.`
-  },
-  kh: {
-    icon:'🏠', title:'Зона Кари Хоме',
-    filter: s=>s.hasKH,
-    cols: [
-      {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-    ],
-    qty: s=>s.khMeters||0, qh:'Количество в метрах (шт)',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.khMeters||0),0).toFixed(1)} м в ${rows.length} маг.`
-  },
-  cosmetics: {
-    icon:'💄', title:'Зона косметики',
-    filter: s=>s.hasCosmetics,
-    cols: [
-      {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-    ],
-    qty: s=>s.cosmeticsMeters||0, qh:'Количество в метрах (шт)',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.cosmeticsMeters||0),0).toFixed(1)} м в ${rows.length} маг.`
-  },
-  clothes: {
-    icon:'👗', title:'Зона одежды',
-    filter: s=>s.hasClothes,
-    cols: [
-      {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-    ],
-    qty: s=>s.clothesMeters||0, qh:'Количество в метрах (шт)',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.clothesMeters||0),0).toFixed(1)} м в ${rows.length} маг.`
-  },
-  sport: {
-    icon:'🏃', title:'Зона спорта',
-    filter: s=>s.hasSport,
-    cols: [
-      {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-      {h:'Расположение',   v: s=>s.sportLocation||'—'},
-    ],
-    qty: s=>s.sportMeters||0, qh:'Количество в метрах (шт)',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.sportMeters||0),0).toFixed(1)} м в ${rows.length} маг.`
+    qty: null, qh: null,
+    total: rows=>`${rows.length} магазинов TOP 20`
   },
   torts: {
-    icon:'📌', title:'Торцы',
-    filter: s=>(s.tortsX+s.tortsG+(s.tortsLeather||0))>0,
+    icon:'📐', title:'Торцы',
+    filter: s=>true,
     cols: [
-      {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-      {h:'Торцы X',        v: s=>s.tortsX||0, num:true},
-      {h:'Торцы G',        v: s=>s.tortsG||0, num:true},
-      {h:'Торцы Кожа',     v: s=>s.tortsLeather||0, num:true},
-      {h:'Торцы Золотой',  v: s=>s.tortsGold||0, num:true},
+      {h:'Подразделение',        v: s=>s.division},
+      {h:'№ магазина',           v: s=>s.id,                               c:true},
+      {h:'Наименование магазина',v: s=>s.name},
+      {h:'Кол-во торцов Х',      v: s=>s.tortsX||'—',                     c:true},
+      {h:'Кол-во торцов G',      v: s=>s.tortsG||'—',                     c:true},
+      {h:'Золотой торец',        v: s=>s.tortsGold||'—',                  c:true},
+      {h:'Торец Кожа',           v: s=>s.tortsLeather||'—',               c:true},
     ],
-    qty: s=>s.tortsX+s.tortsG+(s.tortsLeather||0)+(s.tortsGold||0), qh:'Всего торцов',
-    total: rows=>`Итого: X=${rows.reduce((a,s)=>a+s.tortsX,0)} G=${rows.reduce((a,s)=>a+s.tortsG,0)} Кожа=${rows.reduce((a,s)=>a+(s.tortsLeather||0),0)} Золото=${rows.reduce((a,s)=>a+(s.tortsGold||0),0)} в ${rows.length} маг.`
+    qty: null, qh: null,
+    total: rows=>`X=${rows.reduce((a,s)=>a+(s.tortsX||0),0)} / G=${rows.reduce((a,s)=>a+(s.tortsG||0),0)} / Золото=${rows.reduce((a,s)=>a+(s.tortsGold||0),0)} / Кожа=${rows.reduce((a,s)=>a+(s.tortsLeather||0),0)} — ${rows.length} маг.`
+  },
+  vitrina: {
+    icon:'🪟', title:'Витрина',
+    filter: s=>true,
+    cols: [
+      {h:'Подразделение',                   v: s=>s.division},
+      {h:'№ магазина',                      v: s=>s.id,                    c:true},
+      {h:'Наименование магазина',           v: s=>s.name},
+      {h:'Наличие витрины',                 v: s=>s.hasVitrina?'да':'—',   c:true},
+      {h:'Кол-во витринных модулей (шт)',   v: s=>s.vitrinaModules||'—',   c:true},
+      {h:'Модули сплошные/раздельные',      v: s=>s.vitrinaType||'—',      c:true},
+      {h:'Кол-во сплошных модулей',         v: s=>s.vitrinaFull||'—',      c:true},
+      {h:'Кол-во раздельных модулей',       v: s=>s.vitrinaSplit||'—',     c:true},
+      {h:'ТВ на витрине (шт)',              v: s=>s.vitrinaTV?s.vitrinaTV:'—', c:true},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.filter(s=>s.hasVitrina).length} маг. с витриной / итого ${rows.reduce((a,s)=>a+(s.vitrinaModules||0),0)} модулей`
   },
   ym: {
-    icon:'🔷', title:'Юнит-марки (ЮМ)',
-    filter: s=>s.ymCount>0,
+    icon:'💍', title:'Ювелирный отдел',
+    filter: s=>true,
     cols: [
-      {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-      {h:'Оформление ЮИ',  v: s=>s.yiDesign||'—'},
+      {h:'Подразделение',              v: s=>s.division},
+      {h:'№ магазина',                 v: s=>s.id,              c:true},
+      {h:'Наименование магазина',      v: s=>s.name},
+      {h:'Кол-во ЮМ',                 v: s=>s.ymCount||'—',    c:true},
+      {h:'Оформление зоны ЮИ',        v: s=>s.yiDesign||'—',   c:true},
     ],
-    qty: s=>s.ymCount, qh:'Кол-во ЮМ',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+s.ymCount,0)} ЮМ в ${rows.length} маг.`
+    qty: null, qh: null,
+    total: rows=>`${rows.filter(s=>s.ymCount>0).length} маг. с ЮМ / итого ${rows.reduce((a,s)=>a+(s.ymCount||0),0)} ЮМ`
   },
   gates: {
     icon:'🚧', title:'Антикражные рамки',
-    filter: s=>s.antiTheftGates>0,
+    filter: s=>true,
     cols: [
-      {h:'Вид',            v: s=>s.kind!=='-'?s.kind:'—'},
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
+      {h:'Подразделение',           v: s=>s.division},
+      {h:'№ магазина',              v: s=>s.id,                    c:true},
+      {h:'Наименование магазина',   v: s=>s.name},
+      {h:'Кол-во антикражных ворот',v: s=>s.antiTheftGates||'—',  c:true},
     ],
-    qty: s=>s.antiTheftGates, qh:'Антикражные рамки',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+s.antiTheftGates,0)} рамок в ${rows.length} маг.`
+    qty: null, qh: null,
+    total: rows=>`${rows.filter(s=>s.antiTheftGates>0).length} маг. с рамками / итого ${rows.reduce((a,s)=>a+(s.antiTheftGates||0),0)} рамок`
+  },
+  kh: {
+    icon:'🏠', title:'Кари Хоме',
+    filter: s=>true,
+    cols: [
+      {h:'Подразделение',              v: s=>s.division},
+      {h:'№ магазина',                 v: s=>s.id,              c:true},
+      {h:'Наименование магазина',      v: s=>s.name},
+      {h:'Наличие зоны КХ',           v: s=>s.hasKH?'да':'—',  c:true},
+      {h:'Кол-во метров зоны КХ (шт)',v: s=>s.khMeters||'—',   c:true},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.filter(s=>s.hasKH).length} маг. с КХ / итого ${rows.reduce((a,s)=>a+(s.khMeters||0),0).toFixed(1)} м`
+  },
+  cosmetics: {
+    icon:'💄', title:'Косметика',
+    filter: s=>true,
+    cols: [
+      {h:'Подразделение',                   v: s=>s.division},
+      {h:'№ магазина',                      v: s=>s.id,                    c:true},
+      {h:'Наименование магазина',           v: s=>s.name},
+      {h:'Наличие зоны косметики',          v: s=>s.hasCosmetics?'да':'—', c:true},
+      {h:'Наличие стола косметики GS',      v: s=>s.cosmeticsGS?'да':'—',  c:true},
+      {h:'Кол-во метров уходовой косметики',v: s=>s.cosmeticsMeters||'—',  c:true},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.filter(s=>s.hasCosmetics).length} маг. с зоной / итого ${rows.reduce((a,s)=>a+(s.cosmeticsMeters||0),0).toFixed(1)} м`
+  },
+  clothes: {
+    icon:'👗', title:'Одежда',
+    filter: s=>true,
+    cols: [
+      {h:'Подразделение',          v: s=>s.division},
+      {h:'№ магазина',             v: s=>s.id,                   c:true},
+      {h:'Наименование магазина',  v: s=>s.name},
+      {h:'Наличие одежды',         v: s=>s.hasClothes?'да':'—',  c:true},
+      {h:'Кол-во метров',          v: s=>s.clothesMeters||'—',   c:true},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.filter(s=>s.hasClothes).length} маг. с одеждой / итого ${rows.reduce((a,s)=>a+(s.clothesMeters||0),0).toFixed(1)} м`
+  },
+  sport: {
+    icon:'🏃', title:'Зона спорта',
+    filter: s=>true,
+    cols: [
+      {h:'Подразделение',                           v: s=>s.division},
+      {h:'№ магазина',                              v: s=>s.id,                   c:true},
+      {h:'Наименование магазина',                   v: s=>s.name},
+      {h:'Наличие зоны спорта',                     v: s=>s.hasSport?'да':'—',    c:true},
+      {h:'Кол-во метров',                           v: s=>s.sportMeters||'—',     c:true},
+      {h:'Расположение (остров/пристенок)',          v: s=>s.sportLocation||'—',   c:true},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.filter(s=>s.hasSport).length} маг. со спортом / итого ${rows.reduce((a,s)=>a+(s.sportMeters||0),0).toFixed(1)} м`
   },
   lightSigns: {
     icon:'🔆', title:'Световые таблички',
-    filter: s=>s.lightSigns,
+    filter: s=>true,
     cols: [
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-      {h:'Световые таблички', v: s=>s.lightSigns?'да':'—'},
+      {h:'Подразделение',                 v: s=>s.division},
+      {h:'№ магазина',                    v: s=>s.id,             c:true},
+      {h:'Наименование магазина',         v: s=>s.name},
+      {h:'Световые таблички (home/кидс/спорт)', v: s=>s.lightSigns||'—', c:true},
     ],
     qty: null, qh: null,
-    total: rows=>`${rows.length} магазинов со световыми табличками`
+    total: rows=>`${rows.filter(s=>s.lightSigns).length} маг. со световыми табличками`
   },
   lightboxes: {
     icon:'💡', title:'Лайтбоксы',
-    filter: s=>s.lightboxesCount>0,
+    filter: s=>true,
     cols: [
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
+      {h:'Подразделение',                       v: s=>s.division},
+      {h:'№ магазина',                          v: s=>s.id,                        c:true},
+      {h:'Наименование магазина',               v: s=>s.name},
+      {h:'Наличие лайтбоксов в зале (кол-во)', v: s=>s.lightboxesCount||'—',      c:true},
     ],
-    qty: s=>s.lightboxesCount||0, qh:'Кол-во лайтбоксов',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.lightboxesCount||0),0)} лайтбоксов в ${rows.length} маг.`
+    qty: null, qh: null,
+    total: rows=>`${rows.filter(s=>s.lightboxesCount>0).length} маг. с лайтбоксами / итого ${rows.reduce((a,s)=>a+(s.lightboxesCount||0),0)} шт.`
   },
   facade: {
     icon:'🏢', title:'Фасад',
-    filter: s=>s.facadeType&&s.facadeType!=='-'&&s.facadeType!=='нет',
+    filter: s=>true,
     cols: [
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-      {h:'Тип оформления', v: s=>s.facadeType||'—'},
-      {h:'Реле времени',   v: s=>s.hasTimeRelay?'да':'—'},
+      {h:'Подразделение',                          v: s=>s.division},
+      {h:'№ магазина',                             v: s=>s.id,                    c:true},
+      {h:'Наименование магазина',                  v: s=>s.name},
+      {h:'Оформление фасада (вывеска/банер)',      v: s=>s.facadeType||'—',       c:true},
+      {h:'Реле времени на вывеске',                v: s=>s.hasTimeRelay?'да':'—', c:true},
     ],
     qty: null, qh: null,
-    total: rows=>`${rows.length} магазинов с оформлением фасада`
+    total: rows=>`${rows.filter(s=>s.facadeType&&s.facadeType!=='-'&&s.facadeType!=='нет').length} маг. с оформлением фасада`
   },
   regim: {
     icon:'🕐', title:'Режимник',
-    filter: s=>s.workHourSignsCount>0,
+    filter: s=>true,
     cols: [
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-      {h:'Размер',         v: s=>s.workHourSignsSize||'—'},
-      {h:'Формат',         v: s=>s.workHourSignsFormat||'—'},
-    ],
-    qty: s=>s.workHourSignsCount||0, qh:'Кол-во табличек',
-    total: rows=>`Итого: ${rows.reduce((a,s)=>a+(s.workHourSignsCount||0),0)} табличек в ${rows.length} маг.`
-  },
-  equip: {
-    icon:'🛒', title:'Оборудование',
-    filter: s=>s.hasBaskets||s.shelfMobile||s.shelfCrocs||s.trolley||s.kariWood,
-    cols: [
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-      {h:'Корзины',        v: s=>s.hasBaskets?'да':'—'},
-      {h:'Стеллаж 400×650',v: s=>s.shelfMobile||'—'},
-      {h:'Стойка Crocs',   v: s=>s.shelfCrocs||'—'},
-      {h:'Тележка',        v: s=>s.trolley||'—'},
-      {h:'Kari Wood',      v: s=>s.kariWood||'—'},
+      {h:'Подразделение',                    v: s=>s.division},
+      {h:'№ магазина',                       v: s=>s.id,                        c:true},
+      {h:'Наименование магазина',            v: s=>s.name},
+      {h:'Кол-во табличек о режиме работы', v: s=>s.workHourSignsCount||'—',   c:true},
+      {h:'Размер табличек',                  v: s=>s.workHourSignsSize||'—',    c:true},
+      {h:'Формат табличек',                  v: s=>s.workHourSignsFormat||'—',  c:true},
     ],
     qty: null, qh: null,
-    total: rows=>`${rows.length} магазинов с оборудованием`
+    total: rows=>`${rows.filter(s=>s.workHourSignsCount>0).length} маг. с режимником / итого ${rows.reduce((a,s)=>a+(s.workHourSignsCount||0),0)} табличек`
+  },
+  equip: {
+    icon:'🛒', title:'Корзины, стойки, Бренд зона',
+    filter: s=>true,
+    cols: [
+      {h:'Подразделение',                v: s=>s.division},
+      {h:'№ магазина',                   v: s=>s.id,                c:true},
+      {h:'Наименование магазина',        v: s=>s.name},
+      {h:'Наличие корзин',               v: s=>s.hasBaskets?'да':'—', c:true},
+      {h:'Корзины с надстройками',       v: s=>s.basketsNad||'—',   c:true},
+      {h:'Корзины Кидс',                 v: s=>s.basketsKids||'—',  c:true},
+      {h:'Корзины Кари',                 v: s=>s.basketsKari||'—',  c:true},
+      {h:'Стеллаж 400×650×1650',         v: s=>s.shelfMobile||'—',  c:true},
+      {h:'Стойка Crocs 625×800×1736',    v: s=>s.shelfCrocs||'—',   c:true},
+      {h:'Тележка ТС 1150×640×1950',     v: s=>s.trolley||'—',      c:true},
+      {h:'Kari Wood',                    v: s=>s.kariWood||'—',     c:true},
+    ],
+    qty: null, qh: null,
+    total: rows=>`${rows.filter(s=>s.hasBaskets||s.shelfMobile||s.shelfCrocs||s.trolley||s.kariWood).length} маг. с оборудованием`
   },
   cash: {
     icon:'💰', title:'Формат кассы',
-    filter: s=>s.cash2new||s.cash3new||s.cash4new||s.cash2std||s.cash3std||s.cash4std,
+    filter: s=>true,
     cols: [
-      {h:'Подразделение',  v: s=>s.division},
-      {h:'№ магазина',     v: s=>s.id},
-      {h:'Магазин / Адрес',v: s=>s.name},
-      {h:'Новая 2 м.',     v: s=>s.cash2new?'✓':'—'},
-      {h:'Новая 3 м.',     v: s=>s.cash3new?'✓':'—'},
-      {h:'Новая 4 м.',     v: s=>s.cash4new?'✓':'—'},
-      {h:'Станд. 2 м.',    v: s=>s.cash2std?'✓':'—'},
-      {h:'Станд. 3 м.',    v: s=>s.cash3std?'✓':'—'},
-      {h:'Станд. 4 м.',    v: s=>s.cash4std?'✓':'—'},
+      {h:'Подразделение',            v: s=>s.division},
+      {h:'№ магазина',               v: s=>s.id,                  c:true},
+      {h:'Наименование магазина',    v: s=>s.name},
+      {h:'Новая 2 р.м.',             v: s=>s.cash2new?'✓':'—',    c:true},
+      {h:'Новая 3 р.м.',             v: s=>s.cash3new?'✓':'—',    c:true},
+      {h:'Новая 4 р.м.',             v: s=>s.cash4new?'✓':'—',    c:true},
+      {h:'Станд. 2 р.м.',            v: s=>s.cash2std?'✓':'—',    c:true},
+      {h:'Станд. 3 р.м.',            v: s=>s.cash3std?'✓':'—',    c:true},
+      {h:'Касса 4 р.м. (2 станд.)',  v: s=>s.cash4std?'✓':'—',    c:true},
     ],
     qty: null, qh: null,
-    total: rows=>`${rows.length} магазинов с данными по кассам`
+    total: rows=>`${rows.filter(s=>s.cash2new||s.cash3new||s.cash4new||s.cash2std||s.cash3std||s.cash4std).length} маг. с данными по кассам`
   },
-};
-
+}
 let _ddKey='', _ddBaseRows=[];
 
 function openDrill(key){
@@ -3818,7 +3638,7 @@ function renderDrillTable(rows){
   if(cfg.qty) cols.push({h:cfg.qh, v:cfg.qty});
 
   document.getElementById('ddHead').innerHTML=
-    '<tr>'+cols.map(c=>`<th>${c.h}</th>`).join('')+'</tr>';
+    '<tr>'+cols.map(c=>`<th style="${c.c?'text-align:center':''}">${c.h}</th>`).join('')+'</tr>';
 
   if(!rows.length){
     document.getElementById('ddBody').innerHTML=
@@ -3831,7 +3651,7 @@ function renderDrillTable(rows){
   document.getElementById('ddSubtitle').textContent = cfg.total(rows);
 
   document.getElementById('ddBody').innerHTML = rows.map(s=>{
-    const cells = cfg.cols.map(c=>`<td>${c.v(s)}</td>`).join('');
+    const cells = cfg.cols.map(c=>`<td style="${c.c?'text-align:center':''}">${c.v(s)}</td>`).join('');
     let qCell='';
     if(cfg.qty){
       const v=cfg.qty(s);
@@ -3907,6 +3727,16 @@ function exportDrillXLSX(){
           onmouseout="this.style.background='rgba(255,255,255,0.12)'">
           🔄 Обновить список
         </button>
+        <a id="planDownloadBtn" href="#" download target="_blank"
+          style="display:none;align-items:center;gap:6px;
+                 background:rgba(255,255,255,0.15);color:#fff;
+                 border:1px solid rgba(255,255,255,0.3);border-radius:8px;
+                 padding:6px 14px;font-size:12px;font-weight:700;
+                 font-family:'Inter',sans-serif;cursor:pointer;transition:all .15s;white-space:nowrap;text-decoration:none"
+          onmouseover="this.style.background='rgba(255,255,255,0.28)'"
+          onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+          ⬇ Скачать PDF
+        </a>
         <button class="plan-modal-close" onclick="closePlanModal()">✕</button>
       </div>
     </div>
@@ -3920,9 +3750,6 @@ function exportDrillXLSX(){
       <button class="plan-tb-btn" onclick="planFit()" title="По размеру окна">⛶</button>
       <button class="plan-tb-btn" onclick="planReset()" title="100%">1:1</button>
       <span class="plan-tb-hint">🖱 колёсико мыши для зума · тяните для перемещения</span>
-      <a class="plan-tb-download" id="planDownloadBtn" href="#" download target="_blank">
-        ⬇ Скачать PDF
-      </a>
     </div>
 
     <!-- Viewport -->
@@ -3959,17 +3786,6 @@ function exportDrillXLSX(){
       </table>
     </div>
   </div>
-</div>
-
-
-<!-- ═══ МОДАЛ ПРОСМОТРА ФОТО ПОСМ ═══ -->
-<div id="posmPhotoModal" onclick="closePosmPhoto(event)">
-  <button class="pm-close" onclick="closePosmPhotoForce()">✕</button>
-  <div class="pm-img-wrap" onclick="event.stopPropagation()">
-    <img id="posmPhotoImg" src="" alt="">
-  </div>
-  <div class="pm-caption" id="posmPhotoCaption"></div>
-  <div class="pm-sku" id="posmPhotoSku"></div>
 </div>
 
 </body>
