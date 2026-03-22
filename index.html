@@ -2960,10 +2960,15 @@ function openPlanModalWithFile(storeId, fileId) {
           src="${iframeSrc}"
           width="${IW}" height="${IH}"
           allow="autoplay"
+          onload="onPlanLoaded()"
           style="display:block;border:none;background:#fff;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,0.5)"
         ></iframe>
       </div>
     </div>`;
+
+  // Таймаут-страховка: если onload не сработал за 15 сек — всё равно убираем спиннер
+  clearTimeout(window._planSpinnerTimeout);
+  window._planSpinnerTimeout = setTimeout(() => onPlanLoaded(), 15000);
 
   document.getElementById('planOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -2990,6 +2995,7 @@ function openPlanModal() {
 }
 
 function onPlanLoaded() {
+  clearTimeout(window._planSpinnerTimeout);
   const sp = document.getElementById('planSpinner');
   if (sp) sp.style.display = 'none';
   const iframe = document.getElementById('planIframe');
