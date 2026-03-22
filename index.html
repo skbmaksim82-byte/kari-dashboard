@@ -765,58 +765,64 @@ header {
   html, body { overflow: hidden; height: 100%; }
 
   /* Header */
-  header { padding: 12px 14px; }
-  .logo-badge { width: 36px; height: 36px; font-size: 15px; border-radius: 8px; }
-  .logo-text h1 { font-size: 15px; }
-  .logo-text p { font-size: 10px; }
-  .header-stats { gap: 14px; }
-  .hstat-val { font-size: 16px; }
-  .hstat-lbl { font-size: 10px; }
+  header { padding: 10px 12px; }
+  .logo-badge { width: 34px; height: 34px; font-size: 14px; border-radius: 8px; }
+  .logo-text h1 { font-size: 14px; }
+  .logo-text p { display: none; }
+  .header-stats { gap: 10px; }
+  .hstat-val { font-size: 15px; }
+  .hstat-lbl { font-size: 9px; }
 
-  /* Layout: hide sidebar, full width main */
-  .app { flex-direction: column; height: calc(100vh - 54px - 60px); }
-  .sidebar { display: none !important; }
+  /* Layout: sidebar — выдвижная панель поверх контента */
+  .app { flex-direction: column; height: calc(100vh - 50px - 56px); position: relative; }
+  .sidebar {
+    position: fixed; top: 50px; left: 0; bottom: 56px; z-index: 450;
+    width: 300px; min-width: 300px;
+    transform: translateX(-100%); transition: transform .28s cubic-bezier(.32,.72,0,1);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.25);
+    display: flex !important; flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar.mob-open { transform: translateX(0); }
+  /* Overlay за sidebar */
+  #sidebarOverlay {
+    display: none; position: fixed; inset: 0; z-index: 440;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+  }
+  #sidebarOverlay.open { display: block; }
   .main {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 14px 12px 16px;
+    padding: 12px 10px 14px;
     width: 100%;
   }
 
   /* Bottom nav bar */
   .mobile-nav {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
-    height: 60px;
-    background: #17171B;
-    border-top: 1px solid #F8BBD9;
+    height: 56px;
+    background: rgba(255,255,255,0.97); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
     display: flex;
     padding-bottom: env(safe-area-inset-bottom, 0);
+    box-shadow: 0 -2px 12px rgba(194,24,91,0.1);
   }
   .mobile-nav-item {
     flex: 1; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 3px; cursor: pointer; border: none;
-    background: transparent; color: #7A7A8A; padding: 6px 4px;
-    font-family: 'Inter', sans-serif; transition: color .2s;
+    justify-content: center; gap: 2px; cursor: pointer; border: none;
+    background: transparent; color: var(--muted); padding: 4px 2px;
+    font-family: 'Inter', sans-serif; transition: color .15s;
     -webkit-tap-highlight-color: transparent;
   }
-  .mobile-nav-item.active { color: #C2185B; }
-  .mobile-nav-icon { font-size: 20px; }
-  .mobile-nav-label { font-size: 10px; font-weight: 600; }
+  .mobile-nav-item.active { color: var(--red); }
+  .mobile-nav-icon { font-size: 18px; }
+  .mobile-nav-label { font-size: 9px; font-weight: 600; }
+  .mobile-filter-fab { display: none; }
 
-  /* Fab filter button */
-  .mobile-filter-fab {
-    position: fixed; bottom: 72px; right: 14px; z-index: 400;
-    width: 48px; height: 48px; border-radius: 50%; border: none;
-    background: linear-gradient(145deg,#e91e8c,#c2185b); color: #fff; font-size: 20px; cursor: pointer;
-    box-shadow: 3px 3px 10px rgba(194,24,91,.4), -1px -1px 5px rgba(255,255,255,.3);
-    display: flex; align-items: center; justify-content: center;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .mobile-filter-fab.has-filters { background: #B51020; }
-
-  /* Tabs: hide top tabs on mobile (using bottom nav instead) */
-  .tabs { display: none; }
+  /* Tabs — компактные на мобильных */
+  .tabs { gap: 2px; padding: 3px; margin-bottom: 10px; }
+  .tab-btn { font-size: 11px; padding: 7px 6px; }
 
   /* Cards: tighter */
   .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
@@ -1031,32 +1037,34 @@ window._xlsxReady = typeof XLSX !== 'undefined';
 </header>
 
 <!-- MOBILE BOTTOM NAV -->
+<!-- Overlay для sidebar на мобильных -->
+<div id="sidebarOverlay" onclick="mobCloseSidebar()"></div>
+
 <div class="mobile-nav" id="mobileNav">
-  <button class="mobile-nav-item active" id="mnb-overview" onclick="mSetPage('overview')">
+  <button class="mobile-nav-item" onclick="mobToggleSidebar()" id="mnb-sidebar">
+    <span class="mobile-nav-icon">☰</span>
+    <span class="mobile-nav-label">Фильтры</span>
+  </button>
+  <button class="mobile-nav-item" onclick="setTab('overview');mobCloseSidebar()" id="mnb-overview">
     <span class="mobile-nav-icon">📊</span>
     <span class="mobile-nav-label">Обзор</span>
   </button>
-  <button class="mobile-nav-item" id="mnb-stores" onclick="mSetPage('stores')">
-    <span class="mobile-nav-icon">🏪</span>
-    <span class="mobile-nav-label">Магазины</span>
-  </button>
-  <button class="mobile-nav-item" id="mnb-order" onclick="mSetPage('order')">
+  <button class="mobile-nav-item" onclick="setTab('order');mobCloseSidebar()" id="mnb-order">
     <span class="mobile-nav-icon">📋</span>
+    <span class="mobile-nav-label">Данные</span>
+  </button>
+  <button class="mobile-nav-item" onclick="setTab('posm_order');mobCloseSidebar()" id="mnb-posm">
+    <span class="mobile-nav-icon">🛒</span>
     <span class="mobile-nav-label">Заказ</span>
   </button>
-  <button class="mobile-nav-item" id="mnb-passport" onclick="mSetPage('passport')">
-    <span class="mobile-nav-icon">🗂</span>
+  <button class="mobile-nav-item" onclick="setTab('store');mobCloseSidebar()" id="mnb-passport">
+    <span class="mobile-nav-icon">🏪</span>
     <span class="mobile-nav-label">Паспорт</span>
   </button>
 </div>
 
 <!-- MOBILE FAB -->
-<button class="mobile-filter-fab" id="mFab" onclick="mToggleDrawer()">⚙️</button>
-
-<!-- MOBILE DRAWER OVERLAY -->
-<div class="mobile-drawer-overlay" id="mDrawerOverlay" onclick="mCloseDrawer()"></div>
-
-<!-- MOBILE FILTER DRAWER -->
+<!-- MOBILE FILTER DRAWER (сохраняем drawer для совместимости, но FAB убран) -->
 <div class="mobile-drawer" id="mDrawer">
   <div class="drawer-handle"></div>
   <div class="drawer-htitle">Фильтры</div>
@@ -1495,10 +1503,12 @@ function renderStoreList() {
 
 function selectStore(id) {
   selectedStore = STORES.find(s => s.id === id);
+  if (activeTab !== 'store') { activeTab = 'store'; }
   renderStoreList();
   renderMain();
+  mobSyncNav('store');
+  if (isMobile()) mobCloseSidebar();
   document.getElementById('mainContent').scrollTop = 0;
-  if (activeTab !== 'store') { activeTab = 'store'; renderMain(); }
   setTimeout(() => checkFloorPlan(id), 100);
   // Показать кнопку сброса
   const wrap = document.getElementById('clearSelectionWrap');
@@ -1553,6 +1563,8 @@ function renderMain() {
 function setTab(tab) {
   activeTab = tab;
   renderMain();
+  mobSyncNav(tab);
+  document.getElementById('mainContent').scrollTop = 0;
 }
 
 // ─── OVERVIEW ───
@@ -2248,6 +2260,31 @@ var mFiltered = [...STORES];
 
 function isMobile(){ return window.innerWidth <= 768; }
 
+// ─── SIDEBAR НА МОБИЛЬНЫХ ───
+function mobToggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  const isOpen = sb.classList.contains('mob-open');
+  sb.classList.toggle('mob-open', !isOpen);
+  ov.classList.toggle('open', !isOpen);
+  document.getElementById('mnb-sidebar').classList.toggle('active', !isOpen);
+}
+function mobCloseSidebar() {
+  document.querySelector('.sidebar').classList.remove('mob-open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.getElementById('mnb-sidebar').classList.remove('active');
+}
+
+// Подсветка активной вкладки в bottom-nav
+function mobSyncNav(tab) {
+  if (!isMobile()) return;
+  const map = { overview: 'overview', order: 'order', posm_order: 'posm', store: 'passport' };
+  document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+  const id = 'mnb-' + (map[tab] || 'overview');
+  const btn = document.getElementById(id);
+  if (btn) btn.classList.add('active');
+}
+
 // Init mobile
 (function mInit(){
   if(!isMobile()) return;
@@ -2257,35 +2294,32 @@ function isMobile(){ return window.innerWidth <= 768; }
     const o=document.createElement('option'); o.value=d; o.textContent=d; divSel.appendChild(o);
   });
   // zone chips
-  document.getElementById('mZoneChips').addEventListener('click', e=>{
+  const chips = document.getElementById('mZoneChips');
+  if(chips) chips.addEventListener('click', e=>{
     const b=e.target.closest('.drawer-chip'); if(!b) return;
     document.querySelectorAll('#mZoneChips .drawer-chip').forEach(x=>x.classList.remove('active'));
     b.classList.add('active'); mZoneFilter=b.dataset.zone; mApplyFilters();
   });
-  mRenderAll();
+  mobSyncNav('overview');
 })();
 
 function mSetPage(p){
+  // Legacy — не используется, но оставляем совместимость
   if(!isMobile()) return;
   mActiveTab = p;
-  document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active'));
-  document.getElementById('mnb-'+p).classList.add('active');
-  // Re-use existing tabs system
-  setTab(p === 'overview' ? 'overview' : p === 'stores' ? 'overview' : p === 'order' ? 'order' : 'store');
-  if(p==='stores') mRenderStores();
-  if(p==='overview') { setTab('overview'); }
-  if(p==='order') { setTab('order'); }
-  if(p==='passport') { setTab('store'); }
-  document.getElementById('mainContent').scrollTop = 0;
 }
 
 function mToggleDrawer(){
-  document.getElementById('mDrawer').classList.toggle('open');
-  document.getElementById('mDrawerOverlay').classList.toggle('open');
+  const d = document.getElementById('mDrawer');
+  const o = document.getElementById('mDrawerOverlay');
+  if (d) d.classList.toggle('open');
+  if (o) o.classList.toggle('open');
 }
 function mCloseDrawer(){
-  document.getElementById('mDrawer').classList.remove('open');
-  document.getElementById('mDrawerOverlay').classList.remove('open');
+  const d = document.getElementById('mDrawer');
+  const o = document.getElementById('mDrawerOverlay');
+  if (d) d.classList.remove('open');
+  if (o) o.classList.remove('open');
 }
 
 function mApplyFilters(){
@@ -2392,9 +2426,13 @@ function mOpenPassport(id){
   setTimeout(() => checkFloorPlan(id), 150);
 }
 
-// Override window resize
+// Resize: закрываем sidebar при переходе на desktop
 window.addEventListener('resize', ()=>{
-  if(isMobile()) mRenderAll();
+  if(!isMobile()) {
+    document.querySelector('.sidebar').classList.remove('mob-open');
+    const ov = document.getElementById('sidebarOverlay');
+    if(ov) ov.classList.remove('open');
+  }
 });
 
 
