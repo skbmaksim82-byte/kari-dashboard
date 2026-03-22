@@ -1457,8 +1457,20 @@ function clearStoreSelection() {
 // ─── MAIN RENDER ───
 function renderMain() {
   const el = document.getElementById('mainContent');
+  // Для вкладок "Сводные данные" и "Сводный заказ" — убираем скролл у .main, таблица скроллится сама
+  if (activeTab === 'order' || activeTab === 'posm_order') {
+    el.style.overflow = 'hidden';
+    el.style.display = 'flex';
+    el.style.flexDirection = 'column';
+    el.style.padding = '0';
+  } else {
+    el.style.overflow = '';
+    el.style.display = '';
+    el.style.flexDirection = '';
+    el.style.padding = '';
+  }
   el.innerHTML = `
-    <div class="tabs">
+    <div class="tabs" style="${(activeTab === 'order' || activeTab === 'posm_order') ? 'margin:16px 24px 0;flex-shrink:0' : ''}">
       <button class="tab-btn ${activeTab === 'overview' ? 'active' : ''}" onclick="setTab('overview')">📊 Обзор</button>
       <button class="tab-btn ${activeTab === 'order' ? 'active' : ''}" onclick="setTab('order')">📋 Сводные данные</button>
       <button class="tab-btn ${activeTab === 'posm_order' ? 'active' : ''}" onclick="setTab('posm_order')">🛒 Сводный заказ</button>
@@ -1826,17 +1838,17 @@ function renderOrderTable() {
   }
   tbody += '</tbody>';
 
-  return '<div class="order-section" style="padding:16px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">'
+  return '<div class="order-section" style="padding:16px;flex:1;display:flex;flex-direction:column;min-height:0;margin:8px 16px 16px;border-radius:12px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;flex-shrink:0">'
     + '<div><h2 style="font-size:16px;margin:0">\u0421\u0432\u043e\u0434\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435</h2>'
     + '<p class="order-subtitle" style="margin:3px 0 0">' + stores.length + ' \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u043e\u0432 &middot; ' + COLS.length + ' \u0441\u0442\u043e\u043b\u0431\u0446\u043e\u0432</p></div>'
     + '<button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,#1D6F42,#196040);display:flex;align-items:center;gap:7px;padding:8px 16px;font-size:13px">&#128202; \u0412\u044b\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0432 Excel</button>'
     + '</div>'
-    + '<div style="overflow:auto;max-height:calc(100vh - 220px);border:1px solid var(--border);border-radius:8px">'
+    + '<div style="flex:1;overflow:auto;min-height:0;border:1px solid var(--border);border-radius:8px">'
     + '<table id="orderTable" style="border-collapse:collapse;width:max-content;min-width:100%;font-size:12px">'
     + thead + tbody
     + '</table></div>'
-    + '<div style="margin-top:8px;font-size:11px;color:var(--muted)">\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430: \u043a\u043b\u0438\u043a \u043f\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u0443 &nbsp;|&nbsp; \u041f\u0430\u0441\u043f\u043e\u0440\u0442: \u043a\u043b\u0438\u043a \u043f\u043e \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0443</div>'
+    + '<div style="margin-top:8px;font-size:11px;color:var(--muted);flex-shrink:0">Сортировка: клик по заголовку &nbsp;|&nbsp; Паспорт: клик по магазину</div>'
     + '</div>';
 }
 
@@ -2338,100 +2350,104 @@ function renderPosmOrder() {
   // Берём магазины из текущей фильтрации
   const shops = filteredStores;
   if (!shops.length) {
-    return '<div class="posm-empty">🔍 Выберите магазины через фильтры для формирования заказа</div>';
+    return '<div class="posm-empty" style="margin:24px">🔍 Выберите магазины через фильтры для формирования заказа</div>';
   }
   
+  // Вся обёртка — flex-колонка на оставшуюся высоту
+  // Шапка (фиксированная) + таблица (скроллится) + итоги (фиксированы снизу)
   return `
-    <div class="posm-order-wrap">
-      <!-- Раздел-переключатель -->
-      <div class="posm-section">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+    <div style="flex:1;display:flex;flex-direction:column;min-height:0;margin:8px 16px 16px;gap:0">
+
+      <!-- ШАПка: заголовок + переключатели — фиксированная, не скроллится -->
+      <div style="flex-shrink:0;background:rgba(255,255,255,0.95);border:1px solid var(--border);border-radius:12px 12px 0 0;padding:14px 18px 12px;box-shadow:3px 3px 12px rgba(194,24,91,0.08)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
           <div>
-            <h3 style="margin:0">🛒 Сводный заказ рекламных материалов</h3>
-            <div class="posm-section-sub">Магазинов в выборке: ${shops.length} · Введите количество боксов для каждого магазина</div>
+            <h3 style="margin:0;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700">🛒 Сводный заказ рекламных материалов</h3>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Магазинов в выборке: ${shops.length} · Введите количество боксов для каждого магазина</div>
           </div>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-shrink:0">
             <button class="posm-export-btn" onclick="exportPosmOrder()">📥 Экспорт Excel</button>
             <button class="posm-clear-btn" onclick="clearPosmOrder()">🗑 Очистить</button>
           </div>
         </div>
-        
-        <!-- Переключатель типа материалов -->
-        <div class="posm-tabs" style="margin-bottom:0">
+        <!-- Переключатель: тип материалов -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
           <button class="posm-tab-btn ${activePosmTab==='posm'?'active':''}" onclick="setPosmTab('posm')">📋 Стандартные ПОСм 2025</button>
           <button class="posm-tab-btn ${activePosmTab==='other'?'active':''}" onclick="setPosmTab('other')">📦 Прочие материалы</button>
         </div>
+        <!-- Переключатель: листы (только для posm) -->
+        ${activePosmTab === 'posm' ? (() => {
+          const sheets = ORDER_CATALOG.posm;
+          const icons = {'Листовки':'📄','Чек-поинты':'🏷️','Флаги и роллапы':'🚩','Прочее':'📦'};
+          return '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+            sheets.map((s,i) => `<button class="posm-tab-btn ${activePosmSheet===i?'active':''}" onclick="setPosmSheet(${i})">${icons[s.sheet]||'📁'} ${s.sheet}</button>`).join('') +
+          '</div>';
+        })() : ''}
       </div>
 
-      ${activePosmTab === 'posm' ? renderPosmStandard(shops) : renderPosmOther(shops)}
-      
-      <!-- Итоги -->
-      ${renderPosmSummary(shops)}
+      <!-- ТАБЛИЦА: flex:1, скроллится и по X и по Y -->
+      <div style="flex:1;overflow:auto;min-height:0;border-left:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(255,255,255,0.92)">
+        ${activePosmTab === 'posm' ? renderPosmStandardTable(shops) : renderPosmOtherTable(shops)}
+      </div>
+
+      <!-- ИТОГИ: фиксированы снизу -->
+      <div style="flex-shrink:0;border:1px solid var(--border);border-top:2px solid rgba(194,24,91,0.2);border-radius:0 0 12px 12px;background:rgba(255,255,255,0.95);padding:12px 18px;box-shadow:3px 3px 12px rgba(194,24,91,0.08)">
+        ${renderPosmSummaryInline(shops)}
+      </div>
+
     </div>`;
 }
 
-function renderPosmStandard(shops) {
+function renderPosmStandard(shops) { return renderPosmStandardTable(shops); }
+
+function renderPosmStandardTable(shops) {
   const sheets = ORDER_CATALOG.posm;
-  const sheetNames = sheets.map(s => s.sheet);
-  const sheetIcons = {'Листовки':'📄','Чек-поинты':'🏷️','Флаги и роллапы':'🚩','Прочее':'📦'};
-  
   const activeSheet = sheets[activePosmSheet] || sheets[0];
   const items = activeSheet.items;
   
-  return `
-    <div class="posm-section">
-      <!-- Листы файла -->
-      <div class="posm-tabs" style="margin-bottom:16px">
-        ${sheetNames.map((n,i) => `
-          <button class="posm-tab-btn ${activePosmSheet===i?'active':''}" onclick="setPosmSheet(${i})">
-            ${sheetIcons[n]||'📁'} ${n}
-          </button>`).join('')}
-      </div>
-      
-      <div style="overflow-x:auto">
-        <table class="posm-grid">
-          <thead>
-            <tr>
-              <th style="width:44px">Фото</th>
-              <th>Наименование / Артикул</th>
-              <th>Упаковка</th>
-              ${shops.map(s => `<th class="posm-store-col" title="${s.name}">[№ ${s.id}]<br>${s.city}</th>`).join('')}
-              <th>Итого боксов</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.map((item, itemIdx) => {
-              const key = item.sku || ('sheet' + activePosmSheet + '_' + itemIdx);
-              let rowTotal = 0;
-              const cells = shops.map(s => {
-                const qty = (orderState[s.id] && orderState[s.id][key]) || 0;
-                rowTotal += qty;
-                return `<td class="posm-store-col">
-                  <div class="posm-stepper">
-                    <button class="posm-step-btn" onclick="changeQty(${s.id},'${key}',-1)">−</button>
-                    <input class="posm-qty-input" type="number" min="0" value="${qty}"
-                      onchange="setQty(${s.id},'${key}',+this.value)"
-                      oninput="setQty(${s.id},'${key}',+this.value)">
-                    <button class="posm-step-btn" onclick="changeQty(${s.id},'${key}',+1)">+</button>
-                  </div>
-                </td>`;
-              }).join('');
-              
-              return `<tr>
-                <td>${getFotoCell(item.sku, item.name)}</td>
-                <td>
-                  <div class="posm-item-name">${item.name}</div>
-                  ${item.sku ? `<div class="posm-item-sku">${item.sku}</div>` : ''}
-                </td>
-                <td><div class="posm-item-pack">${item.pack}</div></td>
-                ${cells}
-                <td><strong style="color:var(--red);font-size:14px">${rowTotal || '—'}</strong></td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
+  const thS = 'white-space:nowrap;padding:9px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--red);font-weight:700;background:rgba(255,240,247,0.97);border-bottom:2px solid var(--border);border-right:1px solid rgba(248,187,217,0.4);position:sticky;top:0;z-index:2';
+  const thStoreS = thS + ';min-width:80px;text-align:center';
+
+  return `<table class="posm-grid" style="border-collapse:collapse;width:max-content;min-width:100%">
+    <thead>
+      <tr>
+        <th style="${thS};width:44px;left:0;z-index:3">Фото</th>
+        <th style="${thS};min-width:240px;left:44px;z-index:3">Наименование / Артикул</th>
+        <th style="${thS};min-width:140px">Упаковка</th>
+        ${shops.map(s => `<th style="${thStoreS}" title="${s.name}">[№ ${s.id}]<br><span style="font-size:10px;font-weight:500">${s.city}</span></th>`).join('')}
+        <th style="${thS};text-align:center">Итого</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${items.map((item, itemIdx) => {
+        const key = item.sku || ('sheet' + activePosmSheet + '_' + itemIdx);
+        let rowTotal = 0;
+        const cells = shops.map(s => {
+          const qty = (orderState[s.id] && orderState[s.id][key]) || 0;
+          rowTotal += qty;
+          return `<td style="text-align:center;padding:6px 8px;border-right:1px solid rgba(248,187,217,0.3);border-bottom:1px solid rgba(248,187,217,0.25)">
+            <div class="posm-stepper">
+              <button class="posm-step-btn" onclick="changeQty(${s.id},'${key}',-1)">−</button>
+              <input class="posm-qty-input" type="number" min="0" value="${qty}"
+                onchange="setQty(${s.id},'${key}',+this.value)"
+                oninput="setQty(${s.id},'${key}',+this.value)">
+              <button class="posm-step-btn" onclick="changeQty(${s.id},'${key}',+1)">+</button>
+            </div>
+          </td>`;
+        }).join('');
+        return `<tr>
+          <td style="padding:6px 8px;border-bottom:1px solid rgba(248,187,217,0.25);position:sticky;left:0;background:inherit;z-index:1">${getFotoCell(item.sku, item.name)}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid rgba(248,187,217,0.25);border-right:1px solid rgba(248,187,217,0.3);position:sticky;left:44px;background:inherit;z-index:1">
+            <div class="posm-item-name">${item.name}</div>
+            ${item.sku ? `<div class="posm-item-sku">${item.sku}</div>` : ''}
+          </td>
+          <td style="padding:6px 10px;border-bottom:1px solid rgba(248,187,217,0.25);border-right:1px solid rgba(248,187,217,0.3)"><div class="posm-item-pack">${item.pack}</div></td>
+          ${cells}
+          <td style="text-align:center;padding:6px 10px;border-bottom:1px solid rgba(248,187,217,0.25)"><strong style="color:var(--red);font-size:14px">${rowTotal || '—'}</strong></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
 }
 
 // ─── ФОТО В СВОДНОМ ЗАКАЗЕ ───────────────────────────────────
@@ -2472,61 +2488,61 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-function renderPosmOther(shops) {
+function renderPosmOther(shops) { return renderPosmOtherTable(shops); }
+
+function renderPosmOtherTable(shops) {
   const items = ORDER_CATALOG.other;
-  // Группируем по категории
   const cats = [...new Set(items.map(i => i.category))];
-  
-  return cats.map(cat => {
+
+  const thS = 'white-space:nowrap;padding:9px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--red);font-weight:700;background:rgba(255,240,247,0.97);border-bottom:2px solid var(--border);border-right:1px solid rgba(248,187,217,0.4);position:sticky;top:0;z-index:2';
+
+  const rows = [];
+  cats.forEach(cat => {
     const catItems = items.filter(i => i.category === cat);
     const icon = POSM_ICONS[cat] || '📦';
-    
-    return `
-    <div class="posm-section">
-      <h3>${icon} ${cat}</h3>
-      <div style="overflow-x:auto">
-        <table class="posm-grid">
-          <thead>
-            <tr>
-              <th style="width:44px">Фото</th>
-              <th>Наименование</th>
-              <th>Упаковка</th>
-              ${shops.map(s => `<th class="posm-store-col" title="${s.name}">[№ ${s.id}]<br>${s.city}</th>`).join('')}
-              <th>Итого</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${catItems.map((item, itemIdx) => {
-              const key = 'other_' + cat + '_' + itemIdx;
-              let rowTotal = 0;
-              const cells = shops.map(s => {
-                const qty = (orderState[s.id] && orderState[s.id][key]) || 0;
-                rowTotal += qty;
-                return `<td class="posm-store-col">
-                  <div class="posm-stepper">
-                    <button class="posm-step-btn" onclick="changeQty(${s.id},'${key}',-1)">−</button>
-                    <input class="posm-qty-input" type="number" min="0" value="${qty}"
-                      onchange="setQty(${s.id},'${key}',+this.value)"
-                      oninput="setQty(${s.id},'${key}',+this.value)">
-                    <button class="posm-step-btn" onclick="changeQty(${s.id},'${key}',+1)">+</button>
-                  </div>
-                </td>`;
-              }).join('');
-              return `<tr>
-                <td>${getFotoCell(null, item.name)}</td>
-                <td>
-                  <div class="posm-item-name">${item.name}</div>
-                </td>
-                <td><div class="posm-item-pack">${item.pack}</div></td>
-                ${cells}
-                <td><strong style="color:var(--red);font-size:14px">${rowTotal || '—'}</strong></td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-  }).join('');
+    // Разделитель категории
+    rows.push(`<tr><td colspan="${3 + shops.length + 1}" style="padding:6px 10px;background:rgba(232,22,42,0.06);border-bottom:1px solid rgba(248,187,217,0.4);font-weight:700;font-size:11px;color:var(--red);text-transform:uppercase;letter-spacing:.5px">${icon} ${cat}</td></tr>`);
+    catItems.forEach((item, itemIdx) => {
+      const key = 'other_' + cat + '_' + itemIdx;
+      let rowTotal = 0;
+      const cells = shops.map(s => {
+        const qty = (orderState[s.id] && orderState[s.id][key]) || 0;
+        rowTotal += qty;
+        return `<td style="text-align:center;padding:6px 8px;border-right:1px solid rgba(248,187,217,0.3);border-bottom:1px solid rgba(248,187,217,0.25)">
+          <div class="posm-stepper">
+            <button class="posm-step-btn" onclick="changeQty(${s.id},'${key}',-1)">−</button>
+            <input class="posm-qty-input" type="number" min="0" value="${qty}"
+              onchange="setQty(${s.id},'${key}',+this.value)"
+              oninput="setQty(${s.id},'${key}',+this.value)">
+            <button class="posm-step-btn" onclick="changeQty(${s.id},'${key}',+1)">+</button>
+          </div>
+        </td>`;
+      }).join('');
+      rows.push(`<tr>
+        <td style="padding:6px 8px;border-bottom:1px solid rgba(248,187,217,0.25);position:sticky;left:0;background:rgba(255,255,255,0.95);z-index:1">${getFotoCell(null, item.name)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid rgba(248,187,217,0.25);border-right:1px solid rgba(248,187,217,0.3);position:sticky;left:44px;background:rgba(255,255,255,0.95);z-index:1;min-width:220px">
+          <div class="posm-item-name">${item.name}</div>
+        </td>
+        <td style="padding:6px 10px;border-bottom:1px solid rgba(248,187,217,0.25);border-right:1px solid rgba(248,187,217,0.3);min-width:130px"><div class="posm-item-pack">${item.pack}</div></td>
+        ${cells}
+        <td style="text-align:center;padding:6px 10px;border-bottom:1px solid rgba(248,187,217,0.25)"><strong style="color:var(--red);font-size:14px">${rowTotal || '—'}</strong></td>
+      </tr>`);
+    });
+  });
+
+  const thStoreS = thS + ';min-width:80px;text-align:center';
+  return `<table style="border-collapse:collapse;width:max-content;min-width:100%;font-size:12px">
+    <thead>
+      <tr>
+        <th style="${thS};width:44px;position:sticky;left:0;z-index:3">Фото</th>
+        <th style="${thS};min-width:220px;position:sticky;left:44px;z-index:3">Наименование</th>
+        <th style="${thS};min-width:130px">Упаковка</th>
+        ${shops.map(s => `<th style="${thStoreS}" title="${s.name}">[№ ${s.id}]<br><span style="font-size:10px;font-weight:500">${s.city}</span></th>`).join('')}
+        <th style="${thS};text-align:center">Итого</th>
+      </tr>
+    </thead>
+    <tbody>${rows.join('')}</tbody>
+  </table>`;
 }
 
 function renderPosmSummary(shops) {
@@ -2562,6 +2578,31 @@ function renderPosmSummary(shops) {
           </div>`).join('')}
       </div>
     </div>`;
+}
+
+function renderPosmSummaryInline(shops) {
+  // Считаем итоги по каждому магазину с ненулевыми заказами
+  const summaries = shops.map(s => {
+    const shopOrder = orderState[s.id] || {};
+    const totalBoxes = Object.values(shopOrder).reduce((a,b) => a+b, 0);
+    return { s, totalBoxes };
+  }).filter(x => x.totalBoxes > 0);
+
+  if (!summaries.length) {
+    return '<span style="font-size:12px;color:var(--muted)">📊 Итоги: введите количество боксов выше</span>';
+  }
+
+  const grandTotal = summaries.reduce((a,x) => a + x.totalBoxes, 0);
+  const chips = summaries.map(x =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(194,24,91,0.08);border:1px solid rgba(194,24,91,0.2);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--text)">
+      <span style="color:var(--muted)">[${x.s.id}]</span> ${x.s.city}: <span style="color:var(--red)">${x.totalBoxes}</span>
+    </span>`
+  ).join('');
+
+  return `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:700;color:var(--red);flex-shrink:0">📊 Итого: ${grandTotal} боксов</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${chips}</div>
+  </div>`;
 }
 
 function setPosmTab(tab) {
