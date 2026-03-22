@@ -312,6 +312,55 @@ header {
   display:flex; align-items:center; justify-content:center;
   font-size:20px; flex-shrink:0;
 }
+.posm-item-img.has-foto {
+  cursor:pointer; padding:0; overflow:hidden;
+  border-color: rgba(194,24,91,0.3);
+  box-shadow: 0 2px 8px rgba(194,24,91,0.15);
+  transition: transform .15s, box-shadow .15s;
+}
+.posm-item-img.has-foto:hover { transform:scale(1.08); box-shadow:0 4px 16px rgba(194,24,91,0.3); }
+.posm-item-img.has-foto img { width:100%; height:100%; object-fit:cover; border-radius:7px; display:block; }
+
+/* ─── МОДАЛ ПРЕДПРОСМОТРА ФОТО ─── */
+#fotoPreviewOverlay {
+  position:fixed; inset:0; z-index:1500;
+  background:rgba(0,0,0,0.85); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+#fotoPreviewOverlay.open { opacity:1; pointer-events:all; }
+#fotoPreviewBox {
+  position:relative; max-width:90vw; max-height:88vh;
+  background:#1a1a2e; border-radius:16px;
+  box-shadow:0 24px 80px rgba(0,0,0,0.6);
+  overflow:hidden; display:flex; flex-direction:column;
+  transform:scale(.92); transition:transform .2s;
+}
+#fotoPreviewOverlay.open #fotoPreviewBox { transform:scale(1); }
+.fp-prev-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; background:linear-gradient(135deg,#E8162A,#C2185B);
+  flex-shrink:0;
+}
+.fp-prev-title { color:#fff; font-weight:700; font-size:13px; max-width:70vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fp-prev-actions { display:flex; gap:8px; align-items:center; }
+.fp-prev-dl {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(255,255,255,0.2); color:#fff;
+  border:1px solid rgba(255,255,255,0.35); border-radius:7px;
+  padding:5px 12px; font-size:12px; font-weight:700;
+  text-decoration:none; transition:background .15s; cursor:pointer;
+}
+.fp-prev-dl:hover { background:rgba(255,255,255,0.35); }
+.fp-prev-close {
+  width:30px; height:30px; border-radius:8px; border:none;
+  background:rgba(255,255,255,0.2); color:#fff; font-size:16px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:background .15s;
+}
+.fp-prev-close:hover { background:rgba(255,255,255,0.4); }
+.fp-prev-body { display:flex; align-items:center; justify-content:center; padding:16px; flex:1; min-height:0; }
+.fp-prev-body img { max-width:85vw; max-height:78vh; object-fit:contain; border-radius:8px; display:block; }
 .posm-item-name { font-weight:600; font-size:12px; line-height:1.3; }
 .posm-item-sku { font-size:10px; color:var(--muted); margin-top:2px; }
 .posm-item-pack { font-size:11px; color:var(--blue); }
@@ -2369,7 +2418,7 @@ function renderPosmStandard(shops) {
               }).join('');
               
               return `<tr>
-                <td><div class="posm-item-img">📄</div></td>
+                <td>${getFotoCell(item.sku, item.name)}</td>
                 <td>
                   <div class="posm-item-name">${item.name}</div>
                   ${item.sku ? `<div class="posm-item-sku">${item.sku}</div>` : ''}
@@ -2384,6 +2433,44 @@ function renderPosmStandard(shops) {
       </div>
     </div>`;
 }
+
+// ─── ФОТО В СВОДНОМ ЗАКАЗЕ ───────────────────────────────────
+function getFotoCell(sku, name) {
+  const url = sku ? (FOTO_MAP[sku] || FOTO_MAP[(sku||'').toLowerCase()]) : null;
+  if (url) {
+    const safe = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `<div class="posm-item-img has-foto" onclick="openFotoPreview('${url}','${safe}','${sku}')" title="Нажмите для предпросмотра">
+      <img src="${url}" alt="${safe}" onerror="this.parentElement.innerHTML='📄';this.parentElement.classList.remove('has-foto');this.parentElement.onclick=null;">
+    </div>`;
+  }
+  return `<div class="posm-item-img" title="${sku||'нет SKU'}">📄</div>`;
+}
+
+function openFotoPreview(url, name, sku) {
+  document.getElementById('fpPrevTitle').textContent = name || sku || 'Фото';
+  document.getElementById('fpPrevImg').src = url;
+  const dl = document.getElementById('fpPrevDl');
+  dl.href = url;
+  dl.download = (sku || 'foto') + url.slice(url.lastIndexOf('.'));
+  document.getElementById('fotoPreviewOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFotoPreview(e) {
+  if (e && e.target !== document.getElementById('fotoPreviewOverlay')) return;
+  document.getElementById('fotoPreviewOverlay').classList.remove('open');
+  document.getElementById('fpPrevImg').src = '';
+  document.body.style.overflow = '';
+}
+
+// Закрытие по Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (document.getElementById('fotoPreviewOverlay').classList.contains('open')) {
+      closeFotoPreview();
+    }
+  }
+});
 
 function renderPosmOther(shops) {
   const items = ORDER_CATALOG.other;
@@ -2401,6 +2488,7 @@ function renderPosmOther(shops) {
         <table class="posm-grid">
           <thead>
             <tr>
+              <th style="width:44px">Фото</th>
               <th>Наименование</th>
               <th>Упаковка</th>
               ${shops.map(s => `<th class="posm-store-col" title="${s.name}">[№ ${s.id}]<br>${s.city}</th>`).join('')}
@@ -2425,9 +2513,9 @@ function renderPosmOther(shops) {
                 </td>`;
               }).join('');
               return `<tr>
+                <td>${getFotoCell(null, item.name)}</td>
                 <td>
                   <div class="posm-item-name">${item.name}</div>
-                  <div class="posm-item-pack">${item.pack}</div>
                 </td>
                 <td><div class="posm-item-pack">${item.pack}</div></td>
                 ${cells}
@@ -3142,8 +3230,11 @@ async function refreshFromGoogleSheets() {
       Object.keys(FOTO_MAP).forEach(function(k){ delete FOTO_MAP[k]; });
       files.forEach(function(f) {
         if (/\.(jpg|jpeg|png|webp|gif)$/i.test(f.name)) {
-          const key = f.name.replace(/\.[^.]+$/, '').toLowerCase();
-          FOTO_MAP[key] = GH_FOTO_URL + encodeURIComponent(f.name);
+          const url = GH_FOTO_URL + encodeURIComponent(f.name);
+          const keyOrig = f.name.replace(/\.[^.]+$/, '');   // RUM052754781b
+          const keyLow  = keyOrig.toLowerCase();              // rum052754781b
+          FOTO_MAP[keyOrig] = url;
+          FOTO_MAP[keyLow]  = url;
           fotoCount++;
         }
       });
@@ -3862,7 +3953,22 @@ function exportDrillXLSX(){
   </div>
 </div>
 
-<!-- DRILL-DOWN MODAL -->
+<!-- МОДАЛ ПРЕДПРОСМОТРА ФОТО -->
+<div id="fotoPreviewOverlay" onclick="closeFotoPreview(event)">
+  <div id="fotoPreviewBox" onclick="event.stopPropagation()">
+    <div class="fp-prev-head">
+      <span class="fp-prev-title" id="fpPrevTitle">Фото</span>
+      <div class="fp-prev-actions">
+        <a class="fp-prev-dl" id="fpPrevDl" href="#" download target="_blank">⬇ Скачать</a>
+        <button class="fp-prev-close" onclick="closeFotoPreview()">✕</button>
+      </div>
+    </div>
+    <div class="fp-prev-body">
+      <img id="fpPrevImg" src="" alt="">
+    </div>
+  </div>
+</div>
+
 <!-- DRILL-DOWN MODAL -->
 <div class="modal-overlay" id="ddOverlay" onclick="closeDrillModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
