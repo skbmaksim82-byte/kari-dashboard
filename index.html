@@ -708,7 +708,7 @@ header {
 }
 .modal-xl-btn:hover { transform: translateY(-1px); box-shadow: 3px 5px 12px rgba(46,125,50,0.4); }
 .modal-xl-btn:active { transform: translateY(0); }
-.modal-body { flex: 1; overflow: auto; padding: 12px 16px 20px; -webkit-overflow-scrolling: touch; }
+.modal-body { flex: 1; overflow: auto; padding: 0 0 20px; -webkit-overflow-scrolling: touch; }
 .modal-body::-webkit-scrollbar { width: 4px; }
 .modal-body::-webkit-scrollbar-thumb { background: #F8BBD9; border-radius: 2px; }
 
@@ -716,11 +716,12 @@ header {
 .dd-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
 .dd-table th {
   position: sticky; top: 0; z-index: 2;
-  background: rgba(255,240,247,0.97);
+  background: #FFF0F7;
   text-align: left; padding: 10px 12px;
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .5px; color: var(--red);
   border-bottom: 2px solid #F8BBD9;
+  border-right: 1px solid rgba(248,187,217,0.5);
   white-space: nowrap;
 }
 .dd-table td { padding: 10px 12px; border-bottom: 1px solid rgba(248,187,217,0.4); vertical-align: middle; }
@@ -1223,7 +1224,7 @@ function populateStoreFilter() {
     if (cat && s.category !== +cat) return false;
     if (kind && s.kind !== kind) return false;
     return true;
-  }).sort((a,b) => a.name.localeCompare(b.name, 'ru'));
+  }).sort((a,b) => a.id - b.id);
   subset.forEach(s => {
     const o = document.createElement('option');
     o.value = s.id; o.textContent = `[№${s.id}] ${s.name}`;
@@ -1415,7 +1416,7 @@ function renderStoreList() {
   }
   el.innerHTML = filteredStores.map(s => `
     <div class="store-item ${selectedStore && selectedStore.id === s.id ? 'active' : ''}" onclick="selectStore(${s.id})">
-      <div class="store-item-name">${s.name}${s.top20 ? '<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">TOP20</span>' : ''}</div>
+      <div class="store-item-name"><span style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--red);margin-right:5px">№${s.id}</span>${s.name}${s.top20 ? '<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">TOP20</span>' : ''}</div>
       <div class="store-item-meta">
         <span class="store-cat">Кат. ${s.category}</span>
         <span class="store-div">${s.division}</span>
@@ -2305,7 +2306,7 @@ function mRenderStores(){
   }
   mainEl.innerHTML = '<div style="padding:14px 12px">' + mFiltered.map(s=>`
     <div class="mobile-store-card ${selectedStore&&selectedStore.id===s.id?'sel':''}" onclick="mOpenPassport(${s.id})">
-      <div class="mobile-store-name">${s.name}${s.top20 ? '<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">TOP20</span>' : ''}</div>
+      <div class="mobile-store-name"><span style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--red);margin-right:5px">№${s.id}</span>${s.name}${s.top20 ? '<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">TOP20</span>' : ''}</div>
       <div class="mobile-store-meta">
         <span class="store-cat">Кат. ${s.category}</span>
         <span class="store-div" style="font-size:11px;padding:2px 7px;border-radius:4px;background:${DC2[s.division]||'#333'}20;color:${DC2[s.division]||'#aaa'}">${s.division}</span>
