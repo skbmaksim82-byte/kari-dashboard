@@ -1020,11 +1020,12 @@ header {
 // ─── FETCH TIMEOUT ПОЛИФИЛЛ (совместимость с мобильными браузерами) ───
 function fetchTimeout(url, options, ms) {
   ms = ms || 12000;
-  var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, ms) : null;
-  var opts = ctrl ? Object.assign({}, options, { signal: ctrl.signal }) : (options || {});
-  return fetch(url, opts).then(function(r){ if(timer) clearTimeout(timer); return r; },
-    function(e){ if(timer) clearTimeout(timer); throw e; });
+  // iOS Safari не поддерживает AbortController.signal в fetch — используем Promise.race
+  var fetchPromise = fetch(url, options || {});
+  var timeoutPromise = new Promise(function(_, reject) {
+    setTimeout(function() { reject(new Error('timeout')); }, ms);
+  });
+  return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 
@@ -3136,7 +3137,23 @@ async function refreshFromGoogleSheets() {
     const resp = await fetchTimeout(GSHEET_URL, {}, 15000);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-    const data = new Uint8Array(await resp.arrayBuffer());
+    // iOS Safari: используем blob() вместо arrayBuffer() для совместимости
+    let data;
+    try {
+      const ab = await resp.arrayBuffer();
+      data = new Uint8Array(ab);
+    } catch(e) {
+      // Fallback для iOS Safari через blob
+      const resp2 = await fetchTimeout(GSHEET_URL, {}, 15000);
+      const blob = await resp2.blob();
+      const ab2 = await new Promise(function(res, rej) {
+        var fr = new FileReader();
+        fr.onload = function() { res(fr.result); };
+        fr.onerror = rej;
+        fr.readAsArrayBuffer(blob);
+      });
+      data = new Uint8Array(ab2);
+    }
     const wb = XLSX.read(data, { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
