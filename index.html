@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
+  --hh: 54px; /* реальная высота header, устанавливается через JS */
   --red: #C2185B;
   --red-dark: #880E4F;
   --red-light: #E91E8C;
@@ -774,15 +775,17 @@ header {
   .hstat-lbl { font-size: 9px; }
 
   /* Layout: sidebar — выдвижная панель поверх контента */
-  .app { flex-direction: column; height: calc(100vh - 50px - 56px); position: relative; }
+  .app { flex-direction: column; height: calc(100svh - var(--hh,54px) - 56px); position: relative; }
   .sidebar {
-    position: fixed; top: 50px; left: 0; bottom: 56px; z-index: 450;
-    width: 300px; min-width: 300px;
+    position: fixed; top: var(--hh,54px); left: 0; bottom: 56px; z-index: 450;
+    width: min(300px, 90vw); min-width: 0;
     transform: translateX(-100%); transition: transform .28s cubic-bezier(.32,.72,0,1);
-    box-shadow: 4px 0 24px rgba(0,0,0,0.25);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.3);
     display: flex !important; flex-direction: column;
     overflow: hidden;
+    border-right: 1px solid var(--border);
   }
+  .sidebar .store-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .sidebar.mob-open { transform: translateX(0); }
   /* Overlay за sidebar */
   #sidebarOverlay {
@@ -820,9 +823,21 @@ header {
   .mobile-nav-label { font-size: 9px; font-weight: 600; }
   .mobile-filter-fab { display: none; }
 
-  /* Tabs — компактные на мобильных */
-  .tabs { gap: 2px; padding: 3px; margin-bottom: 10px; }
-  .tab-btn { font-size: 11px; padding: 7px 6px; }
+
+  /* Sidebar mobile header */
+  .mob-sidebar-header {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(136,14,79,0.08), rgba(194,24,91,0.05));
+  }
+
+  /* Tabs — горизонтальный скролл на мобильных */
+  .tabs { gap: 2px; padding: 3px; margin-bottom: 8px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .tab-btn { font-size: 11px; padding: 7px 8px; white-space: nowrap; flex-shrink: 0; }
 
   /* Cards: tighter */
   .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
@@ -851,13 +866,17 @@ header {
   .mobile-store-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
   .mobile-store-zones { display: flex; gap: 4px; flex-wrap: wrap; }
 
-  /* Order table → cards */
-  .order-section { padding: 14px; border-radius: 14px; }
-  .order-section h2 { font-size: 15px; }
+  /* Order table — горизонтальный скролл на мобильных */
+  .order-section { padding: 8px; border-radius: 12px; }
+  .order-section h2 { font-size: 14px; }
   .order-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
   .order-table { min-width: max-content; width: max-content; font-size: 11px; white-space: nowrap; border-collapse: collapse; }
-  .order-table th { padding: 8px; font-size: 9px; white-space: nowrap; }
-  .order-table td { padding: 8px; white-space: nowrap; }
+  .order-table th { padding: 7px 6px; font-size: 9px; white-space: nowrap; }
+  .order-table td { padding: 7px 6px; white-space: nowrap; }
+  /* posm stepper — компактнее */
+  .posm-stepper { gap: 1px; }
+  .posm-stepper button { width: 22px; height: 22px; font-size: 13px; }
+  .posm-stepper input { width: 30px; font-size: 11px; }
 
   /* Detail panel */
   .detail-panel { padding: 14px; border-radius: 14px; }
@@ -932,6 +951,8 @@ header {
 /* Desktop: hide mobile elements */
 @media (min-width: 769px) {
   .mobile-nav, .mobile-filter-fab, .mobile-drawer, .mobile-drawer-overlay { display: none !important; }
+  .mob-sidebar-header { display: none !important; }
+  #sidebarOverlay { display: none !important; }
 }
 
 
@@ -996,6 +1017,17 @@ header {
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
+// ─── FETCH TIMEOUT ПОЛИФИЛЛ (совместимость с мобильными браузерами) ───
+function fetchTimeout(url, options, ms) {
+  ms = ms || 12000;
+  var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, ms) : null;
+  var opts = ctrl ? Object.assign({}, options, { signal: ctrl.signal }) : (options || {});
+  return fetch(url, opts).then(function(r){ if(timer) clearTimeout(timer); return r; },
+    function(e){ if(timer) clearTimeout(timer); throw e; });
+}
+
+
 // Fallback XLSX loader if CDN fails
 window._xlsxReady = typeof XLSX !== 'undefined';
 </script>
@@ -1063,84 +1095,18 @@ window._xlsxReady = typeof XLSX !== 'undefined';
   </button>
 </div>
 
-<!-- MOBILE FAB -->
-<!-- MOBILE FILTER DRAWER (сохраняем drawer для совместимости, но FAB убран) -->
-<div class="mobile-drawer" id="mDrawer">
-  <div class="drawer-handle"></div>
-  <div class="drawer-htitle">Фильтры</div>
-  <div class="drawer-sec">
-    <div class="drawer-sec-lbl">Поиск</div>
-    <input type="search" class="drawer-search" id="mSearch" placeholder="🔍  Название или город..." oninput="mApplyFilters()">
-  </div>
-  <div class="drawer-sec">
-    <div class="drawer-sec-lbl">Подразделение</div>
-    <select class="drawer-select" id="mFilterDiv" onchange="mApplyFilters()">
-      <option value="">Все подразделения</option>
-    </select>
-  </div>
-  <div class="drawer-sec">
-    <div class="drawer-sec-lbl">Юр. лицо</div>
-    <select class="drawer-select" id="mFilterLegal" onchange="mApplyFilters()">
-      <option value="">Все юр. лица</option>
-      <option value="Kari">Kari</option>
-      <option value="Логос">Логос</option>
-    </select>
-  </div>
-  <div class="drawer-sec">
-    <div class="drawer-sec-lbl">Категория</div>
-    <select class="drawer-select" id="mFilterCat" onchange="mApplyFilters()">
-      <option value="">Все категории</option>
-      <option value="1">Категория 1</option>
-      <option value="2">Категория 2</option>
-      <option value="3">Категория 3</option>
-      <option value="4">Категория 4</option>
-      <option value="5">Категория 5</option>
-    </select>
-  </div>
-  <div class="drawer-sec">
-    <div class="drawer-sec-lbl">Вид магазина</div>
-    <select class="drawer-select" id="mFilterKindM" onchange="mApplyFilters()">
-      <option value="">Все виды</option>
-      <option value="shoes">shoes</option>
-      <option value="shoes+Kids">shoes+Kids</option>
-    </select>
-  </div>
-  <div class="drawer-sec">
-    <div class="drawer-sec-lbl">Магазин</div>
-    <select class="drawer-select" id="mFilterStore" onchange="mApplyFilters()">
-      <option value="">Все магазины</option>
-    </select>
-  </div>
-  <div class="drawer-sec">
-    <div class="drawer-sec-lbl">Зоны оформления</div>
-    <div class="drawer-chips" id="mZoneChips">
-      <button class="drawer-chip active" data-zone="all">Все</button>
-      <button class="drawer-chip" data-zone="torts">📐 Торцы</button>
-      <button class="drawer-chip" data-zone="hasVitrina">🪟 Витрина</button>
-      <button class="drawer-chip" data-zone="ymCount">💍 Ювелирный отдел</button>
-      <button class="drawer-chip" data-zone="antiTheftGates">🚧 Антикражные рамки</button>
-      <button class="drawer-chip" data-zone="hasKH">🏠 Кари Хоме</button>
-      <button class="drawer-chip" data-zone="hasCosmetics">💄 Косметика</button>
-      <button class="drawer-chip" data-zone="hasClothes">👗 Одежда</button>
-      <button class="drawer-chip" data-zone="hasSport">🏃 Зона спорта</button>
-      <button class="drawer-chip" data-zone="lightSigns">🔆 Световые таблички</button>
-      <button class="drawer-chip" data-zone="lightboxesCount">💡 Лайтбоксы</button>
-      <button class="drawer-chip" data-zone="facadeType">🏢 Фасад</button>
-      <button class="drawer-chip" data-zone="workHourSigns">🕐 Режимник</button>
-      <button class="drawer-chip" data-zone="equipment">🛒 Корзины, стойки, Бренд зона</button>
-      <button class="drawer-chip" data-zone="cashFormat">💰 Формат кассы</button>
-      <button class="drawer-chip" data-zone="top20">⭐ TOP 20</button>
-    </div>
-  </div>
-  <div class="drawer-actions">
-    <button class="drawer-btn-reset" onclick="mResetFilters()">Сбросить</button>
-    <button class="drawer-btn-apply" onclick="mCloseDrawer()">Применить</button>
-  </div>
-</div>
+<!-- mobile drawer removed - sidebar used instead -->
 
 
 <div class="app">
   <div class="sidebar">
+    <!-- Кнопка закрыть sidebar — только на мобильных -->
+    <div class="mob-sidebar-header" id="mobSidebarHeader">
+      <span style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;color:var(--text)">Фильтры и магазины</span>
+      <button onclick="mobCloseSidebar()"
+        style="border:none;background:rgba(194,24,91,0.1);color:var(--red);border-radius:50%;
+               width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
     <div class="sb-section">
       <h3>Поиск</h3>
       <div class="search-wrap">
@@ -1269,9 +1235,20 @@ let activeTab = 'overview';
 
 // ─── INIT ───
 function init() {
+  // Измеряем реальную высоту header для мобильного layout
+  function setHeaderHeight() {
+    var hh = document.querySelector('header') ? document.querySelector('header').offsetHeight : 54;
+    document.documentElement.style.setProperty('--hh', hh + 'px');
+  }
+  setHeaderHeight();
+  window.addEventListener('resize', setHeaderHeight);
+
   populateFilters();
   renderStoreList();
   renderMain();
+
+  // Инициализируем мобильный bottom-nav
+  if (typeof mInit === 'function') mInit();
 }
 
 function populateFilters() {
@@ -2204,243 +2181,86 @@ function exportCSV() {
 
 init();
 
-// Автозагрузка из GitHub при открытии
-(async function autoLoad() {
-  try {
-    // Убедиться что XLSX загружен
-    const xlsxOk = await ensureXLSX();
-    if (!xlsxOk) { console.warn('XLSX not available, skipping autoLoad'); return; }
-    const resp = await fetch(GSHEET_URL, { signal: AbortSignal.timeout(10000) });
-    if (!resp.ok) return;
-    const buf = await resp.arrayBuffer();
-    const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    if (rows.length < 2) return;
-    const parsed = parseXLSXRows(rows);
-    if (!parsed.length) return;
-    STORES.length = 0;
-    parsed.forEach(s => STORES.push(s));
-    filteredStores = [...STORES];
-    const divSel = document.getElementById('filterDiv');
-    while (divSel.options.length > 1) divSel.remove(1);
-    [...new Set(STORES.map(s => s.division))].sort().forEach(d => {
-      const o = document.createElement('option'); o.value = d; o.textContent = d;
-      divSel.appendChild(o);
-    });
-    populateStoreFilter();
-    applyFilters();
-    renderMain();
-    // Загрузка планировок из GitHub
-    try {
-      const plResp = await fetch('https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/plans', { signal: AbortSignal.timeout(8000) });
-      if (plResp.ok) {
-        const files = await plResp.json();
-        if (Array.isArray(files)) {
-          files.forEach(f => {
-            const m = f.name.match(/^(\d+)\.(pdf|png|jpg)$/i);
-            if (m) FP_MAP[parseInt(m[1])] = GH_PLANS_URL + f.name;
-          });
-          updatePlansCardCounter();
-          renderMain();
-        }
-      }
-    } catch(e) {}
-    showToast('✅ Данные из GitHub: ' + parsed.length + ' магазинов');
-  } catch(e) {}
-})();
+// Автозагрузка из GitHub при открытии — используем общую функцию
+setTimeout(function() { refreshFromGoogleSheets(); }, 300);
 
 // ═══════════════════════════════════════
-// MOBILE LOGIC
+// MOBILE LOGIC — упрощённая версия
+// Sidebar = единственный источник фильтров
+// Bottom-nav переключает вкладки
+// Все фильтры — через desktop-элементы sidebar
 // ═══════════════════════════════════════
-
-var mActiveTab = 'overview';
-var mZoneFilter = 'all';
-var mFiltered = [...STORES];
 
 function isMobile(){ return window.innerWidth <= 768; }
 
-// ─── SIDEBAR НА МОБИЛЬНЫХ ───
+// ─── SIDEBAR TOGGLE ───────────────────
 function mobToggleSidebar() {
-  const sb = document.querySelector('.sidebar');
-  const ov = document.getElementById('sidebarOverlay');
-  const isOpen = sb.classList.contains('mob-open');
+  var sb = document.querySelector('.sidebar');
+  var ov = document.getElementById('sidebarOverlay');
+  if (!sb || !ov) return;
+  var isOpen = sb.classList.contains('mob-open');
   sb.classList.toggle('mob-open', !isOpen);
   ov.classList.toggle('open', !isOpen);
-  document.getElementById('mnb-sidebar').classList.toggle('active', !isOpen);
-}
-function mobCloseSidebar() {
-  document.querySelector('.sidebar').classList.remove('mob-open');
-  document.getElementById('sidebarOverlay').classList.remove('open');
-  document.getElementById('mnb-sidebar').classList.remove('active');
+  var btn = document.getElementById('mnb-sidebar');
+  if (btn) btn.classList.toggle('active', !isOpen);
 }
 
-// Подсветка активной вкладки в bottom-nav
+function mobCloseSidebar() {
+  var sb = document.querySelector('.sidebar');
+  var ov = document.getElementById('sidebarOverlay');
+  if (sb) sb.classList.remove('mob-open');
+  if (ov) ov.classList.remove('open');
+  var btn = document.getElementById('mnb-sidebar');
+  if (btn) btn.classList.remove('active');
+}
+
+// ─── СИНХРОНИЗАЦИЯ BOTTOM-NAV ─────────
 function mobSyncNav(tab) {
   if (!isMobile()) return;
-  const map = { overview: 'overview', order: 'order', posm_order: 'posm', store: 'passport' };
-  document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
-  const id = 'mnb-' + (map[tab] || 'overview');
-  const btn = document.getElementById(id);
-  if (btn) btn.classList.add('active');
+  var map = { overview: 'mnb-overview', order: 'mnb-order', posm_order: 'mnb-posm', store: 'mnb-passport' };
+  document.querySelectorAll('.mobile-nav-item').forEach(function(el) { el.classList.remove('active'); });
+  var id = map[tab];
+  if (id) { var btn = document.getElementById(id); if (btn) btn.classList.add('active'); }
 }
 
-// Init mobile
-(function mInit(){
-  if(!isMobile()) return;
-  // populate division select
-  const divSel = document.getElementById('mFilterDiv');
-  [...new Set(STORES.map(s=>s.division))].sort().forEach(d=>{
-    const o=document.createElement('option'); o.value=d; o.textContent=d; divSel.appendChild(o);
+// ─── LEGACY STUBS (не удаляем — могут вызываться из HTML) ─────
+function mSetPage(p) {}
+function mToggleDrawer() {}
+function mCloseDrawer() {}
+function mApplyFilters() { applyFilters(); renderMain(); }
+function mResetFilters() {
+  ['filterDiv','filterCat','filterKind','filterLegal','filterStore'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
   });
-  // zone chips
-  const chips = document.getElementById('mZoneChips');
-  if(chips) chips.addEventListener('click', e=>{
-    const b=e.target.closest('.drawer-chip'); if(!b) return;
-    document.querySelectorAll('#mZoneChips .drawer-chip').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active'); mZoneFilter=b.dataset.zone; mApplyFilters();
+  var si = document.getElementById('searchInput'); if (si) si.value = '';
+  activeZoneFilter = 'all';
+  document.querySelectorAll('.zone-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.zone === 'all');
   });
+  filteredStores = [...STORES];
+  renderStoreList();
+  renderMain();
+  mobCloseSidebar();
+}
+function mRenderAll() { if (isMobile()) { renderStoreList(); renderMain(); } }
+function mRenderStores() {}
+function mOpenPassport(id) { selectStore(id); }
+
+// ─── ИНИЦИАЛИЗАЦИЯ МОБИЛЬНЫХ ──────────
+function mInit() {
+  if (!isMobile()) return;
   mobSyncNav('overview');
-})();
-
-function mSetPage(p){
-  // Legacy — не используется, но оставляем совместимость
-  if(!isMobile()) return;
-  mActiveTab = p;
-}
-
-function mToggleDrawer(){
-  const d = document.getElementById('mDrawer');
-  const o = document.getElementById('mDrawerOverlay');
-  if (d) d.classList.toggle('open');
-  if (o) o.classList.toggle('open');
-}
-function mCloseDrawer(){
-  const d = document.getElementById('mDrawer');
-  const o = document.getElementById('mDrawerOverlay');
-  if (d) d.classList.remove('open');
-  if (o) o.classList.remove('open');
-}
-
-function mApplyFilters(){
-  const q = document.getElementById('mSearch').value.toLowerCase();
-  const d = document.getElementById('mFilterDiv').value;
-  const c = document.getElementById('mFilterCat').value;
-  const sid = document.getElementById('mFilterStore') ? document.getElementById('mFilterStore').value : '';
-  const leg = document.getElementById('mFilterLegal') ? document.getElementById('mFilterLegal').value : '';
-  const mkind = document.getElementById('mFilterKindM') ? document.getElementById('mFilterKindM').value : '';
-  mFiltered = STORES.filter(s=>{
-    if(q && !s.name.toLowerCase().includes(q) && !s.city.toLowerCase().includes(q)) return false;
-    if(d && s.division!==d) return false;
-    if(c && s.category!==+c) return false;
-    if(leg && s.legalEntity!==leg) return false;
-    if(mkind && s.kind!==mkind) return false;
-    if(sid && s.id!==+sid) return false;
-    if(mZoneFilter!=='all'){
-      if      (mZoneFilter==='torts')           {if(!s.tortsX&&!s.tortsG&&!s.tortsGold&&!s.tortsLeather)return false;}
-      else if (mZoneFilter==='lightboxesCount') {if(!s.lightboxesCount)return false;}
-      else if (mZoneFilter==='antiTheftGates')  {if(!s.antiTheftGates)return false;}
-      else if (mZoneFilter==='ymCount')         {if(!s.ymCount)return false;}
-      else if (mZoneFilter==='top20')           {if(!s.top20)return false;}
-      else if (mZoneFilter==='lightSigns')      {if(!s.lightSigns)return false;}
-      else if (mZoneFilter==='facadeType')      {if(!s.facadeType||s.facadeType==='-'||s.facadeType==='нет')return false;}
-      else if (mZoneFilter==='workHourSigns')   {if(!s.workHourSignsCount)return false;}
-      else if (mZoneFilter==='equipment')       {if(!s.hasBaskets&&!s.shelfMobile&&!s.shelfCrocs&&!s.trolley&&!s.kariWood)return false;}
-      else if (mZoneFilter==='cashFormat')      {if(!s.cash2new&&!s.cash3new&&!s.cash4new&&!s.cash2std&&!s.cash3std&&!s.cash4std)return false;}
-      else if(!s[mZoneFilter])return false;
-    }
-    return true;
-  });
-  filteredStores = mFiltered;
-  const hasF = q||d||c||sid||mZoneFilter!=='all';
-  document.getElementById('mFab').classList.toggle('has-filters', hasF);
-  // Populate mobile store select based on current filters
-  const mStoreSel = document.getElementById('mFilterStore');
-  if(mStoreSel){
-    const prevV = mStoreSel.value;
-    while(mStoreSel.options.length > 1) mStoreSel.remove(1);
-    const sub = STORES.filter(s=>{
-      if(d && s.division!==d) return false;
-      if(c && s.category!==+c) return false;
-      return true;
-    }).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
-    sub.forEach(s=>{
-      const o=document.createElement('option'); o.value=s.id; o.textContent=`[№${s.id}] ${s.name}`; mStoreSel.appendChild(o);
-    });
-    if([...mStoreSel.options].some(o=>o.value===prevV)) mStoreSel.value=prevV;
-  }
-  mRenderAll();
-}
-
-function mResetFilters(){
-  document.getElementById('mSearch').value='';
-  document.getElementById('mFilterDiv').value='';
-  document.getElementById('mFilterCat').value='';
-  if(document.getElementById('mFilterLegal')) document.getElementById('mFilterLegal').value='';
-  if(document.getElementById('mFilterKindM')) document.getElementById('mFilterKindM').value='';
-  if(document.getElementById('mFilterStore')) document.getElementById('mFilterStore').value='';
-  mZoneFilter='all';
-  document.querySelectorAll('#mZoneChips .drawer-chip').forEach((b,i)=>b.classList.toggle('active',i===0));
-  mApplyFilters();
-}
-
-function mRenderAll(){
-  if(!isMobile()) return;
-  mRenderStores();
-  renderMain(); // re-render main with synced filteredStores
-}
-
-function mRenderStores(){
-  if(mActiveTab !== 'stores') return;
-  const mainEl = document.getElementById('mainContent');
-  // inject store list into main area
-  const noTab = document.createElement('div');
-  if(!mFiltered.length){
-    mainEl.innerHTML='<div style="text-align:center;padding:80px 20px;color:var(--muted)"><div style="font-size:48px;margin-bottom:12px">🔍</div><p>Магазины не найдены</p></div>';
-    return;
-  }
-  const DC2 = {'Кузбасс Юг':'#E8162A','Омск 1':'#FF6B35','Алтай 1':'#FF9F43','Алтай 2':'#FFCA3A','Новосибирск 2':'#00B4D8','Хакасия':'#9B5DE5','Томск':'#28C76F'};
-  function zdots2(s){
-    return [['hasVitrina','В','#00B4D8'],['hasKH','КХ','#28C76F'],['hasCosmetics','К','#FF9F43'],['hasClothes','О','#9B5DE5'],['hasSport','С','#E8162A']]
-      .filter(([k])=>s[k]).map(([,l,c])=>`<div class="zone-dot" style="background:${c}20;color:${c}">${l}</div>`).join('');
-  }
-  mainEl.innerHTML = '<div style="padding:14px 12px">' + mFiltered.map(s=>`
-    <div class="mobile-store-card ${selectedStore&&selectedStore.id===s.id?'sel':''}" onclick="mOpenPassport(${s.id})">
-      <div class="mobile-store-name"><span style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--red);margin-right:5px">№${s.id}</span>${s.name}${s.top20 ? '<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">TOP20</span>' : ''}</div>
-      <div class="mobile-store-meta">
-        <span class="store-cat">Кат. ${s.category}</span>
-        <span class="store-div" style="font-size:11px;padding:2px 7px;border-radius:4px;background:${DC2[s.division]||'#333'}20;color:${DC2[s.division]||'#aaa'}">${s.division}</span>
-        ${s.kind && s.kind!=='-'?`<span class="store-kind-badge">${s.kind}</span>`:''}
-      </div>
-      <div class="mobile-store-zones">${zdots2(s)}</div>
-    </div>`).join('') + '</div>';
-}
-
-function mOpenPassport(id){
-  selectedStore = STORES.find(s=>s.id===id);
-  mActiveTab = 'passport';
-  document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active'));
-  document.getElementById('mnb-passport').classList.add('active');
-  setTab('store');
-  document.getElementById('mainContent').scrollTop=0;
-  setTimeout(() => checkFloorPlan(id), 150);
 }
 
 // Resize: закрываем sidebar при переходе на desktop
-window.addEventListener('resize', ()=>{
-  if(!isMobile()) {
-    document.querySelector('.sidebar').classList.remove('mob-open');
-    const ov = document.getElementById('sidebarOverlay');
-    if(ov) ov.classList.remove('open');
+window.addEventListener('resize', function() {
+  if (!isMobile()) {
+    var sb = document.querySelector('.sidebar');
+    if (sb) sb.classList.remove('mob-open');
+    var ov = document.getElementById('sidebarOverlay');
+    if (ov) ov.classList.remove('open');
   }
 });
-
-
-
-
-// ═══════════════════════════════════════
-// СВОДНЫЙ ЗАКАЗ (ПОСМ)
-// ═══════════════════════════════════════
 
 const ORDER_CATALOG = {"posm": [{"sheet": "Листовки", "items": [{"sku": "RUM052754781b", "name": "Листовка А3 вертикальная -30 2025", "pack": "1 бокс = 10 шт", "col": 3}, {"sku": "RUM052754881b", "name": "Листовка А4 -30 2025", "pack": "1 бокс = 10 шт", "col": 4}, {"sku": "RUM052754981b", "name": "Листовка А5 -30 2025", "pack": "1 бокс = 10 шт", "col": 5}, {"sku": "RUM052755581b", "name": "Листовка А3 вертикальная -50% 2025", "pack": "1 бокс = 10 шт", "col": 6}, {"sku": "RUM052755681b", "name": "Листовка А4 горизонтальная -50% 2025", "pack": "1 бокс = 10 шт", "col": 7}, {"sku": "RUM052755881b", "name": "Листовка А5 -50% 2025", "pack": "1 бокс = 10 шт", "col": 8}, {"sku": "RUM052756081b", "name": "Листовки А3 вертикальная -70 2025", "pack": "1 бокс = 10 шт", "col": 9}, {"sku": "RUM052756181b", "name": "Листовки А4 горизонтальная -70 2025", "pack": "1 бокс = 10 шт", "col": 10}, {"sku": "RUM052756281b", "name": "Листовки А5 -70 2025", "pack": "1 бокс = 10 шт", "col": 11}, {"sku": "RUM052756381b", "name": "Листовка А3 Вертикальная 2=3 2025", "pack": "1 бокс = 10 шт", "col": 12}, {"sku": "RUM052756681b", "name": "Листовка А4 горизонтальная 2=3 2025", "pack": "1 бокс = 10 шт", "col": 13}, {"sku": "RUM052756881b", "name": "Листовка А5 2=3 2025", "pack": "1 бокс = 10 шт", "col": 14}, {"sku": "RUM052757081b", "name": "Вставка 80x60 2=3 2025", "pack": "1 бокс = 10 шт", "col": 15}, {"sku": "RUM052757181b", "name": "Вставка 210x100 2=3 2025", "pack": "1 бокс = 10 шт", "col": 16}, {"sku": "RUM052757281b", "name": "Вставка 1200x100 2=3 2025", "pack": "1 бокс = 10 шт", "col": 17}, {"sku": "RUM052757381b", "name": "Листовки А3 \"Гарантия 180 дней\" ВЕРТИКАЛЬ 2025", "pack": "1 бокс = 10 шт", "col": 18}, {"sku": "RUM052757481b", "name": "Листовки А4 \"Гарантия 180 дней\" 2025", "pack": "1 бокс = 10 шт", "col": 19}, {"sku": "RUM052757581b", "name": "Листовки А5 Гарантия 180 дней 2025", "pack": "1 бокс = 10 шт", "col": 20}, {"sku": "RUM052755281b", "name": "Корзины подложки 2025 (комплект 15 макетов)", "pack": "1 бокс = 15 МАКЕТОВ По 5 копий", "col": 21}, {"sku": "RUM052755381b", "name": "Корзины прайспойнты (цена ОТ:) 2025 (комплект 18 макетов)", "pack": "1 бокс = 18 МАКЕТОВ По 5 копий", "col": 22}, {"sku": "RUM052755481b", "name": "Корзины прайспойнты (фикс) 2025 (комплект 10 макетов)", "pack": "1 бокс = 10 МАКЕТОВ По 5 копий", "col": 23}, {"sku": "RUM052756581b", "name": "Корзины подложки РБ 2025 (комплект 15 макетов)", "pack": "1 бокс = 15 МАКЕТОВ По 5 копий", "col": 24}, {"sku": "RUM052756781b", "name": "Корзины прайспойнты РБ (цена ОТ:) 2025 комплект", "pack": "1 бокс = 18 МАКЕТОВ По 5 копий", "col": 25}, {"sku": "RUM052756981b", "name": "Корзины прайспойнты РБ (фикс) 2025 (комплект 10 макетов)", "pack": "1 бокс = 9 МАКЕТОВ По 5 копий", "col": 26}, {"sku": "RUM052757681b", "name": "Вставки в прайс шины Последняя пара Успей купить (комплект) 2025", "pack": "1 бокс = 50шт", "col": 27}, {"sku": "RUM052757781b", "name": "Вставки в прайс шины Последняя пара (правый) 2025 комплект", "pack": "12 видов по 5 шт", "col": 28}, {"sku": "RUM052758481b", "name": "Вставки в прайс шины Последняя пара (певый) 2025 комплект", "pack": "12 видов по 5 шт", "col": 29}, {"sku": "RUM052758981b", "name": "Вставки в прайс шины Последняя пара(сдвоенные правые) 2025 комплект", "pack": "11 видов по 5 шт", "col": 30}, {"sku": "RUM052759081b", "name": "Вставки в прайс шины Последняя пара(сдвоенные левые) 2025 комплект", "pack": "11 видов по 5 шт", "col": 31}, {"sku": "RUM052759181b", "name": "Бирка Последняя пара 60х40 комплект 100шт 2025", "pack": "1бокс=100шт", "col": 32}, {"sku": "RUM052759281b", "name": "Листовка Отрегулируем ремень 80х60 2025", "pack": "1бокс=100шт", "col": 33}, {"sku": "RUM052759381b", "name": "Листовка Отрегулируем ремень А4 2025", "pack": "1 бокс = 5 шт", "col": 34}, {"sku": "RUM052759481b", "name": "Вставка в монетницу 2025", "pack": "1 бокс = 10 шт", "col": 35}, {"sku": "RUM052759581b", "name": "Листовка А5 Рассрочка 2025", "pack": "1 бокс = 10 шт", "col": 36}, {"sku": "RUM052759681b", "name": "Листовки А5 Подарочные сертификаты 2025", "pack": "1 бокс = 10 шт", "col": 37}, {"sku": "RUM052759781b", "name": "Листовки А5 Интернет магазин 2025", "pack": "1 бокс = 10 шт", "col": 38}, {"sku": "RUM052759881b", "name": "Листовки А5 Натуральная кожа 2025", "pack": "1 бокс = 10 шт", "col": 39}, {"sku": "RUM052759981b", "name": "Листовки А5 Подвеска в подарок 2025", "pack": "1 бокс = 10 шт", "col": 40}, {"sku": "RUM052760081b", "name": "Листовка Пробник в подарок А5 2025", "pack": "1 бокс = 10 шт", "col": 41}, {"sku": "RUM052760181b", "name": "Комплект Ищите заказ с буквами 1.2м 2025", "pack": "1 бокс = 1 комплект", "col": 42}, {"sku": "RUM052760281b", "name": "Комплект Ищите заказ с буквами 0.6м 2025", "pack": "1 бокс = 1 комплект", "col": 43}]}, {"sheet": "Чек-поинты", "items": [{"sku": "RUM052795481b", "name": "Чекпоинт -30 2025 370x1560   ИРКУТСК", "pack": "None", "col": 3}, {"sku": "RUM052795581b", "name": "Чекпоинт -30 2025 (стандарт) 460x1495", "pack": "11", "col": 4}, {"sku": "RUM052795681b", "name": "Чекпоинт -50 2025 370x1560   ИРКУТСК", "pack": "None", "col": 5}, {"sku": "RUM052795781b", "name": "Чекпоинт -50 2025 (стандарт) 460x1495", "pack": "11", "col": 6}, {"sku": "RUM052795881b", "name": "Чекпоинт -70 2025 370x1560   ИРКУТСК", "pack": "None", "col": 7}, {"sku": "RUM052795981b", "name": "Чекпоинт -70 2025 (стандарт) 460x1495", "pack": "11", "col": 8}, {"sku": "RUM052796081b", "name": "Чекпоинт 3й в подарок 370x1560 ИРКУТСК", "pack": "None", "col": 9}, {"sku": "RUM052796181b", "name": "Чекпоинт 3й в подарок 2025 (стандарт) 460x1495", "pack": "11", "col": 10}]}, {"sheet": "Флаги и роллапы", "items": [{"sku": "RUM0527234", "name": "Флаг 1500х1000 SALE-30% новый макет1", "pack": "1 бокс = 1 шт", "col": 3}, {"sku": "RUM0527235", "name": "Флаг 1500х1000 SALE-50% новый макет1", "pack": "1 бокс = 1 шт", "col": 4}, {"sku": "RUM0527236", "name": "Флаг 1500х1000 SALE-70% новый макет1", "pack": "1 бокс = 1 шт", "col": 5}, {"sku": "RUM0527237", "name": "Флаг 1500х1000 2=3 новый макет1", "pack": "1 бокс = 1 шт", "col": 6}, {"sku": "RUM0527238", "name": "Флаг 180 дней гарантия (1000х1500)  новый макет1", "pack": "1 бокс = 1 шт", "col": 7}, {"sku": "RUM0527239", "name": "Флаг 500х750 SALE-30% новый макет1", "pack": "1 бокс = 1 шт", "col": 8}, {"sku": "RUM0527240", "name": "Флаг 500х750 SALE-50% новый макет1", "pack": "1 бокс = 1 шт", "col": 9}, {"sku": "RUM0527241", "name": "Флаг 500х750 SALE-70% новый макет1", "pack": "1 бокс = 1 шт", "col": 10}, {"sku": "RUM0527242", "name": "Флаг 500х750 2=3 новый макет1", "pack": "1 бокс = 1 шт", "col": 11}, {"sku": "RUM0527243", "name": "Флаг 180 дней гарантия (500х750) новый макет1", "pack": "1 бокс = 1 шт", "col": 12}, {"sku": "RUM0526948", "name": "Рол-Ап 700х1800 SALE-30% новый логотип", "pack": "1 бокс = 1 шт", "col": 13}, {"sku": "RUM0526949", "name": "Рол-Ап 700х1800 SALE-50% новый логотип", "pack": "1 бокс = 1 шт", "col": 14}, {"sku": "RUM0526950", "name": "Рол-Ап 700х1800 SALE-70%  новый логотип", "pack": "1 бокс = 1 шт", "col": 15}, {"sku": "RUM0526951", "name": "Рол-Ап 700х1800 3 товар в подарок новый логотип", "pack": "1 бокс = 1 шт", "col": 16}]}, {"sheet": "Прочее", "items": [{"sku": "RUM051604069b", "name": "Ценник-стоппер Фуксия (подложки для цифр)", "pack": "1 бокс = 10 шт", "col": 3}, {"sku": "RUM051604169b", "name": "Ценник-стоппер Зеленый (подложки для цифр)", "pack": "1 бокс = 10 шт", "col": 4}, {"sku": "RUM051604269b", "name": "Ценник-стоппер Ультрамарин (подложки для цифр)", "pack": "1 бокс = 10 шт", "col": 5}, {"sku": "RUM0520026", "name": "Магнитный винил РФ", "pack": "1 бокс = 2 шт", "col": 6}, {"sku": "RUM0520027", "name": "Магнитный винил КЗ", "pack": "1 бокс = 2 шт", "col": 7}]}], "other": [{"name": "Термоэтикетка 45х15 мм белая пустая", "category": "Термоэтикетка", "pack": "1 ролик, 400 этикеток в ролике"}, {"name": "Термоэтикетка 40*25 мм, Белая", "category": "Термоэтикетка", "pack": "1 ролик, 500 этикеток в ролике"}, {"name": "Термоэтикетка 60*40 мм, Белая", "category": "Термоэтикетка", "pack": "1 ролик, 500 этикеток в ролике"}, {"name": "Термоэтикетка 60*40 мм, Желтая", "category": "Термоэтикетка", "pack": "1 ролик, 350 этикеток в ролике"}, {"name": "Подложки для ценников на витрину", "category": "Подложка", "pack": "4 вида, каждого по 20 штук"}, {"name": "Анкета для подбора персонала", "category": "Анкета", "pack": "100"}, {"name": "Ценники 45х35 на витрину фуксия", "category": "Ценник", "pack": "36 макетов, каждый по 10 шт.      22 макета, каждый по 20 шт."}, {"name": "Бирка евромех- текстиль (двусторонняя)", "category": "Бирка", "pack": "50"}, {"name": "Бирка Зима", "category": "Бирка", "pack": "100"}, {"name": "Бирка Демисезон", "category": "Бирка", "pack": "100"}, {"name": "Коробки для следков", "category": "Накопитель", "pack": "1"}, {"name": "Накопитель/коробка для аксессуаров акриловый", "category": "Накопитель", "pack": "7"}, {"name": "Комплект афишетка А3", "category": "POS-материалы", "pack": "10"}, {"name": "Комплект Афишетка А5", "category": "POS-материалы", "pack": "10"}, {"name": "Карман акриловый А4 в ЭкП", "category": "POS-материалы", "pack": "10"}, {"name": "Монетница", "category": "POS-материалы", "pack": "1"}, {"name": "Профиль алюминиевый POSTERSNAPPER длина 1000 мм", "category": "POS-материалы", "pack": "1 комплект:верх+низ"}, {"name": "Профиль алюминиевый POSTERSNAPPER длина 500 мм", "category": "POS-материалы", "pack": "1 комплект:верх+низ"}, {"name": "Прайс-шина ANT-1200 мм", "category": "POS-материалы", "pack": "25"}, {"name": "Прайс-шина ANT-600 мм", "category": "POS-материалы", "pack": "25"}, {"name": "Напольная BASE-ML инфор-мационная стойка раздвижная 1100-1400мм", "category": "POS-материалы", "pack": "10"}, {"name": "Комплект держатель магнитный с А5 прозрачной рамкой", "category": "POS-материалы", "pack": "10"}, {"name": "Магнитные ценники для ремней", "category": "POS-материалы", "pack": "20"}, {"name": "Прайс-шина на корзину", "category": "POS-материалы", "pack": "10"}, {"name": "Алюминиевые уголки на магните  (комплект из 2 штук)", "category": "POS-материалы", "pack": "2"}, {"name": "Ценникодержатель 100х1200мм, пэт 0,7мм", "category": "Ценникодержатель", "pack": "10"}, {"name": "Ценникодержатель откидной на крючки", "category": "Ценникодержатель", "pack": "12"}, {"name": "Ценник полочный (уголок) (Держатель инфор-мации L-образный P-PRICER 45х35", "category": "Ценникодержатель", "pack": "50"}, {"name": "Ценник для косметики 60х40х10мм горизонтальный", "category": "Ценникодержатель", "pack": "70"}, {"name": "Ценник для косметики 60х40 горизонтальный с держателем-капля", "category": "Ценникодержатель", "pack": "40"}, {"name": "Ценник для косметики 60x40мм на П-держателе 16мм", "category": "Ценникодержатель", "pack": "60"}, {"name": "Табличка Новая поставка 1157х250 мм", "category": "Табличка", "pack": "1"}, {"name": "Табличка на ПВХ новая поставка  354х18", "category": "Табличка", "pack": "2"}, {"name": "Блоттеры для косметики", "category": "Зона косметики", "pack": "500"}, {"name": "Стикер Тестер белый фон для косметики", "category": "Зона косметики", "pack": "100"}, {"name": "Контейнер для мусора", "category": "Зона косметики", "pack": "1"}, {"name": "Сухие салфетки косметические для снятия макияжа", "category": "Зона косметики", "pack": "120"}, {"name": "Этикетки для палитры лаков", "category": "Зона косметики", "pack": "4"}, {"name": "Палитра для лаков (ромашка)", "category": "Зона косметики", "pack": "5"}, {"name": "Оберточная бумага для КАРИ HOME ширина 0,42 м., намотка 100 м.", "category": "КАРИ HOME", "pack": "1"}, {"name": "Манекен \"Бегущие ноги\"", "category": "КАРИ SPORT", "pack": "1"}]};
 
@@ -2847,7 +2667,7 @@ async function refreshPlansFromDrive() {
 
   try {
     const apiUrl = 'https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/plans';
-    const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(10000) });
+    const resp = await fetchTimeout(apiUrl, {}, 10000);
     if (!resp.ok) throw new Error('GitHub API: HTTP ' + resp.status);
 
     const files = await resp.json();
@@ -3303,7 +3123,7 @@ async function refreshFromGoogleSheets() {
     const ok = await ensureXLSX();
     if (!ok) throw new Error('Библиотека XLSX недоступна');
 
-    const resp = await fetch(GSHEET_URL, { signal: AbortSignal.timeout(15000) });
+    const resp = await fetchTimeout(GSHEET_URL, {}, 15000);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
     const data = new Uint8Array(await resp.arrayBuffer());
@@ -3346,6 +3166,7 @@ async function refreshFromGoogleSheets() {
     populateStoreFilter();
     applyFilters();
     renderMain();
+    if (typeof mobSyncNav === 'function') mobSyncNav(activeTab);
 
     xlsxOk = true;
     rsSet('xlsx', 'ok', STORES.length + ' магазинов');
@@ -3356,7 +3177,7 @@ async function refreshFromGoogleSheets() {
   // ── 2. Планировки (plans/) ────────────────────────────────────
   rsSet('plans', 'spin', 'загрузка...');
   try {
-    const resp = await fetch('https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/plans', { signal: AbortSignal.timeout(10000) });
+    const resp = await fetchTimeout('https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/plans', {}, 10000);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const files = await resp.json();
     if (Array.isArray(files)) {
@@ -3375,7 +3196,7 @@ async function refreshFromGoogleSheets() {
   // ── 3. Фото рекламы (Foto Reklama/) ──────────────────────────
   rsSet('foto', 'spin', 'загрузка...');
   try {
-    const resp = await fetch('https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/Foto%20Reklama', { signal: AbortSignal.timeout(10000) });
+    const resp = await fetchTimeout('https://api.github.com/repos/skbmaksim82-byte/kari-dashboard/contents/Foto%20Reklama', {}, 10000);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const files = await resp.json();
     if (Array.isArray(files)) {
