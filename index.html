@@ -1145,20 +1145,7 @@ window._xlsxReady = typeof XLSX !== 'undefined';
       <h3>Зоны оформления</h3>
       <div class="zone-filters" id="zoneFilters">
         <button class="zone-btn active" data-zone="all">Все</button>
-        <button class="zone-btn" data-zone="torts">📐 Торцы</button>
-        <button class="zone-btn" data-zone="hasVitrina">🪟 Витрина</button>
-        <button class="zone-btn" data-zone="ymCount">💍 Ювелирный отдел</button>
-        <button class="zone-btn" data-zone="antiTheftGates">🚧 Антикражные рамки</button>
-        <button class="zone-btn" data-zone="hasKH">🏠 Кари Хоме</button>
-        <button class="zone-btn" data-zone="hasCosmetics">💄 Косметика</button>
-        <button class="zone-btn" data-zone="hasClothes">👗 Одежда</button>
-        <button class="zone-btn" data-zone="hasSport">🏃 Зона спорта</button>
-        <button class="zone-btn" data-zone="lightSigns">🔆 Световые таблички</button>
-        <button class="zone-btn" data-zone="lightboxesCount">💡 Лайтбоксы</button>
-        <button class="zone-btn" data-zone="facadeType">🏢 Фасад</button>
-        <button class="zone-btn" data-zone="workHourSigns">🕐 Режимник</button>
-        <button class="zone-btn" data-zone="equipment">🛒 Корзины, стойки, Бренд зона</button>
-        <button class="zone-btn" data-zone="cashFormat">💰 Формат кассы</button>
+        <!-- генерируется из ZONES_CFG в init() -->
         <button class="zone-btn" data-zone="top20">⭐ TOP 20</button>
       </div>
     </div>
@@ -1245,6 +1232,21 @@ function init() {
   }
   setHeaderHeight();
   window.addEventListener('resize', setHeaderHeight);
+
+  // Генерируем кнопки зон в sidebar из ZONES_CFG
+  (function buildZoneBtns() {
+    var container = document.getElementById('zoneFilters');
+    if (!container || typeof ZONES_CFG === 'undefined') return;
+    // Вставляем кнопки перед существующей кнопкой TOP 20
+    var topBtn = container.querySelector('[data-zone="top20"]');
+    ZONES_CFG.forEach(function(z) {
+      var btn = document.createElement('button');
+      btn.className = 'zone-btn';
+      btn.dataset.zone = z.dataZone;
+      btn.textContent = z.icon + ' ' + z.label;
+      container.insertBefore(btn, topBtn);
+    });
+  })();
 
   populateFilters();
   renderStoreList();
@@ -1470,7 +1472,7 @@ function renderStoreList() {
   }
   el.innerHTML = filteredStores.map(s => `
     <div class="store-item ${selectedStore && selectedStore.id === s.id ? 'active' : ''}" onclick="selectStore(${s.id})">
-      <div class="store-item-name"><span style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--red);margin-right:5px">№${s.id}</span>${s.name}${s.top20 ? '<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">TOP20</span>' : ''}</div>
+      <div class="store-item-name"><span style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--red);margin-right:5px">№${s.id}</span>${s.name}${s.top20 ? `<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">${window._TOP_LABEL||'TOP20'}</span>` : ''}</div>
       <div class="store-item-meta">
         <span class="store-cat">Кат. ${s.category}</span>
         <span class="store-div">${s.division}</span>
@@ -1598,114 +1600,20 @@ function renderOverview() {
         <div class="card-click-hint">📋 фильтр TOP 20</div>
       </div>
 
-      <!-- ── 14 ЗОН ОФОРМЛЕНИЯ ───────────────────────────────── -->
-      <div class="card clickable" onclick="openDrill('torts')">
-        <div class="card-accent" style="background:#E8162A"></div>
-        <div class="card-icon">📐</div>
-        <div class="card-val" style="color:#E8162A">${withTorts}</div>
-        <div class="card-lbl">Торцы</div>
-        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:4px">
-          <span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 5px;border-radius:4px">X: ${totalTortsX}</span>
-          <span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 5px;border-radius:4px">G: ${totalTortsG}</span>
-          <span style="font-size:10px;background:rgba(139,69,19,0.1);color:#8B4513;padding:2px 5px;border-radius:4px">Кожа: ${totalTortsLeather}</span>
-          <span style="font-size:10px;background:rgba(212,160,0,0.1);color:#D4A000;padding:2px 5px;border-radius:4px">Зол: ${totalTortsGold}</span>
-        </div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('vitrina')">
-        <div class="card-accent" style="background:var(--blue)"></div>
-        <div class="card-icon">🪟</div>
-        <div class="card-val" style="color:var(--blue)">${withVitrina}</div>
-        <div class="card-lbl">Витрина</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('ym')">
-        <div class="card-accent" style="background:#FFD700"></div>
-        <div class="card-icon">💍</div>
-        <div class="card-val" style="color:#B8860B">${withYM}</div>
-        <div class="card-lbl">Ювелирный отдел</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">ЮМ всего: ${totalYM}</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('gates')">
-        <div class="card-accent" style="background:#795548"></div>
-        <div class="card-icon">🚧</div>
-        <div class="card-val" style="color:#795548">${withGatesF}</div>
-        <div class="card-lbl">Антикражные рамки</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">ворот всего: ${totalGates}</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('kh')">
-        <div class="card-accent" style="background:var(--green)"></div>
-        <div class="card-icon">🏠</div>
-        <div class="card-val" style="color:var(--green)">${withKH}</div>
-        <div class="card-lbl">Кари Хоме</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('cosmetics')">
-        <div class="card-accent" style="background:var(--amber)"></div>
-        <div class="card-icon">💄</div>
-        <div class="card-val" style="color:var(--amber)">${withCosmetics}</div>
-        <div class="card-lbl">Косметика</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('clothes')">
-        <div class="card-accent" style="background:var(--purple)"></div>
-        <div class="card-icon">👗</div>
-        <div class="card-val" style="color:var(--purple)">${withClothes}</div>
-        <div class="card-lbl">Одежда</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('sport')">
-        <div class="card-accent" style="background:#FF6B35"></div>
-        <div class="card-icon">🏃</div>
-        <div class="card-val" style="color:#FF6B35">${withSport}</div>
-        <div class="card-lbl">Зона спорта</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('lightSigns')">
-        <div class="card-accent" style="background:#00C2FF"></div>
-        <div class="card-icon">🔆</div>
-        <div class="card-val" style="color:#00C2FF">${withLightSigns}</div>
-        <div class="card-lbl">Световые таблички</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('lightboxes')">
-        <div class="card-accent" style="background:#00B4D8"></div>
-        <div class="card-icon">💡</div>
-        <div class="card-val" style="color:#00B4D8">${withLightboxes}</div>
-        <div class="card-lbl">Лайтбоксы</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('facade')">
-        <div class="card-accent" style="background:#8B4513"></div>
-        <div class="card-icon">🏢</div>
-        <div class="card-val" style="color:#8B4513">${withFacade}</div>
-        <div class="card-lbl">Фасад</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('regim')">
-        <div class="card-accent" style="background:#6C757D"></div>
-        <div class="card-icon">🕐</div>
-        <div class="card-val" style="color:#6C757D">${withRegim}</div>
-        <div class="card-lbl">Режимник</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('equip')">
-        <div class="card-accent" style="background:var(--green)"></div>
-        <div class="card-icon">🛒</div>
-        <div class="card-val" style="color:var(--green)">${withEquip}</div>
-        <div class="card-lbl">Корзины, стойки, Бренд зона</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <div class="card clickable" onclick="openDrill('cash')">
-        <div class="card-accent" style="background:var(--purple)"></div>
-        <div class="card-icon">💰</div>
-        <div class="card-val" style="color:var(--purple)">${withCash}</div>
-        <div class="card-lbl">Формат кассы</div>
-        <div class="card-click-hint">📋 детальный список</div>
-      </div>
-      <!-- ── конец 14 зон ────────────────────────────────────── -->
+      <!-- ── ЗОНЫ ОФОРМЛЕНИЯ — генерируются из ZONES_CFG ───── -->
+      ${ZONES_CFG.map(function(z){
+        var cnt = z.count(stores);
+        var ex = z.extra ? z.extra(stores) : '';
+        return '<div class="card clickable" onclick="openDrill(\'' + z.key + '\')">' +
+          '<div class="card-accent" style="background:' + z.color + '"></div>' +
+          '<div class="card-icon">' + z.icon + '</div>' +
+          '<div class="card-val" style="color:' + z.color + '">' + cnt + '</div>' +
+          '<div class="card-lbl">' + z.label + '</div>' +
+          (ex || '') +
+          '<div class="card-click-hint">📋 детальный список</div>' +
+        '</div>';
+      }).join('')}
+      <!-- ── конец зон ──────────────────────────────────────── -->
 
       <div class="card clickable" onclick="openPlansGallery()">
         <div class="card-accent" style="background:linear-gradient(135deg,#880E4F,#C2185B)"></div>
@@ -1972,7 +1880,7 @@ function renderStoreDetail() {
           ${s.areaTotal ? `<span style="color:var(--muted);margin:0 6px">·</span><span>${s.areaTotal} м²</span>` : ''}
           ${s.category ? `<span style="color:var(--muted);margin:0 6px">·</span><span class="badge badge-cat" style="font-size:13px;padding:2px 10px">Категория ${s.category}</span>` : ''}
           ${s.kind && s.kind !== '-' ? `<span style="color:var(--muted);margin:0 4px">·</span><span class="badge ${s.kind==='остановлен'?'badge-stopped':'badge-kind'}" style="font-size:13px;padding:2px 10px">${s.kind}</span>` : ''}
-          ${s.top20 ? '<span style="margin-left:6px;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(135deg,#E8162A,#C2185B);padding:2px 9px;border-radius:4px;letter-spacing:.5px">⭐ TOP 20</span>' : ''}
+          ${s.top20 ? `<span style="margin-left:6px;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(135deg,#E8162A,#C2185B);padding:2px 9px;border-radius:4px;letter-spacing:.5px">⭐ ${window._TOP_LABEL||'TOP 20'}</span>` : ''}
         </div>
 
         <!-- Подстрока: регион · подразделение · юрлицо -->
@@ -3180,6 +3088,7 @@ async function refreshFromGoogleSheets() {
     });
     populateStoreFilter();
     applyFilters();
+    updateTopLabel(); // обновляем название TOP из таблицы
     renderMain();
     if (typeof mobSyncNav === 'function') mobSyncNav(activeTab);
 
@@ -3358,6 +3267,22 @@ function num(v, def) {
   return isNaN(n) ? (def || 0) : n;
 }
 
+// ─── ДИНАМИЧЕСКОЕ НАЗВАНИЕ TOP-СТОЛБЦА ───────────────────────
+// Обновляет все места в UI где отображается название "TOP 20"/"TOP 15"/etc
+function updateTopLabel() {
+  var label = window._TOP_LABEL || 'TOP 20';
+  // Кнопка фильтра зон
+  var zoneBtn = document.querySelector('.zone-btn[data-zone="top20"]');
+  if (zoneBtn) zoneBtn.textContent = '⭐ ' + label;
+  // Карточка на обзоре
+  var cardLbl = document.querySelector('#cardTop20 .card-lbl');
+  if (cardLbl) cardLbl.textContent = label;
+  var cardHint = document.querySelector('#cardTop20 .card-click-hint');
+  if (cardHint) cardHint.textContent = '📋 фильтр ' + label;
+  // Сохраняем глобально для рендера
+  window._TOP_LABEL = label;
+}
+
 function parseXLSXRows(rows) {
   // Новая структура: строка 1 = группы, строка 2 = заголовки, данные с строки 3
   // Но XLSX.utils.sheet_to_json возвращает все строки — определяем сами
@@ -3383,6 +3308,10 @@ function parseXLSXRows(rows) {
   const ci = (name) => hdr.findIndex(h => h.includes(name));
   const cif = (fn) => hdr.findIndex(fn);
 
+  // Сохраняем реальное название столбца TOP для динамического UI
+  var topColIdx = cif(function(h){ return /^TOP\s*\d+/i.test(h.trim()); });
+  if (topColIdx >= 0) { window._TOP_LABEL = hdr[topColIdx]; }
+
   const C = {
     region:       ci('Регион'),
     division:     ci('Подразделение'),
@@ -3392,7 +3321,7 @@ function parseXLSXRows(rows) {
     legalEntity:  ci('Юр'),
     kind:         ci('Вид магазина'),
     category:     ci('Категория'),
-    top20:        ci('TOP 20'),
+    top20:        cif(h => /^TOP\s*\d+/i.test(h.trim()) || h.trim() === 'TOP 20' || h.trim() === 'TOP 15'),
     areaTotal:    ci('общая'),
     areaTrade:    ci('торговая'),
     areaKids:     ci('Кидс (м2)'),
@@ -3523,6 +3452,243 @@ function parseXLSXRows(rows) {
 // DRILL-DOWN MODAL
 // ═══════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════
+// ЕДИНЫЙ ИСТОЧНИК ПРАВДЫ — ЗОНЫ ОФОРМЛЕНИЯ
+// Все три места (sidebar, карточки Обзора, DD_CFG) берут
+// данные отсюда. При изменении названия или логики —
+// меняй только здесь.
+// ═══════════════════════════════════════════════════════
+const ZONES_CFG = [
+  {
+    key: 'torts',
+    dataZone: 'torts',        // совпадает с data-zone в sidebar
+    icon: '📐',
+    label: 'Торцы',
+    color: '#E8162A',
+    // Для карточки Обзора: функция подсчёта и доп.контент
+    count: stores => stores.filter(s => s.tortsX||s.tortsG||s.tortsGold||s.tortsLeather).length,
+    extra: stores => {
+      const x=stores.reduce((a,s)=>a+s.tortsX,0), g=stores.reduce((a,s)=>a+s.tortsG,0),
+            gold=stores.reduce((a,s)=>a+(s.tortsGold||0),0), lth=stores.reduce((a,s)=>a+(s.tortsLeather||0),0);
+      return `<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:4px">
+        <span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 5px;border-radius:4px">X: ${x}</span>
+        <span style="font-size:10px;background:rgba(232,22,42,0.1);color:var(--red);padding:2px 5px;border-radius:4px">G: ${g}</span>
+        <span style="font-size:10px;background:rgba(139,69,19,0.1);color:#8B4513;padding:2px 5px;border-radius:4px">Кожа: ${lth}</span>
+        <span style="font-size:10px;background:rgba(212,160,0,0.1);color:#D4A000;padding:2px 5px;border-radius:4px">Зол: ${gold}</span>
+      </div>`;
+    },
+    // DD_CFG
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',        v: s=>s.division},
+      {h:'№ магазина',           v: s=>s.id,              c:true},
+      {h:'Наименование магазина',v: s=>s.name},
+      {h:'Кол-во торцов Х',      v: s=>s.tortsX||'—',     c:true},
+      {h:'Кол-во торцов G',      v: s=>s.tortsG||'—',     c:true},
+      {h:'Золотой торец',        v: s=>s.tortsGold||'—',  c:true},
+      {h:'Торец Кожа',           v: s=>s.tortsLeather||'—', c:true},
+    ],
+    ddTotal: rows => `X=${rows.reduce((a,s)=>a+(s.tortsX||0),0)} / G=${rows.reduce((a,s)=>a+(s.tortsG||0),0)} / Золото=${rows.reduce((a,s)=>a+(s.tortsGold||0),0)} / Кожа=${rows.reduce((a,s)=>a+(s.tortsLeather||0),0)} — ${rows.length} маг.`
+  },
+  {
+    key: 'vitrina', dataZone: 'hasVitrina', icon: '🪟', label: 'Витрина', color: 'var(--blue)',
+    count: stores => stores.filter(s=>s.hasVitrina).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',                   v: s=>s.division},
+      {h:'№ магазина',                      v: s=>s.id,                    c:true},
+      {h:'Наименование магазина',           v: s=>s.name},
+      {h:'Наличие витрины',                 v: s=>s.hasVitrina?'да':'—',   c:true},
+      {h:'Кол-во витринных модулей (шт)',   v: s=>s.vitrinaModules||'—',   c:true},
+      {h:'Модули сплошные/раздельные',      v: s=>s.vitrinaType||'—',      c:true},
+      {h:'Кол-во сплошных модулей',         v: s=>s.vitrinaFull||'—',      c:true},
+      {h:'Кол-во раздельных модулей',       v: s=>s.vitrinaSplit||'—',     c:true},
+      {h:'ТВ на витрине (шт)',              v: s=>s.vitrinaTV?s.vitrinaTV:'—', c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.hasVitrina).length} маг. с витриной / итого ${rows.reduce((a,s)=>a+(s.vitrinaModules||0),0)} модулей`
+  },
+  {
+    key: 'ym', dataZone: 'ymCount', icon: '💍', label: 'Ювелирный отдел', color: '#B8860B',
+    count: stores => stores.filter(s=>s.ymCount>0).length,
+    extra: stores => `<div style="font-size:10px;color:var(--muted);margin-top:2px">ЮМ всего: ${stores.reduce((a,s)=>a+s.ymCount,0)}</div>`,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',         v: s=>s.division},
+      {h:'№ магазина',            v: s=>s.id,              c:true},
+      {h:'Наименование магазина', v: s=>s.name},
+      {h:'Кол-во ЮМ',            v: s=>s.ymCount||'—',    c:true},
+      {h:'Оформление зоны ЮИ',   v: s=>s.yiDesign||'—',   c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.ymCount>0).length} маг. с ЮМ / итого ${rows.reduce((a,s)=>a+(s.ymCount||0),0)} ЮМ`
+  },
+  {
+    key: 'gates', dataZone: 'antiTheftGates', icon: '🚧', label: 'Антикражные рамки', color: '#795548',
+    count: stores => stores.filter(s=>s.antiTheftGates>0).length,
+    extra: stores => `<div style="font-size:10px;color:var(--muted);margin-top:2px">ворот всего: ${stores.reduce((a,s)=>a+(s.antiTheftGates||0),0)}</div>`,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',           v: s=>s.division},
+      {h:'№ магазина',              v: s=>s.id,                    c:true},
+      {h:'Наименование магазина',   v: s=>s.name},
+      {h:'Кол-во антикражных ворот',v: s=>s.antiTheftGates||'—',  c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.antiTheftGates>0).length} маг. с рамками / итого ${rows.reduce((a,s)=>a+(s.antiTheftGates||0),0)} рамок`
+  },
+  {
+    key: 'kh', dataZone: 'hasKH', icon: '🏠', label: 'Кари Хоме', color: 'var(--green)',
+    count: stores => stores.filter(s=>s.hasKH).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',              v: s=>s.division},
+      {h:'№ магазина',                 v: s=>s.id,              c:true},
+      {h:'Наименование магазина',      v: s=>s.name},
+      {h:'Наличие зоны КХ',           v: s=>s.hasKH?'да':'—',  c:true},
+      {h:'Кол-во метров зоны КХ (шт)',v: s=>s.khMeters||'—',   c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.hasKH).length} маг. с КХ / итого ${rows.reduce((a,s)=>a+(s.khMeters||0),0).toFixed(1)} м`
+  },
+  {
+    key: 'cosmetics', dataZone: 'hasCosmetics', icon: '💄', label: 'Косметика', color: 'var(--amber)',
+    count: stores => stores.filter(s=>s.hasCosmetics).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',                   v: s=>s.division},
+      {h:'№ магазина',                      v: s=>s.id,                    c:true},
+      {h:'Наименование магазина',           v: s=>s.name},
+      {h:'Наличие зоны косметики',          v: s=>s.hasCosmetics?'да':'—', c:true},
+      {h:'Наличие стола косметики GS',      v: s=>s.cosmeticsGS?'да':'—',  c:true},
+      {h:'Кол-во метров уходовой косметики',v: s=>s.cosmeticsMeters||'—',  c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.hasCosmetics).length} маг. с зоной / итого ${rows.reduce((a,s)=>a+(s.cosmeticsMeters||0),0).toFixed(1)} м`
+  },
+  {
+    key: 'clothes', dataZone: 'hasClothes', icon: '👗', label: 'Одежда', color: 'var(--purple)',
+    count: stores => stores.filter(s=>s.hasClothes).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',          v: s=>s.division},
+      {h:'№ магазина',             v: s=>s.id,                   c:true},
+      {h:'Наименование магазина',  v: s=>s.name},
+      {h:'Наличие одежды',         v: s=>s.hasClothes?'да':'—',  c:true},
+      {h:'Кол-во метров',          v: s=>s.clothesMeters||'—',   c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.hasClothes).length} маг. с одеждой / итого ${rows.reduce((a,s)=>a+(s.clothesMeters||0),0).toFixed(1)} м`
+  },
+  {
+    key: 'sport', dataZone: 'hasSport', icon: '🏃', label: 'Зона спорта', color: '#FF6B35',
+    count: stores => stores.filter(s=>s.hasSport).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',                           v: s=>s.division},
+      {h:'№ магазина',                              v: s=>s.id,                   c:true},
+      {h:'Наименование магазина',                   v: s=>s.name},
+      {h:'Наличие зоны спорта',                     v: s=>s.hasSport?'да':'—',    c:true},
+      {h:'Кол-во метров',                           v: s=>s.sportMeters||'—',     c:true},
+      {h:'Расположение (остров/пристенок)',          v: s=>s.sportLocation||'—',   c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.hasSport).length} маг. со спортом / итого ${rows.reduce((a,s)=>a+(s.sportMeters||0),0).toFixed(1)} м`
+  },
+  {
+    key: 'lightSigns', dataZone: 'lightSigns', icon: '🔆', label: 'Световые таблички', color: '#00C2FF',
+    count: stores => stores.filter(s=>s.lightSigns).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',                 v: s=>s.division},
+      {h:'№ магазина',                    v: s=>s.id,             c:true},
+      {h:'Наименование магазина',         v: s=>s.name},
+      {h:'Световые таблички (home/кидс/спорт)', v: s=>s.lightSigns||'—', c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.lightSigns).length} маг. со световыми табличками`
+  },
+  {
+    key: 'lightboxes', dataZone: 'lightboxesCount', icon: '💡', label: 'Лайтбоксы', color: '#00B4D8',
+    count: stores => stores.filter(s=>s.lightboxesCount>0).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',                       v: s=>s.division},
+      {h:'№ магазина',                          v: s=>s.id,                        c:true},
+      {h:'Наименование магазина',               v: s=>s.name},
+      {h:'Наличие лайтбоксов в зале (кол-во)', v: s=>s.lightboxesCount||'—',      c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.lightboxesCount>0).length} маг. с лайтбоксами / итого ${rows.reduce((a,s)=>a+(s.lightboxesCount||0),0)} шт.`
+  },
+  {
+    key: 'facade', dataZone: 'facadeType', icon: '🏢', label: 'Фасад', color: '#8B4513',
+    count: stores => stores.filter(s=>s.facadeType&&s.facadeType!=='-'&&s.facadeType!=='нет').length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',                          v: s=>s.division},
+      {h:'№ магазина',                             v: s=>s.id,                    c:true},
+      {h:'Наименование магазина',                  v: s=>s.name},
+      {h:'Оформление фасада (вывеска/банер)',      v: s=>s.facadeType||'—',       c:true},
+      {h:'Реле времени на вывеске',                v: s=>s.hasTimeRelay?'да':'—', c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.facadeType&&s.facadeType!=='-'&&s.facadeType!=='нет').length} маг. с оформлением фасада`
+  },
+  {
+    key: 'regim', dataZone: 'workHourSigns', icon: '🕐', label: 'Режимник', color: '#6C757D',
+    count: stores => stores.filter(s=>s.workHourSignsCount>0).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',                    v: s=>s.division},
+      {h:'№ магазина',                       v: s=>s.id,                        c:true},
+      {h:'Наименование магазина',            v: s=>s.name},
+      {h:'Кол-во табличек о режиме работы', v: s=>s.workHourSignsCount||'—',   c:true},
+      {h:'Размер табличек',                  v: s=>s.workHourSignsSize||'—',    c:true},
+      {h:'Формат табличек',                  v: s=>s.workHourSignsFormat||'—',  c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.workHourSignsCount>0).length} маг. с режимником / итого ${rows.reduce((a,s)=>a+(s.workHourSignsCount||0),0)} табличек`
+  },
+  {
+    key: 'equip', dataZone: 'equipment', icon: '🛒', label: 'Корзины, стойки, Бренд зона', color: 'var(--green)',
+    count: stores => stores.filter(s=>s.hasBaskets||s.shelfMobile||s.shelfCrocs||s.trolley||s.kariWood).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',                v: s=>s.division},
+      {h:'№ магазина',                   v: s=>s.id,                c:true},
+      {h:'Наименование магазина',        v: s=>s.name},
+      {h:'Наличие корзин',               v: s=>s.hasBaskets?'да':'—', c:true},
+      {h:'Корзины с надстройками',       v: s=>s.basketsNad||'—',   c:true},
+      {h:'Корзины Кидс',                 v: s=>s.basketsKids||'—',  c:true},
+      {h:'Корзины Кари',                 v: s=>s.basketsKari||'—',  c:true},
+      {h:'Стеллаж 400×650×1650',         v: s=>s.shelfMobile||'—',  c:true},
+      {h:'Стойка Crocs 625×800×1736',    v: s=>s.shelfCrocs||'—',   c:true},
+      {h:'Тележка ТС 1150×640×1950',     v: s=>s.trolley||'—',      c:true},
+      {h:'Kari Wood',                    v: s=>s.kariWood||'—',     c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.hasBaskets||s.shelfMobile||s.shelfCrocs||s.trolley||s.kariWood).length} маг. с оборудованием`
+  },
+  {
+    key: 'cash', dataZone: 'cashFormat', icon: '💰', label: 'Формат кассы', color: 'var(--purple)',
+    count: stores => stores.filter(s=>s.cash2new||s.cash3new||s.cash4new||s.cash2std||s.cash3std||s.cash4std).length,
+    extra: null,
+    ddFilter: s => true,
+    ddCols: [
+      {h:'Подразделение',            v: s=>s.division},
+      {h:'№ магазина',               v: s=>s.id,                  c:true},
+      {h:'Наименование магазина',    v: s=>s.name},
+      {h:'Новая 2 р.м.',             v: s=>s.cash2new?'✓':'—',    c:true},
+      {h:'Новая 3 р.м.',             v: s=>s.cash3new?'✓':'—',    c:true},
+      {h:'Новая 4 р.м.',             v: s=>s.cash4new?'✓':'—',    c:true},
+      {h:'Станд. 2 р.м.',            v: s=>s.cash2std?'✓':'—',    c:true},
+      {h:'Станд. 3 р.м.',            v: s=>s.cash3std?'✓':'—',    c:true},
+      {h:'Касса 4 р.м. (2 станд.)',  v: s=>s.cash4std?'✓':'—',    c:true},
+    ],
+    ddTotal: rows => `${rows.filter(s=>s.cash2new||s.cash3new||s.cash4new||s.cash2std||s.cash3std||s.cash4std).length} маг. с данными по кассам`
+  },
+];
+
+// ─── Генерируем DD_CFG из ZONES_CFG ─────────────────────────
 const DD_CFG = {
   all: {
     icon:'🏪', title:'Все магазины',
@@ -3536,7 +3702,7 @@ const DD_CFG = {
       {h:'Юр лицо',             v: s=>s.legalEntity||'—',    c:true},
       {h:'Вид магазина',        v: s=>s.kind!=='-'?s.kind:'—', c:true},
       {h:'Категория магазина',  v: s=>s.category||'—',       c:true},
-      {h:'TOP 20',              v: s=>s.top20?'да':'—',      c:true},
+      {h:(window._TOP_LABEL||'TOP 20'), v: s=>s.top20?'да':'—', c:true},
       {h:'Площадь общая (м²)',  v: s=>s.areaTotal||'—',      c:true},
       {h:'Площадь торговая (м²)',v: s=>s.areaTrade||'—',     c:true},
       {h:'Площадь Кидс (м²)',   v: s=>s.areaKids||'—',      c:true},
@@ -3545,7 +3711,7 @@ const DD_CFG = {
     total: rows=>`${rows.length} магазинов`
   },
   top20: {
-    icon:'⭐', title:'TOP 20',
+    icon:'⭐', title:(window._TOP_LABEL||'TOP 20'),
     filter: s=>s.top20,
     cols: [
       {h:'Подразделение',        v: s=>s.division},
@@ -3559,205 +3725,20 @@ const DD_CFG = {
     qty: null, qh: null,
     total: rows=>`${rows.length} магазинов TOP 20`
   },
-  torts: {
-    icon:'📐', title:'Торцы',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',        v: s=>s.division},
-      {h:'№ магазина',           v: s=>s.id,                               c:true},
-      {h:'Наименование магазина',v: s=>s.name},
-      {h:'Кол-во торцов Х',      v: s=>s.tortsX||'—',                     c:true},
-      {h:'Кол-во торцов G',      v: s=>s.tortsG||'—',                     c:true},
-      {h:'Золотой торец',        v: s=>s.tortsGold||'—',                  c:true},
-      {h:'Торец Кожа',           v: s=>s.tortsLeather||'—',               c:true},
-    ],
+  // Зоны оформления — генерируются из ZONES_CFG автоматически
+};
+// Добавляем записи из ZONES_CFG в DD_CFG
+ZONES_CFG.forEach(function(z) {
+  DD_CFG[z.key] = {
+    icon: z.icon,
+    title: z.label,
+    filter: z.ddFilter,
+    cols: z.ddCols,
     qty: null, qh: null,
-    total: rows=>`X=${rows.reduce((a,s)=>a+(s.tortsX||0),0)} / G=${rows.reduce((a,s)=>a+(s.tortsG||0),0)} / Золото=${rows.reduce((a,s)=>a+(s.tortsGold||0),0)} / Кожа=${rows.reduce((a,s)=>a+(s.tortsLeather||0),0)} — ${rows.length} маг.`
-  },
-  vitrina: {
-    icon:'🪟', title:'Витрина',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',                   v: s=>s.division},
-      {h:'№ магазина',                      v: s=>s.id,                    c:true},
-      {h:'Наименование магазина',           v: s=>s.name},
-      {h:'Наличие витрины',                 v: s=>s.hasVitrina?'да':'—',   c:true},
-      {h:'Кол-во витринных модулей (шт)',   v: s=>s.vitrinaModules||'—',   c:true},
-      {h:'Модули сплошные/раздельные',      v: s=>s.vitrinaType||'—',      c:true},
-      {h:'Кол-во сплошных модулей',         v: s=>s.vitrinaFull||'—',      c:true},
-      {h:'Кол-во раздельных модулей',       v: s=>s.vitrinaSplit||'—',     c:true},
-      {h:'ТВ на витрине (шт)',              v: s=>s.vitrinaTV?s.vitrinaTV:'—', c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.hasVitrina).length} маг. с витриной / итого ${rows.reduce((a,s)=>a+(s.vitrinaModules||0),0)} модулей`
-  },
-  ym: {
-    icon:'💍', title:'Ювелирный отдел',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',              v: s=>s.division},
-      {h:'№ магазина',                 v: s=>s.id,              c:true},
-      {h:'Наименование магазина',      v: s=>s.name},
-      {h:'Кол-во ЮМ',                 v: s=>s.ymCount||'—',    c:true},
-      {h:'Оформление зоны ЮИ',        v: s=>s.yiDesign||'—',   c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.ymCount>0).length} маг. с ЮМ / итого ${rows.reduce((a,s)=>a+(s.ymCount||0),0)} ЮМ`
-  },
-  gates: {
-    icon:'🚧', title:'Антикражные рамки',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',           v: s=>s.division},
-      {h:'№ магазина',              v: s=>s.id,                    c:true},
-      {h:'Наименование магазина',   v: s=>s.name},
-      {h:'Кол-во антикражных ворот',v: s=>s.antiTheftGates||'—',  c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.antiTheftGates>0).length} маг. с рамками / итого ${rows.reduce((a,s)=>a+(s.antiTheftGates||0),0)} рамок`
-  },
-  kh: {
-    icon:'🏠', title:'Кари Хоме',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',              v: s=>s.division},
-      {h:'№ магазина',                 v: s=>s.id,              c:true},
-      {h:'Наименование магазина',      v: s=>s.name},
-      {h:'Наличие зоны КХ',           v: s=>s.hasKH?'да':'—',  c:true},
-      {h:'Кол-во метров зоны КХ (шт)',v: s=>s.khMeters||'—',   c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.hasKH).length} маг. с КХ / итого ${rows.reduce((a,s)=>a+(s.khMeters||0),0).toFixed(1)} м`
-  },
-  cosmetics: {
-    icon:'💄', title:'Косметика',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',                   v: s=>s.division},
-      {h:'№ магазина',                      v: s=>s.id,                    c:true},
-      {h:'Наименование магазина',           v: s=>s.name},
-      {h:'Наличие зоны косметики',          v: s=>s.hasCosmetics?'да':'—', c:true},
-      {h:'Наличие стола косметики GS',      v: s=>s.cosmeticsGS?'да':'—',  c:true},
-      {h:'Кол-во метров уходовой косметики',v: s=>s.cosmeticsMeters||'—',  c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.hasCosmetics).length} маг. с зоной / итого ${rows.reduce((a,s)=>a+(s.cosmeticsMeters||0),0).toFixed(1)} м`
-  },
-  clothes: {
-    icon:'👗', title:'Одежда',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',          v: s=>s.division},
-      {h:'№ магазина',             v: s=>s.id,                   c:true},
-      {h:'Наименование магазина',  v: s=>s.name},
-      {h:'Наличие одежды',         v: s=>s.hasClothes?'да':'—',  c:true},
-      {h:'Кол-во метров',          v: s=>s.clothesMeters||'—',   c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.hasClothes).length} маг. с одеждой / итого ${rows.reduce((a,s)=>a+(s.clothesMeters||0),0).toFixed(1)} м`
-  },
-  sport: {
-    icon:'🏃', title:'Зона спорта',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',                           v: s=>s.division},
-      {h:'№ магазина',                              v: s=>s.id,                   c:true},
-      {h:'Наименование магазина',                   v: s=>s.name},
-      {h:'Наличие зоны спорта',                     v: s=>s.hasSport?'да':'—',    c:true},
-      {h:'Кол-во метров',                           v: s=>s.sportMeters||'—',     c:true},
-      {h:'Расположение (остров/пристенок)',          v: s=>s.sportLocation||'—',   c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.hasSport).length} маг. со спортом / итого ${rows.reduce((a,s)=>a+(s.sportMeters||0),0).toFixed(1)} м`
-  },
-  lightSigns: {
-    icon:'🔆', title:'Световые таблички',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',                 v: s=>s.division},
-      {h:'№ магазина',                    v: s=>s.id,             c:true},
-      {h:'Наименование магазина',         v: s=>s.name},
-      {h:'Световые таблички (home/кидс/спорт)', v: s=>s.lightSigns||'—', c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.lightSigns).length} маг. со световыми табличками`
-  },
-  lightboxes: {
-    icon:'💡', title:'Лайтбоксы',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',                       v: s=>s.division},
-      {h:'№ магазина',                          v: s=>s.id,                        c:true},
-      {h:'Наименование магазина',               v: s=>s.name},
-      {h:'Наличие лайтбоксов в зале (кол-во)', v: s=>s.lightboxesCount||'—',      c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.lightboxesCount>0).length} маг. с лайтбоксами / итого ${rows.reduce((a,s)=>a+(s.lightboxesCount||0),0)} шт.`
-  },
-  facade: {
-    icon:'🏢', title:'Фасад',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',                          v: s=>s.division},
-      {h:'№ магазина',                             v: s=>s.id,                    c:true},
-      {h:'Наименование магазина',                  v: s=>s.name},
-      {h:'Оформление фасада (вывеска/банер)',      v: s=>s.facadeType||'—',       c:true},
-      {h:'Реле времени на вывеске',                v: s=>s.hasTimeRelay?'да':'—', c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.facadeType&&s.facadeType!=='-'&&s.facadeType!=='нет').length} маг. с оформлением фасада`
-  },
-  regim: {
-    icon:'🕐', title:'Режимник',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',                    v: s=>s.division},
-      {h:'№ магазина',                       v: s=>s.id,                        c:true},
-      {h:'Наименование магазина',            v: s=>s.name},
-      {h:'Кол-во табличек о режиме работы', v: s=>s.workHourSignsCount||'—',   c:true},
-      {h:'Размер табличек',                  v: s=>s.workHourSignsSize||'—',    c:true},
-      {h:'Формат табличек',                  v: s=>s.workHourSignsFormat||'—',  c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.workHourSignsCount>0).length} маг. с режимником / итого ${rows.reduce((a,s)=>a+(s.workHourSignsCount||0),0)} табличек`
-  },
-  equip: {
-    icon:'🛒', title:'Корзины, стойки, Бренд зона',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',                v: s=>s.division},
-      {h:'№ магазина',                   v: s=>s.id,                c:true},
-      {h:'Наименование магазина',        v: s=>s.name},
-      {h:'Наличие корзин',               v: s=>s.hasBaskets?'да':'—', c:true},
-      {h:'Корзины с надстройками',       v: s=>s.basketsNad||'—',   c:true},
-      {h:'Корзины Кидс',                 v: s=>s.basketsKids||'—',  c:true},
-      {h:'Корзины Кари',                 v: s=>s.basketsKari||'—',  c:true},
-      {h:'Стеллаж 400×650×1650',         v: s=>s.shelfMobile||'—',  c:true},
-      {h:'Стойка Crocs 625×800×1736',    v: s=>s.shelfCrocs||'—',   c:true},
-      {h:'Тележка ТС 1150×640×1950',     v: s=>s.trolley||'—',      c:true},
-      {h:'Kari Wood',                    v: s=>s.kariWood||'—',     c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.hasBaskets||s.shelfMobile||s.shelfCrocs||s.trolley||s.kariWood).length} маг. с оборудованием`
-  },
-  cash: {
-    icon:'💰', title:'Формат кассы',
-    filter: s=>true,
-    cols: [
-      {h:'Подразделение',            v: s=>s.division},
-      {h:'№ магазина',               v: s=>s.id,                  c:true},
-      {h:'Наименование магазина',    v: s=>s.name},
-      {h:'Новая 2 р.м.',             v: s=>s.cash2new?'✓':'—',    c:true},
-      {h:'Новая 3 р.м.',             v: s=>s.cash3new?'✓':'—',    c:true},
-      {h:'Новая 4 р.м.',             v: s=>s.cash4new?'✓':'—',    c:true},
-      {h:'Станд. 2 р.м.',            v: s=>s.cash2std?'✓':'—',    c:true},
-      {h:'Станд. 3 р.м.',            v: s=>s.cash3std?'✓':'—',    c:true},
-      {h:'Касса 4 р.м. (2 станд.)',  v: s=>s.cash4std?'✓':'—',    c:true},
-    ],
-    qty: null, qh: null,
-    total: rows=>`${rows.filter(s=>s.cash2new||s.cash3new||s.cash4new||s.cash2std||s.cash3std||s.cash4std).length} маг. с данными по кассам`
-  },
-}
+    total: z.ddTotal
+  };
+});
+
 let _ddKey='', _ddBaseRows=[];
 
 function openDrill(key){
@@ -3867,6 +3848,9 @@ function exportDrillXLSX(){
 // HELP MODAL
 // ═══════════════════════════════════════
 function openHelpModal() {
+  // Обновляем название TOP в справке
+  var el = document.getElementById('helpTopLabel');
+  if (el) el.textContent = window._TOP_LABEL || 'TOP 20';
   document.getElementById('helpOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -4069,7 +4053,7 @@ document.addEventListener('keydown', function(e) {
         </div>
         <div class="help-item">
           <span class="help-icon">⭐</span>
-          <span>Магазины со статусом <b>TOP 20</b> отмечены значком в списке и карточке.</span>
+          <span>Магазины со статусом <b id="helpTopLabel">TOP 20</b> отмечены значком в списке и карточке.</span>
         </div>
         <div class="help-item">
           <span class="help-icon">🗺️</span>
