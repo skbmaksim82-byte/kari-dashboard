@@ -1372,8 +1372,14 @@ function doLogout() {
   document.getElementById('loginBadge').style.display = 'none';
   document.getElementById('logoutBtn').style.display = 'none';
 
+  // Показываем экран входа СРАЗУ — до любых других операций
+  var screen = document.getElementById('loginScreen');
+  screen.style.display = 'flex';
+  screen.style.opacity = '1';
+  screen.classList.remove('fade-out');
+
   // Восстанавливаем UI (если был режим магазина)
-  filteredStores = STORES ? [...STORES] : [];
+  try { filteredStores = (typeof STORES !== 'undefined' && STORES) ? [...STORES] : []; } catch(e) { filteredStores = []; }
   selectedStore = null;
   activeTab = 'overview';
   _storeModeStore = null;
@@ -1385,14 +1391,8 @@ function doLogout() {
   var storeBanner = document.getElementById('storeBanner');
   if (storeBanner) storeBanner.remove();
 
-  if (typeof renderMain === 'function') renderMain();
-  if (typeof renderStoreList === 'function') renderStoreList();
-
-  // Показываем экран входа
-  var screen = document.getElementById('loginScreen');
-  screen.style.display = 'flex';
-  screen.style.opacity = '1';
-  screen.classList.remove('fade-out');
+  try { if (typeof renderMain === 'function') renderMain(); } catch(e) {}
+  try { if (typeof renderStoreList === 'function') renderStoreList(); } catch(e) {}
 
   // Фокус
   setTimeout(function(){
