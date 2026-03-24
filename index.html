@@ -1325,36 +1325,24 @@ function applyStoreMode(storeId) {
     return;
   }
 
-  // 1. Ограничиваем ВСЕ данные — только этот магазин во всех вкладках
-  filteredStores = [store];
-
-  // 2. Sidebar — скрываем (фильтры и список не нужны)
+  // 1. Sidebar — скрываем (фильтры и список не нужны)
   var sidebar = document.querySelector('.sidebar');
   if (sidebar) sidebar.style.display = 'none';
 
-  // 3. Скрываем кнопку ☁️ Обновить
+  // 2. Скрываем кнопку ☁️ Обновить
   var refreshBtn = document.getElementById('mainRefreshBtn');
   if (refreshBtn) refreshBtn.style.display = 'none';
 
-  // 4. Скрываем upload-btn если есть
+  // 3. Скрываем upload-btn если есть
   var uploadBtn = document.querySelector('.upload-btn');
   if (uploadBtn && uploadBtn !== document.getElementById('mainRefreshBtn')) uploadBtn.style.display = 'none';
 
-  // 5. Выбираем магазин и открываем паспорт
+  // 4. Выбираем магазин и открываем паспорт
   selectedStore = store;
   activeTab = 'store';
 
-  // 6. Перерисовываем
+  // 5. Перерисовываем
   if (typeof renderMain === 'function') renderMain();
-
-  // 7. Патчим applyFilters — блокируем выход данных за пределы одного магазина
-  applyFilters = function() {
-    filteredStores = [store];
-    if (typeof renderMain === 'function') renderMain();
-  };
-
-  // 8. Добавляем плашку "режим магазина" под вкладками
-  _storeModeStore = store;
 }
 
 function doLogout() {
@@ -1386,22 +1374,18 @@ function doLogout() {
   var logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) logoutBtn.style.display = 'none';
 
-  // 5. Восстанавливаем UI — всё в try/catch чтобы не падать
+  // 5. Восстанавливаем UI
   try {
-    // STORES объявлен как const ниже по коду — обращаемся через window
     var allStores = window.STORES || [];
     if (typeof filteredStores !== 'undefined') filteredStores = allStores.slice();
   } catch(e) {}
   try { selectedStore = null; } catch(e) {}
   try { activeTab = 'overview'; } catch(e) {}
-  try { window._storeModeStore = null; } catch(e) {}
 
   var sidebar = document.querySelector('.sidebar');
   if (sidebar) sidebar.style.display = '';
   var refreshBtn = document.getElementById('mainRefreshBtn');
   if (refreshBtn) refreshBtn.style.display = '';
-  var storeBanner = document.getElementById('storeBanner');
-  if (storeBanner) storeBanner.remove();
 
   try { if (typeof renderMain === 'function') renderMain(); } catch(e) {}
   try { if (typeof renderStoreList === 'function') renderStoreList(); } catch(e) {}
@@ -2158,24 +2142,11 @@ function renderMain() {
     el.style.flexDirection = '';
     el.style.padding = '';
   }
-  // Баннер режима магазина
-  var storeBannerHtml = '';
-  if (window._storeModeStore) {
-    var sb = window._storeModeStore;
-    storeBannerHtml = '<div id="storeBanner" style="' +
-      'background:linear-gradient(135deg,#FFF0F7,#FCE4EC);' +
-      'border:1.5px solid #F06292;border-radius:12px;' +
-      'padding:10px 18px;margin-bottom:16px;' +
-      'display:flex;align-items:center;gap:10px;flex-shrink:0;">' +
-      '<span style="font-size:18px">🏪</span>' +
-      '<div>' +
-        '<div style="font-size:13px;font-weight:700;color:#880E4F">Режим просмотра магазина</div>' +
-        '<div style="font-size:11px;color:#8C4D6E">№' + sb.id + ' · ' + (sb.city||'') + ' · ' + (sb.name||'') + ' — отображаются только данные вашего магазина</div>' +
-      '</div>' +
-    '</div>';
-  }
+  // В режиме магазина — только вкладка "Паспорт", без остальных
+  var isStoreMode = (_authDone && _authStoreId !== null);
+  if (isStoreMode) activeTab = 'store';
 
-  el.innerHTML = storeBannerHtml + `
+  el.innerHTML = (isStoreMode ? '' : `
     <div class="tabs" style="${(activeTab === 'order' || activeTab === 'posm_order') ? 'margin:16px 24px 0;flex-shrink:0' : ''}">
       <button class="tab-btn ${activeTab === 'overview' ? 'active' : ''}" onclick="setTab('overview')">📊 Обзор</button>
       <button class="tab-btn ${activeTab === 'order' ? 'active' : ''}" onclick="setTab('order')">📋 Сводные данные</button>
@@ -2186,7 +2157,7 @@ function renderMain() {
     ${activeTab === 'order' ? renderOrderTable() : ''}
     ${activeTab === 'posm_order' ? renderPosmOrder() : ''}
     ${activeTab === 'store' ? renderStoreDetail() : ''}
-  \`;
+  `) + (isStoreMode ? renderStoreDetail() : '');
 }
 
 function setTab(tab) {
