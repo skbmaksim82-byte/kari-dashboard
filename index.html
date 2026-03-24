@@ -2125,10 +2125,13 @@ function renderStoreDetail() {
           ${[s.region, s.division, s.legalEntity].filter(Boolean).join(' · ')}
         </div>
 
-        <!-- Кнопка планировки -->
-        <div style="margin-top:12px">
+        <!-- Кнопки: планировка + сообщить о неточности -->
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
           <button onclick="openPlanModal()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#E8162A,#C2185B);color:#fff;border:none;border-radius:9px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 12px rgba(232,22,42,0.25);transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
             🗺️ Планировка магазина
+          </button>
+          <button id="reportBtnMain" onclick="openReportModal()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#fff5f8,#fff);color:#C2185B;border:2px solid #F06292;border-radius:9px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 12px rgba(194,24,91,0.12);transition:all .2s;position:relative;overflow:hidden" onmouseover="this.style.background='linear-gradient(135deg,#FCE4EC,#fff5f8)';this.style.boxShadow='0 4px 18px rgba(194,24,91,0.25)'" onmouseout="this.style.background='linear-gradient(135deg,#fff5f8,#fff)';this.style.boxShadow='0 3px 12px rgba(194,24,91,0.12)'">
+            ✏️ Сообщить о неточности
           </button>
         </div>
       </div>
@@ -4069,6 +4072,535 @@ document.addEventListener('keydown', function(e) {
     </div>
   </div>
 </div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- МОДАЛ: СООБЩИТЬ О НЕТОЧНОСТИ                                   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<style>
+/* ── overlay ── */
+#reportOverlay {
+  position:fixed;inset:0;z-index:1200;
+  background:rgba(45,10,26,0.6);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+#reportOverlay.open { opacity:1;pointer-events:all; }
+
+/* ── box ── */
+#reportBox {
+  background:#fff;border-radius:20px;width:100%;max-width:660px;max-height:92vh;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 24px 80px rgba(194,24,91,0.25);
+  transform:translateY(20px) scale(.97);transition:transform .28s cubic-bezier(.32,.72,0,1);
+}
+#reportOverlay.open #reportBox { transform:translateY(0) scale(1); }
+
+/* ── header ── */
+.rpt-head {
+  background:linear-gradient(135deg,#880E4F,#C2185B);
+  padding:16px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;
+}
+.rpt-head-icon {
+  width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.2);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+}
+.rpt-head-title { color:#fff;font-family:'Montserrat',sans-serif;font-weight:800;font-size:16px;flex:1; }
+.rpt-head-sub { color:rgba(255,255,255,.7);font-size:11px;margin-top:2px; }
+.rpt-close {
+  width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,.2);
+  color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:background .15s;
+}
+.rpt-close:hover { background:rgba(255,255,255,.35); }
+
+/* ── store info bar ── */
+.rpt-store-bar {
+  background:linear-gradient(135deg,#FFF0F7,#FDE8F2);
+  border-bottom:1px solid #F8BBD9;
+  padding:12px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0;
+}
+.rpt-store-num {
+  width:44px;height:44px;border-radius:10px;
+  background:linear-gradient(135deg,#E8162A,#C2185B);
+  color:#fff;font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.rpt-store-info { flex:1;min-width:0; }
+.rpt-store-name { font-weight:700;font-size:14px;color:#2D0A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.rpt-store-meta { font-size:11px;color:#8C4D6E;margin-top:2px; }
+
+/* ── scroll body ── */
+.rpt-body { flex:1;overflow-y:auto;padding:20px; }
+.rpt-body::-webkit-scrollbar { width:4px; }
+.rpt-body::-webkit-scrollbar-thumb { background:#F8BBD9;border-radius:2px; }
+
+/* ── section label ── */
+.rpt-section-lbl {
+  font-size:11px;font-weight:700;color:#8C4D6E;text-transform:uppercase;
+  letter-spacing:.7px;margin-bottom:6px;margin-top:18px;
+}
+.rpt-section-lbl:first-child { margin-top:0; }
+
+/* ── items list ── */
+.rpt-items { display:flex;flex-direction:column;gap:12px; }
+
+/* ── single item card ── */
+.rpt-item {
+  background:linear-gradient(135deg,#FFFAFD,#FFF5FA);
+  border:1.5px solid #F8BBD9;border-radius:14px;padding:16px;position:relative;
+  transition:border-color .2s,box-shadow .2s;
+  animation:rptSlideIn .22s ease;
+}
+@keyframes rptSlideIn {
+  from { opacity:0;transform:translateY(-8px); }
+  to   { opacity:1;transform:translateY(0); }
+}
+.rpt-item:hover { border-color:#E91E8C;box-shadow:0 4px 14px rgba(194,24,91,0.1); }
+.rpt-item-remove {
+  position:absolute;top:10px;right:10px;
+  width:24px;height:24px;border-radius:50%;border:none;
+  background:rgba(194,24,91,0.1);color:#C2185B;font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;line-height:1;
+}
+.rpt-item-remove:hover { background:rgba(194,24,91,0.22); }
+.rpt-item-row { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px; }
+.rpt-item-row-3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:0; }
+
+/* ── field ── */
+.rpt-field { display:flex;flex-direction:column;gap:4px; }
+.rpt-field label { font-size:11px;font-weight:600;color:#8C4D6E;letter-spacing:.3px; }
+.rpt-field select, .rpt-field input {
+  background:rgba(255,255,255,0.9);border:1.5px solid #F8BBD9;
+  border-radius:8px;padding:8px 10px;font-size:12px;font-family:'Inter',sans-serif;
+  color:#2D0A1A;outline:none;transition:border .15s;width:100%;
+}
+.rpt-field select:focus, .rpt-field input:focus { border-color:#C2185B; }
+.rpt-field input[readonly] {
+  background:rgba(248,187,217,0.15);color:#8C4D6E;font-style:italic;cursor:default;
+}
+.rpt-field input.rpt-new {
+  border-color:#C2185B;background:rgba(232,22,42,0.04);font-weight:600;
+}
+
+/* ── add button ── */
+.rpt-add-btn {
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;padding:11px;border-radius:10px;
+  border:2px dashed #F8BBD9;background:transparent;
+  color:#8C4D6E;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;
+  cursor:pointer;transition:all .18s;margin-top:4px;
+}
+.rpt-add-btn:hover { border-color:#C2185B;color:#C2185B;background:rgba(194,24,91,0.04); }
+
+/* ── footer ── */
+.rpt-footer {
+  padding:16px 20px;border-top:1px solid #F8BBD9;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-shrink:0;background:#fff;
+}
+.rpt-footer-hint { font-size:11px;color:#8C4D6E;line-height:1.5; }
+.rpt-send-btn {
+  display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,#1A4D8F,#1565C0);color:#fff;
+  border:none;border-radius:11px;padding:11px 22px;
+  font-size:13px;font-weight:700;font-family:'Inter',sans-serif;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  box-shadow:0 4px 14px rgba(21,101,192,0.35);
+  transition:all .2s;position:relative;overflow:hidden;
+}
+.rpt-send-btn:hover { transform:translateY(-1px);box-shadow:0 6px 20px rgba(21,101,192,0.45); }
+.rpt-send-btn:active { transform:translateY(1px); }
+.rpt-send-btn .rpt-btn-ripple {
+  position:absolute;border-radius:50%;background:rgba(255,255,255,0.35);
+  width:0;height:0;top:50%;left:50%;transform:translate(-50%,-50%);
+  transition:width .5s ease,height .5s ease,opacity .5s ease;opacity:0;
+}
+.rpt-send-btn.rpt-sending .rpt-btn-ripple { width:300px;height:300px;opacity:0; }
+
+/* ── success toast ── */
+#rptToast {
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:linear-gradient(135deg,#1A4D8F,#1565C0);color:#fff;
+  padding:12px 24px;border-radius:30px;font-weight:700;font-size:14px;
+  box-shadow:0 8px 24px rgba(21,101,192,0.4);z-index:1400;
+  transition:transform .35s cubic-bezier(.32,.72,0,1),opacity .35s;
+  opacity:0;white-space:nowrap;
+}
+#rptToast.show { transform:translateX(-50%) translateY(0);opacity:1; }
+
+/* ── pulse animation on button ── */
+@keyframes rptPulse {
+  0%   { box-shadow:0 0 0 0 rgba(194,24,91,0.5); }
+  70%  { box-shadow:0 0 0 10px rgba(194,24,91,0); }
+  100% { box-shadow:0 0 0 0 rgba(194,24,91,0); }
+}
+.rpt-pulse { animation:rptPulse 1.5s ease 3; }
+</style>
+
+<div id="reportOverlay" onclick="closeReportModal(event)">
+  <div id="reportBox" onclick="event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="rpt-head">
+      <div class="rpt-head-icon">✏️</div>
+      <div>
+        <div class="rpt-head-title">Сообщить о неточности</div>
+        <div class="rpt-head-sub">Данные отправятся менеджеру по рекламе</div>
+      </div>
+      <button class="rpt-close" onclick="closeReportModal()">✕</button>
+    </div>
+
+    <!-- Store info bar -->
+    <div class="rpt-store-bar">
+      <div class="rpt-store-num" id="rptStoreNum">—</div>
+      <div class="rpt-store-info">
+        <div class="rpt-store-name" id="rptStoreName">Выберите магазин</div>
+        <div class="rpt-store-meta" id="rptStoreMeta"></div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="rpt-body">
+      <div class="rpt-section-lbl">Список неточностей</div>
+      <div class="rpt-items" id="rptItems">
+        <!-- items generated by JS -->
+      </div>
+      <button class="rpt-add-btn" onclick="rptAddItem()" style="margin-top:12px">
+        ＋ Добавить ещё неточность
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <div class="rpt-footer">
+      <div class="rpt-footer-hint">
+        📧 Отправка в Outlook<br>на t.zaharova@kari.com
+      </div>
+      <button class="rpt-send-btn" id="rptSendBtn" onclick="rptSendMail()">
+        <span class="rpt-btn-ripple" id="rptRipple"></span>
+        📧 Отправить менеджеру
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div id="rptToast">✅ Outlook открыт — проверьте письмо!</div>
+
+<script>
+// ═══════════════════════════════════════════
+// REPORT MODAL — логика формы неточностей
+// ═══════════════════════════════════════════
+
+// Разделы и подразделы
+var RPT_SECTIONS = {
+  '📐 Торцы': {
+    fields: ['Кол-во торцов Х','Кол-во торцов G','Золотой торец','Торец Кожа'],
+    get: function(s){ return {
+      'Кол-во торцов Х': s.tortsX||'—',
+      'Кол-во торцов G': s.tortsG||'—',
+      'Золотой торец': s.tortsGold||'—',
+      'Торец Кожа': s.tortsLeather||'—'
+    };}
+  },
+  '🪟 Витрина': {
+    fields: ['Наличие витрины','Кол-во модулей','Тип модулей','Сплошных','Раздельных','ТВ на витрине'],
+    get: function(s){ return {
+      'Наличие витрины': s.hasVitrina?'Да':'Нет',
+      'Кол-во модулей': s.vitrinaModules||'—',
+      'Тип модулей': s.vitrinaType||'—',
+      'Сплошных': s.vitrinaFull||'—',
+      'Раздельных': s.vitrinaSplit||'—',
+      'ТВ на витрине': s.vitrinaTV||'—'
+    };}
+  },
+  '💍 Ювелирный отдел': {
+    fields: ['Кол-во ЮМ','Оформление ЮИ'],
+    get: function(s){ return {
+      'Кол-во ЮМ': s.ymCount||'—',
+      'Оформление ЮИ': s.yiDesign||'—'
+    };}
+  },
+  '🚧 Антикражные рамки': {
+    fields: ['Кол-во антикражных ворот'],
+    get: function(s){ return {'Кол-во антикражных ворот': s.antiTheftGates||'—'};}
+  },
+  '🏠 Кари Хоме': {
+    fields: ['Наличие зоны КХ','Кол-во метров КХ'],
+    get: function(s){ return {
+      'Наличие зоны КХ': s.hasKH?'Да':'Нет',
+      'Кол-во метров КХ': s.khMeters||'—'
+    };}
+  },
+  '💄 Косметика': {
+    fields: ['Наличие косметики','Стол GS','Метры уходовой'],
+    get: function(s){ return {
+      'Наличие косметики': s.hasCosmetics?'Да':'Нет',
+      'Стол GS': s.cosmeticsGS?'Да':'Нет',
+      'Метры уходовой': s.cosmeticsMeters||'—'
+    };}
+  },
+  '👗 Одежда': {
+    fields: ['Наличие одежды','Кол-во метров'],
+    get: function(s){ return {
+      'Наличие одежды': s.hasClothes?'Да':'Нет',
+      'Кол-во метров': s.clothesMeters||'—'
+    };}
+  },
+  '🏃 Зона спорта': {
+    fields: ['Наличие зоны спорта','Кол-во метров','Расположение'],
+    get: function(s){ return {
+      'Наличие зоны спорта': s.hasSport?'Да':'Нет',
+      'Кол-во метров': s.sportMeters||'—',
+      'Расположение': s.sportLocation||'—'
+    };}
+  },
+  '🔆 Световые таблички': {
+    fields: ['Установлены (home/кидс/спорт)'],
+    get: function(s){ return {'Установлены (home/кидс/спорт)': s.lightSigns||'—'};}
+  },
+  '💡 Лайтбоксы': {
+    fields: ['Кол-во лайтбоксов'],
+    get: function(s){ return {'Кол-во лайтбоксов': s.lightboxesCount||'—'};}
+  },
+  '🏢 Фасад': {
+    fields: ['Оформление фасада','Реле времени'],
+    get: function(s){ return {
+      'Оформление фасада': s.facadeType||'—',
+      'Реле времени': s.hasTimeRelay?'Да':'Нет'
+    };}
+  },
+  '🕐 Режимник': {
+    fields: ['Кол-во табличек','Размер табличек','Формат табличек'],
+    get: function(s){ return {
+      'Кол-во табличек': s.workHourSignsCount||'—',
+      'Размер табличек': s.workHourSignsSize||'—',
+      'Формат табличек': s.workHourSignsFormat||'—'
+    };}
+  },
+  '🛒 Корзины, стойки, Бренд зона': {
+    fields: ['Наличие корзин','Корзины с надстройками','Корзины Кидс','Корзины Кари','Стеллаж 400×650','Стойка Crocs','Тележка','Kari Wood'],
+    get: function(s){ return {
+      'Наличие корзин': s.hasBaskets?'Да':'Нет',
+      'Корзины с надстройками': s.basketsNad||'—',
+      'Корзины Кидс': s.basketsKids||'—',
+      'Корзины Кари': s.basketsKari||'—',
+      'Стеллаж 400×650': s.shelfMobile||'—',
+      'Стойка Crocs': s.shelfCrocs||'—',
+      'Тележка': s.trolley||'—',
+      'Kari Wood': s.kariWood||'—'
+    };}
+  },
+  '💰 Формат кассы': {
+    fields: ['Новая касса 2 р.м.','Новая касса 3 р.м.','Новая касса 4 р.м.','Стандартная касса 2 р.м.','Стандартная касса 3 р.м.','Касса 4 р.м.'],
+    get: function(s){ return {
+      'Новая касса 2 р.м.': s.cash2new?'Да':'Нет',
+      'Новая касса 3 р.м.': s.cash3new?'Да':'Нет',
+      'Новая касса 4 р.м.': s.cash4new?'Да':'Нет',
+      'Стандартная касса 2 р.м.': s.cash2std?'Да':'Нет',
+      'Стандартная касса 3 р.м.': s.cash3std?'Да':'Нет',
+      'Касса 4 р.м.': s.cash4std?'Да':'Нет'
+    };}
+  }
+};
+
+var _rptStore = null;
+var _rptItemCount = 0;
+
+function openReportModal() {
+  _rptStore = selectedStore;
+  if (!_rptStore) return;
+
+  // Заполняем шапку магазина
+  document.getElementById('rptStoreNum').textContent = _rptStore.id;
+  document.getElementById('rptStoreName').textContent =
+    (_rptStore.city ? _rptStore.city + ' · ' : '') + (_rptStore.name || '');
+  document.getElementById('rptStoreMeta').textContent =
+    [_rptStore.region, _rptStore.division, _rptStore.legalEntity].filter(Boolean).join(' · ');
+
+  // Сбрасываем и создаём первый item
+  _rptItemCount = 0;
+  document.getElementById('rptItems').innerHTML = '';
+  rptAddItem();
+
+  // Открываем с анимацией
+  var ov = document.getElementById('reportOverlay');
+  ov.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Pulse-анимация на кнопке отправки
+  setTimeout(function(){
+    var sb = document.getElementById('rptSendBtn');
+    if (sb) { sb.classList.add('rpt-pulse'); setTimeout(function(){ sb.classList.remove('rpt-pulse'); }, 4500); }
+  }, 600);
+}
+
+function closeReportModal(e) {
+  if (e && e.target !== document.getElementById('reportOverlay')) return;
+  document.getElementById('reportOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Добавить строку неточности
+function rptAddItem() {
+  var id = ++_rptItemCount;
+  var sections = Object.keys(RPT_SECTIONS);
+  var sectionOpts = sections.map(function(s){
+    return '<option value="'+s+'">'+s+'</option>';
+  }).join('');
+
+  var firstSec = sections[0];
+  var firstFields = RPT_SECTIONS[firstSec].fields;
+  var firstCurr = _rptStore ? RPT_SECTIONS[firstSec].get(_rptStore) : {};
+  var subfieldOpts = firstFields.map(function(f){
+    return '<option value="'+f+'">'+f+'</option>';
+  }).join('');
+  var firstFieldName = firstFields[0];
+  var firstCurrVal = firstCurr[firstFieldName] || '—';
+
+  var el = document.createElement('div');
+  el.className = 'rpt-item';
+  el.id = 'rptItem_'+id;
+  el.innerHTML =
+    (id > 1 ? '<button class="rpt-item-remove" onclick="rptRemoveItem('+id+')" title="Удалить">✕</button>' : '') +
+    '<div class="rpt-item-row">' +
+      '<div class="rpt-field">' +
+        '<label>РАЗДЕЛ</label>' +
+        '<select id="rptSec_'+id+'" onchange="rptOnSectionChange('+id+')">' + sectionOpts + '</select>' +
+      '</div>' +
+      '<div class="rpt-field">' +
+        '<label>ПОДРАЗДЕЛ</label>' +
+        '<select id="rptSub_'+id+'" onchange="rptOnSubChange('+id+')">' + subfieldOpts + '</select>' +
+      '</div>' +
+    '</div>' +
+    '<div class="rpt-item-row-3">' +
+      '<div class="rpt-field">' +
+        '<label>ТЕКУЩЕЕ ЗНАЧЕНИЕ</label>' +
+        '<input type="text" id="rptCur_'+id+'" readonly value="'+firstCurrVal+'">' +
+      '</div>' +
+      '<div class="rpt-field" style="grid-column:span 2">' +
+        '<label>✏️ ИСПРАВИТЬ НА</label>' +
+        '<input type="text" id="rptNew_'+id+'" class="rpt-new" placeholder="Введите правильное значение..." autocomplete="off">' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('rptItems').appendChild(el);
+}
+
+function rptRemoveItem(id) {
+  var el = document.getElementById('rptItem_'+id);
+  if (el) {
+    el.style.opacity = '0'; el.style.transform = 'translateX(-10px)';
+    el.style.transition = 'all .2s';
+    setTimeout(function(){ el.remove(); }, 200);
+  }
+}
+
+function rptOnSectionChange(id) {
+  var secName = document.getElementById('rptSec_'+id).value;
+  var cfg = RPT_SECTIONS[secName];
+  var fields = cfg ? cfg.fields : [];
+  var subSel = document.getElementById('rptSub_'+id);
+  subSel.innerHTML = fields.map(function(f){ return '<option value="'+f+'">'+f+'</option>'; }).join('');
+  rptOnSubChange(id);
+}
+
+function rptOnSubChange(id) {
+  var secName = document.getElementById('rptSec_'+id).value;
+  var subName = document.getElementById('rptSub_'+id).value;
+  var cfg = RPT_SECTIONS[secName];
+  var curVal = '—';
+  if (cfg && _rptStore) {
+    var vals = cfg.get(_rptStore);
+    curVal = vals[subName] !== undefined ? vals[subName] : '—';
+  }
+  document.getElementById('rptCur_'+id).value = curVal;
+}
+
+function rptSendMail() {
+  if (!_rptStore) return;
+
+  // Собираем все строки
+  var items = document.querySelectorAll('.rpt-item');
+  var lines = [];
+  var hasNew = false;
+  items.forEach(function(el) {
+    var idMatch = el.id.match(/rptItem_(\d+)/);
+    if (!idMatch) return;
+    var n = idMatch[1];
+    var sec = (document.getElementById('rptSec_'+n)||{}).value || '';
+    var sub = (document.getElementById('rptSub_'+n)||{}).value || '';
+    var cur = (document.getElementById('rptCur_'+n)||{}).value || '—';
+    var nw  = ((document.getElementById('rptNew_'+n)||{}).value || '').trim();
+    if (!nw) return;
+    hasNew = true;
+    lines.push((lines.length+1) + '. ' + sec + ' / ' + sub + '\r\n   Сейчас: ' + cur + '\r\n   Исправить на: ' + nw);
+  });
+
+  if (!hasNew) {
+    // Shake-анимация на полях без значений
+    document.querySelectorAll('.rpt-new').forEach(function(inp){
+      if (!inp.value.trim()) {
+        inp.style.borderColor = '#E8162A';
+        inp.style.animation = 'none';
+        setTimeout(function(){
+          inp.style.animation = 'rptShake .35s ease';
+          inp.addEventListener('animationend', function(){ inp.style.animation=''; }, {once:true});
+        }, 10);
+      }
+    });
+    return;
+  }
+
+  var storeId   = _rptStore.id;
+  var storeName = [_rptStore.city, _rptStore.name].filter(Boolean).join(' · ');
+  var region    = [_rptStore.region, _rptStore.division].filter(Boolean).join(' · ');
+  var date      = new Date().toLocaleDateString('ru-RU');
+
+  var subject = 'Паспорт магазина ' + storeId;
+
+  var body =
+    'Добрый день, Татьяна!\r\n\r\n' +
+    'Магазин сообщает о неточностях в паспорте магазина.\r\n\r\n' +
+    '──────────────────────────────\r\n' +
+    'МАГАЗИН: №' + storeId + ' · ' + storeName + '\r\n' +
+    'РЕГИОН: ' + region + '\r\n' +
+    'ДАТА: ' + date + '\r\n' +
+    '──────────────────────────────\r\n\r\n' +
+    'НЕТОЧНОСТИ:\r\n\r\n' +
+    lines.join('\r\n\r\n') +
+    '\r\n\r\n──────────────────────────────\r\n' +
+    'Сообщение отправлено через дашборд Kari «Паспорт магазинов»';
+
+  // Ripple-эффект на кнопке
+  var btn = document.getElementById('rptSendBtn');
+  btn.classList.add('rpt-sending');
+  setTimeout(function(){ btn.classList.remove('rpt-sending'); }, 600);
+
+  // Открываем Outlook
+  window.location.href = 'mailto:t.zaharova@kari.com'
+    + '?subject=' + encodeURIComponent(subject)
+    + '&body='    + encodeURIComponent(body);
+
+  // Toast
+  setTimeout(function(){
+    var toast = document.getElementById('rptToast');
+    toast.classList.add('show');
+    setTimeout(function(){ toast.classList.remove('show'); }, 4000);
+    // Закрываем модал
+    setTimeout(function(){
+      document.getElementById('reportOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }, 1200);
+  }, 400);
+}
+
+// Shake-keyframe
+var rptStyleEl = document.createElement('style');
+rptStyleEl.textContent = '@keyframes rptShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}';
+document.head.appendChild(rptStyleEl);
+</script>
 
 </body>
 </html>
