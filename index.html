@@ -1358,31 +1358,43 @@ function applyStoreMode(storeId) {
 }
 
 function doLogout() {
+  // 1. СРАЗУ показываем экран входа — ничего не должно этому мешать
+  var screen = document.getElementById('loginScreen');
+  if (screen) {
+    screen.style.display = 'flex';
+    screen.style.opacity = '1';
+    screen.classList.remove('fade-out');
+  }
+
+  // 2. Сбрасываем состояние авторизации
   _authDone = false;
   _authStoreId = null;
   _loginRole = 'store';
 
-  // Сброс формы
-  document.getElementById('loginStoreId').value = '';
-  document.getElementById('loginManagerPwd').value = '';
-  document.getElementById('loginError').classList.remove('show');
+  // 3. Сбрасываем форму
+  var sid = document.getElementById('loginStoreId');
+  if (sid) sid.value = '';
+  var mpwd = document.getElementById('loginManagerPwd');
+  if (mpwd) mpwd.value = '';
+  var err = document.getElementById('loginError');
+  if (err) err.classList.remove('show');
   loginSetRole('store');
 
-  // Скрываем бейдж
-  document.getElementById('loginBadge').style.display = 'none';
-  document.getElementById('logoutBtn').style.display = 'none';
+  // 4. Скрываем бейдж и кнопку выхода
+  var badge = document.getElementById('loginBadge');
+  if (badge) badge.style.display = 'none';
+  var logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.style.display = 'none';
 
-  // Показываем экран входа СРАЗУ — до любых других операций
-  var screen = document.getElementById('loginScreen');
-  screen.style.display = 'flex';
-  screen.style.opacity = '1';
-  screen.classList.remove('fade-out');
-
-  // Восстанавливаем UI (если был режим магазина)
-  try { filteredStores = (typeof STORES !== 'undefined' && STORES) ? [...STORES] : []; } catch(e) { filteredStores = []; }
-  selectedStore = null;
-  activeTab = 'overview';
-  _storeModeStore = null;
+  // 5. Восстанавливаем UI — всё в try/catch чтобы не падать
+  try {
+    // STORES объявлен как const ниже по коду — обращаемся через window
+    var allStores = window.STORES || [];
+    if (typeof filteredStores !== 'undefined') filteredStores = allStores.slice();
+  } catch(e) {}
+  try { selectedStore = null; } catch(e) {}
+  try { activeTab = 'overview'; } catch(e) {}
+  try { window._storeModeStore = null; } catch(e) {}
 
   var sidebar = document.querySelector('.sidebar');
   if (sidebar) sidebar.style.display = '';
@@ -1394,9 +1406,10 @@ function doLogout() {
   try { if (typeof renderMain === 'function') renderMain(); } catch(e) {}
   try { if (typeof renderStoreList === 'function') renderStoreList(); } catch(e) {}
 
-  // Фокус
+  // 6. Фокус на поле ввода
   setTimeout(function(){
-    document.getElementById('loginStoreId').focus();
+    var inp = document.getElementById('loginStoreId');
+    if (inp) inp.focus();
   }, 100);
 }
 
