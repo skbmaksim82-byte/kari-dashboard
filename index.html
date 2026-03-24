@@ -61,7 +61,49 @@ header {
   display: flex; flex-direction: column;
   overflow: hidden; backdrop-filter: blur(10px);
 }
-.main { flex: 1; overflow-y: auto; padding: 24px; background: transparent; }
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+}
+/* Вкладки — не скроллируются */
+#mainTabs {
+  flex-shrink: 0;
+  padding: 16px 24px 0;
+  background: transparent;
+}
+/* Основной контент — скроллируется */
+#mainBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24px 24px;
+}
+#mainBody::-webkit-scrollbar { width: 6px; }
+#mainBody::-webkit-scrollbar-track { background: transparent; }
+#mainBody::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+/* В паспорте магазина — заголовок тоже не скроллируется */
+#mainBody.passport-mode {
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#passportHeader {
+  flex-shrink: 0;
+  padding: 16px 0 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+#passportScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 16px;
+}
+#passportScroll::-webkit-scrollbar { width: 6px; }
+#passportScroll::-webkit-scrollbar-track { background: transparent; }
+#passportScroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 /* ─── SIDEBAR ─── */
 .sb-section { padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
@@ -223,7 +265,7 @@ header {
 }
 
 /* ─── TABS ─── */
-.tabs { display: flex; gap: 4px; margin-bottom: 20px; background: rgba(255,255,255,0.7); border-radius: 10px; padding: 4px; box-shadow: inset 2px 2px 6px rgba(194,24,91,0.1); backdrop-filter: blur(8px); }
+.tabs { display: flex; gap: 4px; margin-bottom: 0; background: rgba(255,255,255,0.7); border-radius: 10px; padding: 4px; box-shadow: inset 2px 2px 6px rgba(194,24,91,0.1); backdrop-filter: blur(8px); }
 .tab-btn {
   flex: 1; padding: 8px 12px; border-radius: 7px; border: none;
   background: transparent; color: var(--muted); font-size: 13px; cursor: pointer;
@@ -264,29 +306,18 @@ header {
 .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 /* ─── STORE MODE STICKY HEADER ─── */
-.store-mode-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(255,255,255,0.97);
-  backdrop-filter: blur(12px);
-  border-bottom: 2px solid var(--border);
-  padding: 14px 24px 12px;
-  margin: -24px -24px 20px -24px;
-  box-shadow: 0 4px 20px rgba(194,24,91,0.1);
-}
-.store-mode-header .smh-title {
+.smh-title {
   font-size: 15px; font-weight: 800; color: var(--text);
   line-height: 1.5; display: flex; flex-wrap: wrap;
   align-items: center; gap: 4px 0;
 }
-.store-mode-header .smh-sub {
+.smh-sub {
   font-size: 11px; color: var(--muted); font-weight: 500;
-  margin-top: 3px; letter-spacing: .3px;
+  margin-top: 4px; letter-spacing: .3px;
 }
-.store-mode-header .smh-btns {
+.smh-btns {
   display: flex; gap: 10px; flex-wrap: wrap;
-  align-items: center; margin-top: 10px;
+  align-items: center; margin-top: 12px;
 }
 
 /* ─── PLACEHOLDER ─── */
@@ -1181,12 +1212,12 @@ window._xlsxReady = typeof XLSX !== 'undefined';
 
 /* Бейдж роли в правом нижнем углу */
 #loginBadge {
-  position:fixed;bottom:20px;right:20px;z-index:9100;
-  background:linear-gradient(135deg,#880E4F,#C2185B);color:#fff;
-  padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;
-  font-family:'Montserrat',sans-serif;letter-spacing:.4px;
-  box-shadow:0 4px 14px rgba(194,24,91,0.35);
-  display:none;
+  display:none;align-items:center;gap:6px;
+  background:rgba(255,255,255,.18);color:#fff;
+  border:1.5px solid rgba(255,255,255,.45);border-radius:20px;
+  padding:5px 14px;font-size:12px;font-weight:700;
+  font-family:'Montserrat',sans-serif;letter-spacing:.3px;
+  white-space:nowrap;flex-shrink:0;
 }
 
 /* Кнопка выхода в header */
@@ -1244,7 +1275,6 @@ window._xlsxReady = typeof XLSX !== 'undefined';
   </div>
 </div>
 
-<div id="loginBadge"></div>
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -1321,11 +1351,11 @@ function loginSuccess(role, storeId) {
   var logoutBtn = document.getElementById('logoutBtn');
   if (role === 'manager') {
     badge.textContent = '👤 Менеджер';
-    badge.style.display = 'block';
+    badge.style.display = 'flex';
     logoutBtn.style.display = 'flex';
   } else {
     badge.textContent = '🏪 Магазин №' + storeId;
-    badge.style.display = 'block';
+    badge.style.display = 'flex';
     logoutBtn.style.display = 'flex';
   }
 
@@ -1366,6 +1396,10 @@ function applyStoreMode(storeId) {
   // 4. Выбираем магазин и открываем паспорт
   selectedStore = store;
   activeTab = 'store';
+
+  // Убираем верхний отступ у main — sticky-заголовок прилипает без зазора
+  var mainEl = document.getElementById('mainContent');
+  if (mainEl) mainEl.classList.add('store-mode');
 
   // 5. Перерисовываем
   if (typeof renderMain === 'function') renderMain();
@@ -1412,6 +1446,8 @@ function doLogout() {
   if (sidebar) sidebar.style.display = '';
   var refreshBtn = document.getElementById('mainRefreshBtn');
   if (refreshBtn) refreshBtn.style.display = '';
+  var mainEl = document.getElementById('mainContent');
+  if (mainEl) mainEl.classList.remove('store-mode');
 
   try { if (typeof renderMain === 'function') renderMain(); } catch(e) {}
   try { if (typeof renderStoreList === 'function') renderStoreList(); } catch(e) {}
@@ -1450,6 +1486,7 @@ window.addEventListener('load', function(){
            display:flex;align-items:center;justify-content:center;line-height:1"
     onmouseover="this.style.background='rgba(255,255,255,0.25)';this.style.borderColor='rgba(255,255,255,0.7)'"
     onmouseout="this.style.background='rgba(255,255,255,0.12)';this.style.borderColor='rgba(255,255,255,0.4)'">?</button>
+  <div id="loginBadge"></div>
   <button id="logoutBtn" onclick="doLogout()" title="Выйти из аккаунта">
     🚪 Выйти
   </button>
@@ -1567,7 +1604,8 @@ window.addEventListener('load', function(){
   </div>
 
   <div class="main" id="mainContent">
-    <!-- dynamic content here -->
+    <div id="mainTabs"></div>
+    <div id="mainBody"></div>
   </div>
 </div>
 
@@ -2155,42 +2193,51 @@ function clearStoreSelection() {
 
 // ─── MAIN RENDER ───
 function renderMain() {
-  const el = document.getElementById('mainContent');
-  // Для вкладок "Сводные данные" и "Сводный заказ" — убираем скролл у .main, таблица скроллится сама
-  if (activeTab === 'order' || activeTab === 'posm_order') {
-    el.style.overflow = 'hidden';
-    el.style.display = 'flex';
-    el.style.flexDirection = 'column';
-    el.style.padding = '0';
-  } else {
-    el.style.overflow = '';
-    el.style.display = '';
-    el.style.flexDirection = '';
-    el.style.padding = '';
-  }
-  // В режиме магазина — только вкладка "Паспорт", без остальных
+  var tabsEl = document.getElementById('mainTabs');
+  var bodyEl = document.getElementById('mainBody');
+  if (!tabsEl || !bodyEl) return;
+
   var isStoreMode = (_authDone && _authStoreId !== null);
   if (isStoreMode) activeTab = 'store';
 
-  el.innerHTML = (isStoreMode ? '' : `
-    <div class="tabs" style="${(activeTab === 'order' || activeTab === 'posm_order') ? 'margin:16px 24px 0;flex-shrink:0' : ''}">
-      <button class="tab-btn ${activeTab === 'overview' ? 'active' : ''}" onclick="setTab('overview')">📊 Обзор</button>
-      <button class="tab-btn ${activeTab === 'order' ? 'active' : ''}" onclick="setTab('order')">📋 Сводные данные</button>
-      <button class="tab-btn ${activeTab === 'posm_order' ? 'active' : ''}" onclick="setTab('posm_order')">🛒 Сводный заказ</button>
-      <button class="tab-btn ${activeTab === 'store' ? 'active' : ''}" onclick="setTab('store')">🏪 Паспорт магазина</button>
-    </div>
-    ${activeTab === 'overview' ? renderOverview() : ''}
-    ${activeTab === 'order' ? renderOrderTable() : ''}
-    ${activeTab === 'posm_order' ? renderPosmOrder() : ''}
-    ${activeTab === 'store' ? renderStoreDetail() : ''}
-  `) + (isStoreMode ? renderStoreDetail() : '');
+  // ── Вкладки — всегда зафиксированы, не скроллируются ──
+  if (isStoreMode) {
+    tabsEl.innerHTML = '';
+  } else {
+    tabsEl.innerHTML = `
+      <div class="tabs">
+        <button class="tab-btn ${activeTab==='overview'?'active':''}" onclick="setTab('overview')">📊 Обзор</button>
+        <button class="tab-btn ${activeTab==='order'?'active':''}" onclick="setTab('order')">📋 Сводные данные</button>
+        <button class="tab-btn ${activeTab==='posm_order'?'active':''}" onclick="setTab('posm_order')">🛒 Сводный заказ</button>
+        <button class="tab-btn ${activeTab==='store'?'active':''}" onclick="setTab('store')">🏪 Паспорт магазина</button>
+      </div>`;
+  }
+
+  // ── Контент ──
+  if (activeTab === 'order' || activeTab === 'posm_order') {
+    // Таблица скроллится сама внутри
+    bodyEl.className = '';
+    bodyEl.style.cssText = 'overflow:hidden;display:flex;flex-direction:column;padding:0;flex:1;min-height:0';
+    bodyEl.innerHTML = activeTab === 'order' ? renderOrderTable() : renderPosmOrder();
+  } else if (activeTab === 'store' || isStoreMode) {
+    // Паспорт — заголовок зафиксирован, зоны скроллируются
+    bodyEl.className = 'passport-mode';
+    bodyEl.style.cssText = '';
+    bodyEl.innerHTML = renderStoreDetail();
+  } else {
+    // Обзор — обычный скролл
+    bodyEl.className = '';
+    bodyEl.style.cssText = '';
+    bodyEl.innerHTML = renderOverview();
+  }
 }
 
 function setTab(tab) {
   activeTab = tab;
   renderMain();
   mobSyncNav(tab);
-  document.getElementById('mainContent').scrollTop = 0;
+  var bodyEl = document.getElementById('mainBody');
+  if (bodyEl) bodyEl.scrollTop = 0;
 }
 
 // ─── OVERVIEW ───
@@ -2527,17 +2574,21 @@ function renderStoreDetail() {
       <button onclick="openPlanModal()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#E8162A,#C2185B);color:#fff;border:none;border-radius:9px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 12px rgba(232,22,42,0.25);transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
         🗺️ Планировка магазина
       </button>
-      <button id="reportBtnMain" onclick="openReportModal()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#fff5f8,#fff);color:#C2185B;border:2px solid #F06292;border-radius:9px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 12px rgba(194,24,91,0.12);transition:all .2s;position:relative;overflow:hidden" onmouseover="this.style.background='linear-gradient(135deg,#FCE4EC,#fff5f8)';this.style.boxShadow='0 4px 18px rgba(194,24,91,0.25)'" onmouseout="this.style.background='linear-gradient(135deg,#fff5f8,#fff)';this.style.boxShadow='0 3px 12px rgba(194,24,91,0.12)'">
+      <button onclick="openStorePosm()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1565C0,#1A4D8F);color:#fff;border:none;border-radius:9px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 14px rgba(21,101,192,0.35);transition:all .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        🛒 Заказ рекламных материалов
+      </button>
+      <button id="reportBtnMain" onclick="openReportModal()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#fff5f8,#fff);color:#C2185B;border:2px solid #F06292;border-radius:9px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 12px rgba(194,24,91,0.12);transition:all .2s;position:relative;overflow:hidden" onmouseover="this.style.background='linear-gradient(135deg,#FCE4EC,#fff5f8)';this.style.boxShadow='0 4px 18px rgba(194,24,91,0.25)'" onmouseout="this.style.background='linear-gradient(135deg,#fff5f8,#fff)';this.style.boxShadow='0 3d 12px rgba(194,24,91,0.12)'">
         ✏️ Сообщить о неточности
       </button>
     </div>`;
 
+  // Структура: заголовок зафиксирован (#passportHeader), зоны скроллируются (#passportScroll)
   return `
-    ${isStoreM ? `<div class="store-mode-header">${titleHtml}</div>` : ''}
-    <div class="detail-panel">
-
-      <!-- ══ ЗАГОЛОВОК (только в режиме менеджера) ══════════════════ -->
-      ${!isStoreM ? `<div style="margin-bottom:14px">${titleHtml}</div>` : ''}
+    <div id="passportHeader">
+      ${titleHtml}
+    </div>
+    <div id="passportScroll">
+    <div class="detail-panel" style="margin:0;border-radius:0 0 16px 16px;border-top:none;padding-top:16px">
 
       <!-- ══ КАРТОЧКИ ЗОН ОФОРМЛЕНИЯ (порядок по таблице) ══════════ -->
       <div class="detail-grid">
@@ -2644,10 +2695,9 @@ function renderStoreDetail() {
 
       </div>
     </div>
+    </div>
   `;
 }
-
-// ─── EXPORT ───
 
 async function exportExcel() {
   const stores = filteredStores;
@@ -5004,6 +5054,680 @@ var rptStyleEl = document.createElement('style');
 rptStyleEl.textContent = '@keyframes rptShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}';
 document.head.appendChild(rptStyleEl);
 </script>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- МОДАЛ: ЗАКАЗ РЕКЛАМНЫХ МАТЕРИАЛОВ (режим магазина)             -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<style>
+#posmOrderOverlay {
+  position:fixed;inset:0;z-index:1300;
+  background:rgba(45,10,26,0.65);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+#posmOrderOverlay.open { opacity:1;pointer-events:all; }
+#posmOrderBox {
+  background:#fff;width:100%;max-width:860px;max-height:90vh;
+  display:flex;flex-direction:column;overflow:hidden;
+  border-radius:20px;
+  box-shadow:0 24px 70px rgba(194,24,91,0.22);
+  transform:translateY(30px) scale(.97);transition:transform .28s cubic-bezier(.32,.72,0,1);
+}
+#posmOrderOverlay.open #posmOrderBox { transform:translateY(0) scale(1); }
+
+/* Header */
+.pom-head {
+  background:linear-gradient(135deg,#1A4D8F,#1565C0);
+  padding:16px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;
+}
+.pom-head-icon { font-size:22px; }
+.pom-head-title { color:#fff;font-family:'Montserrat',sans-serif;font-weight:800;font-size:16px;flex:1; }
+.pom-head-sub { color:rgba(255,255,255,.7);font-size:11px;margin-top:2px; }
+.pom-close {
+  width:32px;height:32px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.2);color:#fff;font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:background .15s;
+}
+.pom-close:hover { background:rgba(255,255,255,.35); }
+
+/* Sheet tabs */
+.pom-tabs {
+  display:flex;gap:4px;padding:12px 16px 0;flex-shrink:0;
+  background:#F8F9FF;border-bottom:2px solid #E3ECF8;flex-wrap:wrap;
+}
+.pom-tab {
+  padding:7px 14px;border-radius:8px 8px 0 0;border:none;
+  background:transparent;color:#5577AA;font-size:12px;font-weight:600;
+  font-family:'Inter',sans-serif;cursor:pointer;transition:all .15s;
+}
+.pom-tab.active {
+  background:#fff;color:#1565C0;
+  box-shadow:0 -2px 0 #1565C0 inset;
+}
+.pom-tab:hover:not(.active) { background:rgba(21,101,192,.07); }
+
+/* Table area */
+.pom-body { flex:1;overflow-y:auto;padding:0; }
+.pom-body::-webkit-scrollbar { width:5px; }
+.pom-body::-webkit-scrollbar-thumb { background:#C5D8F5;border-radius:3px; }
+
+.pom-table { width:100%;border-collapse:collapse; }
+.pom-table th {
+  position:sticky;top:0;z-index:2;
+  background:#EEF4FF;padding:9px 12px;
+  font-size:10px;text-transform:uppercase;letter-spacing:.5px;
+  color:#5577AA;font-weight:700;border-bottom:2px solid #C5D8F5;
+  white-space:nowrap;
+}
+.pom-table td {
+  padding:8px 12px;border-bottom:1px solid rgba(197,216,245,.4);
+  vertical-align:middle;
+}
+.pom-table tr:hover td { background:rgba(21,101,192,.03); }
+
+.pom-foto {
+  width:44px;height:44px;border-radius:8px;object-fit:cover;
+  border:1px solid #C5D8F5;background:#F0F6FF;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;overflow:hidden;cursor:pointer;
+  transition:transform .15s,box-shadow .15s;
+}
+.pom-foto:hover { transform:scale(1.1);box-shadow:0 4px 14px rgba(21,101,192,.25); }
+.pom-foto img { width:100%;height:100%;object-fit:cover;border-radius:7px;display:block; }
+
+.pom-item-name { font-size:12px;font-weight:600;color:#1A2B4A;line-height:1.35; }
+.pom-item-sku  { font-size:10px;color:#8899BB;margin-top:2px; }
+.pom-item-pack { font-size:11px;color:#5577AA;line-height:1.3; }
+
+/* Stepper */
+.pom-stepper {
+  display:inline-flex;align-items:center;
+  border:1.5px solid #C5D8F5;border-radius:8px;overflow:hidden;
+}
+.pom-step-btn {
+  width:30px;height:30px;border:none;background:#EEF4FF;
+  color:#1565C0;font-size:16px;font-weight:700;cursor:pointer;
+  transition:background .12s;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.pom-step-btn:hover { background:#C5D8F5; }
+.pom-step-btn:active { background:#A8C8F0; }
+.pom-qty-val {
+  min-width:36px;text-align:center;font-size:13px;font-weight:700;
+  color:#1A2B4A;font-family:'Montserrat',sans-serif;
+  padding:0 4px;
+}
+
+/* Footer */
+.pom-footer {
+  padding:14px 20px;border-top:2px solid #E3ECF8;
+  display:flex;align-items:center;justify-content:space-between;
+  background:#F8F9FF;flex-shrink:0;gap:12px;
+}
+.pom-total-lbl { font-size:12px;color:#5577AA; }
+.pom-total-val { font-size:18px;font-weight:800;color:#1565C0;font-family:'Montserrat',sans-serif; }
+.pom-send-btn {
+  display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,#1A4D8F,#1565C0);color:#fff;
+  border:none;border-radius:10px;padding:11px 22px;
+  font-size:13px;font-weight:700;font-family:'Inter',sans-serif;
+  cursor:pointer;box-shadow:0 4px 14px rgba(21,101,192,.35);
+  transition:all .2s;
+}
+.pom-send-btn:hover { transform:translateY(-1px);box-shadow:0 6px 20px rgba(21,101,192,.45); }
+</style>
+
+<div id="posmOrderOverlay" onclick="closePosmOrderModal(event)">
+  <div id="posmOrderBox" onclick="event.stopPropagation()">
+    <div class="pom-head">
+      <div class="pom-head-icon">🛒</div>
+      <div style="flex:1">
+        <div class="pom-head-title" id="pomHeadTitle">Заказ рекламных материалов</div>
+        <div class="pom-head-sub" id="pomHeadSub">Магазин</div>
+      </div>
+      <button class="pom-close" onclick="closePosmOrderModal()">✕</button>
+    </div>
+    <div class="pom-tabs" id="pomTabs"></div>
+    <div class="pom-body" id="pomBody"></div>
+    <div class="pom-footer" id="pomFooter">
+      <div>
+        <div class="pom-total-lbl">Итого позиций в заказе</div>
+        <div class="pom-total-val" id="pomTotalVal">0</div>
+      </div>
+      <button class="pom-send-btn" onclick="pomSendOrder()">
+        📧 Отправить заказ менеджеру
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// POSM ORDER MODAL — Заказ рекламных материалов (режим магазина)
+// v2: история заказов + окно подтверждения + Excel
+// ══════════════════════════════════════════════════════════════
+
+var _pomActiveSheet = 0;
+var _pomStoreId     = null;
+var _pomView        = 'order'; // 'order' | 'history'
+
+// ─── ИСТОРИЯ ───────────────────────────────────────────────────
+// localStorage: kari_orders_{storeId} → [{date, items:[{sku,name,pack,qty,sheet}]}]
+// Храним только записи не старше 365 дней
+
+function pomHistoryKey(sid) { return 'kari_orders_' + sid; }
+
+function pomHistoryLoad(sid) {
+  try {
+    var raw = localStorage.getItem(pomHistoryKey(sid));
+    if (!raw) return [];
+    var arr = JSON.parse(raw);
+    var cutoff = Date.now() - 365 * 24 * 3600 * 1000;
+    return arr.filter(function(r){ return r.ts && r.ts > cutoff; });
+  } catch(e) { return []; }
+}
+
+function pomHistorySave(sid, record) {
+  var arr = pomHistoryLoad(sid);
+  arr.unshift(record);
+  // Оставляем максимум 50 записей
+  arr = arr.slice(0, 50);
+  try { localStorage.setItem(pomHistoryKey(sid), JSON.stringify(arr)); } catch(e) {}
+}
+
+// ─── ОТКРЫТИЕ/ЗАКРЫТИЕ ─────────────────────────────────────────
+function openStorePosm() {
+  if (!selectedStore) return;
+  _pomStoreId     = selectedStore.id;
+  _pomActiveSheet = 0;
+  _pomView        = 'order';
+  document.getElementById('pomHeadSub').textContent =
+    '№' + selectedStore.id + ' · ' + (selectedStore.city||'') + ' · ' + (selectedStore.name||'');
+  pomRenderViewBtns();
+  pomRenderTabs();
+  pomRenderTable();
+  document.getElementById('posmOrderOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePosmOrderModal(e) {
+  if (e && e.target !== document.getElementById('posmOrderOverlay')) return;
+  document.getElementById('posmOrderOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ─── КНОПКИ "ЗАКАЗ / ИСТОРИЯ" в хедере ────────────────────────
+function pomRenderViewBtns() {
+  var titleEl = document.getElementById('pomHeadTitle');
+  if (!titleEl) return;
+  titleEl.innerHTML =
+    '<span style="cursor:pointer;text-decoration:' + (_pomView==='order'?'underline':'none') +
+    ';opacity:' + (_pomView==='order'?'1':'.6') + '" onclick="pomSwitchView(\'order\')">Заказ</span>' +
+    '<span style="margin:0 8px;opacity:.4">|</span>' +
+    '<span style="cursor:pointer;text-decoration:' + (_pomView==='history'?'underline':'none') +
+    ';opacity:' + (_pomView==='history'?'1':'.6') + '" onclick="pomSwitchView(\'history\')">История заказов 📋</span>';
+}
+
+function pomSwitchView(view) {
+  _pomView = view;
+  pomRenderViewBtns();
+  var tabsEl  = document.getElementById('pomTabs');
+  var bodyEl  = document.getElementById('pomBody');
+  var footEl  = document.getElementById('pomFooter');
+  if (view === 'history') {
+    tabsEl.style.display  = 'none';
+    footEl.style.display  = 'none';
+    pomRenderHistory();
+  } else {
+    tabsEl.style.display  = '';
+    footEl.style.display  = '';
+    pomRenderTabs();
+    pomRenderTable();
+  }
+}
+
+// ─── ИСТОРИЯ — РЕНДЕР ──────────────────────────────────────────
+function pomRenderHistory() {
+  var records = pomHistoryLoad(_pomStoreId);
+  var bodyEl = document.getElementById('pomBody');
+  if (!records.length) {
+    bodyEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#8899BB;font-size:14px">📋 История заказов пуста.<br><span style="font-size:12px;opacity:.7">Здесь появятся все отправленные заказы за последний год.</span></div>';
+    return;
+  }
+  var html = '<div style="padding:12px 16px">';
+  records.forEach(function(rec, ri) {
+    var date = rec.date || '—';
+    html += '<div style="border:1.5px solid #C5D8F5;border-radius:12px;margin-bottom:12px;overflow:hidden">' +
+      '<div style="background:#EEF4FF;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">' +
+        '<div><span style="font-weight:700;color:#1A2B4A;font-size:13px">📦 Заказ от ' + date + '</span>' +
+          (rec.orderNum ? '<span style="margin-left:8px;font-size:11px;color:#8899BB">' + rec.orderNum + '</span>' : '') +
+        '</div>' +
+        '<span style="font-size:11px;color:#5577AA">' + rec.items.length + ' позиций · ' + rec.total + ' ед.</span>' +
+      '</div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12px">' +
+      '<tr style="background:#F5F9FF"><th style="padding:6px 10px;text-align:left;color:#5577AA;font-weight:600;border-bottom:1px solid #C5D8F5">Артикул</th>' +
+      '<th style="padding:6px 10px;text-align:left;color:#5577AA;font-weight:600;border-bottom:1px solid #C5D8F5">Наименование</th>' +
+      '<th style="padding:6px 10px;text-align:center;color:#5577AA;font-weight:600;border-bottom:1px solid #C5D8F5">Кол-во</th></tr>';
+    rec.items.forEach(function(it) {
+      html += '<tr><td style="padding:5px 10px;border-bottom:1px solid rgba(197,216,245,.3);color:#8899BB;font-size:11px">' + (it.sku||'—') + '</td>' +
+        '<td style="padding:5px 10px;border-bottom:1px solid rgba(197,216,245,.3)">' + it.name + '</td>' +
+        '<td style="padding:5px 10px;border-bottom:1px solid rgba(197,216,245,.3);text-align:center;font-weight:700;color:#1565C0">' + it.qty + '</td></tr>';
+    });
+    html += '</table></div>';
+  });
+  html += '</div>';
+  bodyEl.innerHTML = html;
+}
+
+// ─── ВКЛАДКИ ПО ЛИСТАМ ─────────────────────────────────────────
+function pomRenderTabs() {
+  var sheets = ORDER_CATALOG.posm;
+  var icons  = {'Листовки':'📄','Чек-поинты':'✅','Флаги и роллапы':'🚩','Прочее':'📦'};
+  document.getElementById('pomTabs').innerHTML = sheets.map(function(s, i) {
+    return '<button class="pom-tab ' + (_pomActiveSheet===i?'active':'') + '" onclick="pomSetSheet('+i+')">' +
+      (icons[s.sheet]||'📁') + ' ' + s.sheet + '</button>';
+  }).join('');
+}
+
+function pomSetSheet(idx) {
+  _pomActiveSheet = idx;
+  pomRenderTabs();
+  pomRenderTable();
+}
+
+// ─── ТАБЛИЦА ТОВАРОВ ───────────────────────────────────────────
+function pomRenderTable() {
+  var sid   = _pomStoreId;
+  var sheet = ORDER_CATALOG.posm[_pomActiveSheet];
+  var items = sheet.items;
+  var html  = '<table class="pom-table"><thead><tr>' +
+    '<th style="width:52px">Фото</th>' +
+    '<th style="min-width:220px">Номенклатура</th>' +
+    '<th style="min-width:130px">Описание (упаковка)</th>' +
+    '<th style="width:120px;text-align:center">Количество</th>' +
+    '</tr></thead><tbody>';
+
+  items.forEach(function(item, idx) {
+    var key = item.sku || ('sheet' + _pomActiveSheet + '_' + idx);
+    var qty = (orderState[sid] && orderState[sid][key]) || 0;
+    var url = item.sku ? (FOTO_MAP[item.sku] || FOTO_MAP[(item.sku||'').toLowerCase()]) : null;
+    var fotoHtml = url
+      ? '<div class="pom-foto" onclick="openFotoPreview(\''+url+'\',\''+item.name.replace(/'/g,"\\'").replace(/"/g,'&quot;')+'\',\''+item.sku+'\')" title="Предпросмотр"><img src="'+url+'" onerror="this.parentElement.innerHTML=\'📄\';this.parentElement.onclick=null;this.parentElement.style.cursor=\'default\'"></div>'
+      : '<div class="pom-foto" style="cursor:default">📄</div>';
+    html += '<tr>' +
+      '<td>' + fotoHtml + '</td>' +
+      '<td><div class="pom-item-name">' + item.name + '</div>' +
+        (item.sku ? '<div class="pom-item-sku">' + item.sku + '</div>' : '') + '</td>' +
+      '<td><div class="pom-item-pack">' + (item.pack||'—') + '</div></td>' +
+      '<td style="text-align:center">' +
+        '<div class="pom-stepper">' +
+          '<button class="pom-step-btn" onclick="pomChangeQty(\'' + key + '\',-1)">−</button>' +
+          '<div class="pom-qty-val" id="pomQty_' + key + '">' + (qty||0) + '</div>' +
+          '<button class="pom-step-btn" onclick="pomChangeQty(\'' + key + '\',+1)">+</button>' +
+        '</div>' +
+      '</td>' +
+    '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('pomBody').innerHTML = html;
+  pomUpdateTotal();
+}
+
+function pomChangeQty(key, delta) {
+  var sid = _pomStoreId;
+  if (!orderState[sid]) orderState[sid] = {};
+  var cur = orderState[sid][key] || 0;
+  var nv  = Math.max(0, cur + delta);
+  orderState[sid][key] = nv;
+  var el = document.getElementById('pomQty_' + key);
+  if (el) {
+    el.textContent = nv;
+    el.style.transform = 'scale(1.4)';
+    el.style.color = delta > 0 ? '#1565C0' : '#C2185B';
+    setTimeout(function(){ el.style.transform=''; el.style.color=''; }, 200);
+  }
+  pomUpdateTotal();
+}
+
+function pomUpdateTotal() {
+  var sid = _pomStoreId;
+  var total = 0;
+  var shopOrder = orderState[sid] || {};
+  Object.values(shopOrder).forEach(function(v){ total += (v||0); });
+  var el = document.getElementById('pomTotalVal');
+  if (el) el.textContent = total;
+}
+
+// ─── КНОПКА "ОТПРАВИТЬ" → ОКНО ПОДТВЕРЖДЕНИЯ ──────────────────
+function pomSendOrder() {
+  var sid = _pomStoreId;
+  if (!selectedStore) return;
+  var shopOrder = orderState[sid] || {};
+
+  // Собираем позиции заказа
+  var orderItems = [];
+  ORDER_CATALOG.posm.forEach(function(sheet, sheetIdx) {
+    sheet.items.forEach(function(item, idx) {
+      var key = item.sku || ('sheet' + sheetIdx + '_' + idx);
+      var qty = shopOrder[key] || 0;
+      if (qty > 0) {
+        orderItems.push({ sku: item.sku||'', name: item.name, pack: item.pack||'', qty: qty, sheet: sheet.sheet });
+      }
+    });
+  });
+
+  if (!orderItems.length) {
+    var btn = document.querySelector('.pom-send-btn');
+    if (btn) {
+      btn.textContent = '⚠️ Заказ пустой';
+      btn.style.background = 'linear-gradient(135deg,#C2185B,#880E4F)';
+      setTimeout(function(){ btn.innerHTML='📧 Отправить заказ менеджеру'; btn.style.background=''; }, 2000);
+    }
+    return;
+  }
+
+  // Показываем окно подтверждения
+  pomShowConfirm(orderItems);
+}
+
+// ─── ОКНО ПОДТВЕРЖДЕНИЯ ────────────────────────────────────────
+function pomShowConfirm(orderItems) {
+  var s = selectedStore;
+  var total = orderItems.reduce(function(a,b){ return a + b.qty; }, 0);
+  var date  = new Date().toLocaleDateString('ru-RU');
+
+  // Группируем по листам для отображения
+  var bySheet = {};
+  orderItems.forEach(function(it){
+    if (!bySheet[it.sheet]) bySheet[it.sheet] = [];
+    bySheet[it.sheet].push(it);
+  });
+
+  var rowsHtml = '';
+  Object.keys(bySheet).forEach(function(sheetName) {
+    rowsHtml += '<tr><td colspan="3" style="padding:8px 12px 4px;font-size:11px;font-weight:700;color:#5577AA;text-transform:uppercase;letter-spacing:.5px;background:#F5F9FF;border-top:2px solid #C5D8F5">' + sheetName + '</td></tr>';
+    bySheet[sheetName].forEach(function(it, i) {
+      var bg = i%2===0 ? '' : 'background:rgba(197,216,245,.15)';
+      rowsHtml += '<tr style="' + bg + '">' +
+        '<td style="padding:7px 12px;font-size:11px;color:#8899BB;border-bottom:1px solid rgba(197,216,245,.3)">' + (it.sku||'—') + '</td>' +
+        '<td style="padding:7px 12px;font-size:12px;font-weight:500;border-bottom:1px solid rgba(197,216,245,.3)">' + it.name + '</td>' +
+        '<td style="padding:7px 14px;font-size:14px;font-weight:800;color:#1565C0;text-align:center;border-bottom:1px solid rgba(197,216,245,.3)">' + it.qty + '</td>' +
+      '</tr>';
+    });
+  });
+
+  var html =
+    '<div id="pomConfirmOverlay" onclick="pomCloseConfirm(event)" style="position:fixed;inset:0;z-index:1400;background:rgba(10,20,50,.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px">' +
+    '<div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:100%;max-width:600px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(21,101,192,.3);animation:pomConfirmIn .25s cubic-bezier(.32,.72,0,1)">' +
+
+    // Header
+    '<div style="background:linear-gradient(135deg,#1A4D8F,#1565C0);padding:16px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0">' +
+      '<div style="font-size:22px">✅</div>' +
+      '<div style="flex:1"><div style="color:#fff;font-family:Montserrat,sans-serif;font-weight:800;font-size:15px">Подтверждение заказа</div>' +
+        '<div style="color:rgba(255,255,255,.7);font-size:11px;margin-top:2px">№' + s.id + ' · ' + (s.city||'') + ' · ' + (s.name||'') + ' · ' + date + '</div></div>' +
+      '<button onclick="pomCloseConfirm()" style="width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.2);color:#fff;font-size:15px;cursor:pointer">✕</button>' +
+    '</div>' +
+
+    // Table
+    '<div style="flex:1;overflow-y:auto">' +
+      '<table style="width:100%;border-collapse:collapse">' +
+        '<thead><tr style="background:#EEF4FF;position:sticky;top:0">' +
+          '<th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#5577AA;font-weight:700;border-bottom:2px solid #C5D8F5">Артикул</th>' +
+          '<th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#5577AA;font-weight:700;border-bottom:2px solid #C5D8F5">Наименование</th>' +
+          '<th style="padding:9px 14px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#5577AA;font-weight:700;border-bottom:2px solid #C5D8F5">Кол-во</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rowsHtml + '</tbody>' +
+      '</table>' +
+    '</div>' +
+
+    // Footer
+    '<div style="padding:14px 20px;border-top:2px solid #E3ECF8;background:#F8F9FF;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0">' +
+      '<div><div style="font-size:11px;color:#5577AA">Итого позиций</div>' +
+        '<div style="font-size:20px;font-weight:800;color:#1565C0;font-family:Montserrat,sans-serif">' + total + ' ед.</div></div>' +
+      '<div style="display:flex;gap:10px">' +
+        '<button onclick="pomCloseConfirm()" style="padding:10px 18px;border:1.5px solid #C5D8F5;border-radius:9px;background:#fff;color:#5577AA;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Изменить</button>' +
+        '<button onclick="pomConfirmAndSend()" style="padding:10px 22px;border:none;border-radius:9px;background:linear-gradient(135deg,#1A4D8F,#1565C0);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;box-shadow:0 4px 14px rgba(21,101,192,.35)">📤 Подтвердить и отправить</button>' +
+      '</div>' +
+    '</div>' +
+
+    '</div></div>';
+
+  // Инжектим и сохраняем orderItems для подтверждения
+  var div = document.createElement('div');
+  div.id = 'pomConfirmRoot';
+  div.innerHTML = html;
+  document.body.appendChild(div);
+  window._pomConfirmItems = orderItems;
+}
+
+function pomCloseConfirm(e) {
+  if (e && e.target !== document.getElementById('pomConfirmOverlay')) return;
+  var el = document.getElementById('pomConfirmRoot');
+  if (el) el.remove();
+}
+
+// ─── ПОДТВЕРЖДЕНИЕ → EXCEL + OUTLOOK ─────────────────────────
+function pomConfirmAndSend() {
+  var orderItems = window._pomConfirmItems || [];
+  var s   = selectedStore;
+  var sid = _pomStoreId;
+  if (!s || !orderItems.length) return;
+
+  var date     = new Date().toLocaleDateString('ru-RU');
+  var dateISO  = new Date().toISOString().slice(0,10);
+  var orderNum = 'ЗАК-' + sid + '-' + Date.now().toString().slice(-6);
+  var filename = 'Заказ_РМ_' + s.id + '_' + dateISO + '.xlsx';
+
+  // 1. Сохраняем в историю
+  pomHistorySave(sid, {
+    ts:       Date.now(),
+    date:     date,
+    orderNum: orderNum,
+    total:    orderItems.reduce(function(a,b){ return a+b.qty; }, 0),
+    items:    orderItems
+  });
+
+  // 2. Сбрасываем заказ
+  if (orderState[sid]) orderState[sid] = {};
+
+  // 3. Заменяем окно подтверждения на гид "что делать дальше"
+  pomShowSendGuide(orderItems, s, date, dateISO, orderNum, filename);
+}
+
+// ─── ОКНО-ГИД ПОСЛЕ ОТПРАВКИ ──────────────────────────────────
+function pomShowSendGuide(orderItems, s, date, dateISO, orderNum, filename) {
+  // Убираем окно подтверждения
+  var prev = document.getElementById('pomConfirmRoot');
+  if (prev) prev.remove();
+
+  var total = orderItems.reduce(function(a,b){ return a+b.qty; }, 0);
+
+  var html =
+    '<div id="pomGuideOverlay" onclick="pomCloseGuide(event)" style="position:fixed;inset:0;z-index:1400;background:rgba(10,20,50,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px">' +
+    '<div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 24px 70px rgba(21,101,192,.35);animation:pomConfirmIn .3s cubic-bezier(.32,.72,0,1)">' +
+
+    // ── Шапка ──
+    '<div style="background:linear-gradient(135deg,#1A4D8F,#1565C0);padding:20px 24px 18px;text-align:center">' +
+      '<div style="font-size:36px;margin-bottom:8px;animation:pomBounce .5s .1s both">📦</div>' +
+      '<div style="color:#fff;font-family:Montserrat,sans-serif;font-weight:800;font-size:17px">Заказ оформлен!</div>' +
+      '<div style="color:rgba(255,255,255,.75);font-size:12px;margin-top:4px">' + orderNum + ' · ' + date + ' · ' + total + ' ед.</div>' +
+    '</div>' +
+
+    // ── Инфо о магазине ──
+    '<div style="background:#EEF4FF;padding:10px 24px;border-bottom:1px solid #C5D8F5;font-size:12px;color:#5577AA;text-align:center">' +
+      '🏪 №' + s.id + ' · ' + (s.city||'') + ' · ' + (s.name||'') +
+    '</div>' +
+
+    // ── Пошаговый гид ──
+    '<div style="padding:20px 24px">' +
+      '<div style="font-size:12px;font-weight:700;color:#5577AA;text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Выполните 2 шага для отправки:</div>' +
+
+      // Шаг 1
+      '<div id="pomStep1" style="display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;background:#F0F7FF;border:1.5px solid #A8C8F0;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s" onclick="pomDoStep1(this,\''+filename+'\',\''+dateISO+'\')">' +
+        '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1A4D8F,#1565C0);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800">1</div>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:13px;font-weight:700;color:#1A2B4A">📥 Скачать Excel-файл заказа</div>' +
+          '<div style="font-size:11px;color:#5577AA;margin-top:3px">Файл сохранится в папку <b>Загрузки</b></div>' +
+          '<div style="font-size:11px;color:#8899BB;margin-top:2px;font-family:monospace">' + filename + '</div>' +
+        '</div>' +
+        '<div id="pomStep1Icon" style="font-size:20px;flex-shrink:0;transition:all .2s">⬇️</div>' +
+      '</div>' +
+
+      // Шаг 2
+      '<div id="pomStep2" style="display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;background:#F0F7FF;border:1.5px solid #A8C8F0;cursor:pointer;transition:box-shadow .15s;opacity:.5" onclick="pomDoStep2(this,\''+encodeURIComponent(JSON.stringify(orderItems))+'\',\''+s.id+'\',\''+encodeURIComponent(s.city||'')+'\',\''+encodeURIComponent(s.name||'')+'\',\''+encodeURIComponent([(s.region||''),(s.division||'')].filter(Boolean).join(' · '))+'\',\''+date+'\',\''+orderNum+'\',\''+filename+'\')">' +
+        '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1A4D8F,#1565C0);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800">2</div>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:13px;font-weight:700;color:#1A2B4A">📧 Открыть Outlook и отправить</div>' +
+          '<div style="font-size:11px;color:#5577AA;margin-top:3px">Письмо заполнено автоматически — прикрепите файл и нажмите <b>Отправить</b></div>' +
+          '<div style="font-size:11px;color:#8899BB;margin-top:2px">Кому: t.zaharova@kari.com</div>' +
+        '</div>' +
+        '<div id="pomStep2Icon" style="font-size:20px;flex-shrink:0">📬</div>' +
+      '</div>' +
+
+      // Подсказка
+      '<div id="pomGuideHint" style="margin-top:12px;padding:10px 14px;background:#FFF8E8;border:1px solid #FFD98A;border-radius:8px;font-size:11px;color:#8B6200;display:none">' +
+        '💡 <b>Как прикрепить файл в Outlook:</b> нажмите кнопку 📎 (Вложить файл) → Обзор → папка Загрузки → выберите <span style="font-family:monospace">' + filename + '</span>' +
+      '</div>' +
+    '</div>' +
+
+    // ── Кнопка закрыть ──
+    '<div style="padding:0 24px 20px;text-align:center">' +
+      '<button onclick="pomCloseGuide()" style="padding:10px 32px;border:1.5px solid #C5D8F5;border-radius:10px;background:#fff;color:#5577AA;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Закрыть</button>' +
+    '</div>' +
+
+    '</div></div>';
+
+  var div = document.createElement('div');
+  div.id = 'pomGuideRoot';
+  div.innerHTML = html;
+  document.body.appendChild(div);
+}
+
+function pomDoStep1(el, filename, dateISO) {
+  // Генерируем и скачиваем Excel
+  pomGenerateExcel(window._pomConfirmItems || [], selectedStore, new Date().toLocaleDateString('ru-RU'), dateISO,
+    'ЗАК-' + _pomStoreId + '-' + Date.now().toString().slice(-6), filename);
+
+  // Помечаем шаг выполненным
+  el.style.background  = '#E8F5E9';
+  el.style.borderColor = '#66BB6A';
+  document.getElementById('pomStep1Icon').textContent = '✅';
+  el.onclick = null;
+
+  // Разблокируем шаг 2
+  var step2 = document.getElementById('pomStep2');
+  if (step2) {
+    step2.style.opacity = '1';
+    step2.style.background = '#F0F7FF';
+  }
+  // Показываем подсказку
+  var hint = document.getElementById('pomGuideHint');
+  if (hint) hint.style.display = 'block';
+}
+
+function pomDoStep2(el, itemsEnc, storeId, cityEnc, nameEnc, regionEnc, date, orderNum, filename) {
+  var s = selectedStore || {};
+  var city   = decodeURIComponent(cityEnc);
+  var name   = decodeURIComponent(nameEnc);
+  var region = decodeURIComponent(regionEnc);
+  var orderItems = [];
+  try { orderItems = JSON.parse(decodeURIComponent(itemsEnc)); } catch(e) {}
+
+  // Строим тело письма
+  var bySheet = {};
+  orderItems.forEach(function(it){
+    if (!bySheet[it.sheet]) bySheet[it.sheet] = [];
+    bySheet[it.sheet].push(it);
+  });
+  var bodyLines = [];
+  Object.keys(bySheet).forEach(function(sh){
+    var lines = bySheet[sh].map(function(it){
+      return '  \u2022 ' + it.name + (it.sku ? ' (' + it.sku + ')' : '') +
+             '\r\n    \u041a\u043e\u043b-\u0432\u043e: ' + it.qty + (it.pack ? ' \u00b7 ' + it.pack : '');
+    });
+    bodyLines.push('[' + sh + ']\r\n' + lines.join('\r\n'));
+  });
+
+  var total = orderItems.reduce(function(a,b){ return a+b.qty; }, 0);
+  var body =
+    '\u0414\u043e\u0431\u0440\u044b\u0439 \u0434\u0435\u043d\u044c!\r\n\r\n' +
+    '\u041c\u0430\u0433\u0430\u0437\u0438\u043d \u043d\u0430\u043f\u0440\u0430\u0432\u043b\u044f\u0435\u0442 \u0437\u0430\u044f\u0432\u043a\u0443 \u043d\u0430 \u0440\u0435\u043a\u043b\u0430\u043c\u043d\u044b\u0435 \u043c\u0430\u0442\u0435\u0440\u0438\u0430\u043b\u044b.\r\n' +
+    '\u203c\ufe0f \u0412\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u0432 \u043f\u0438\u0441\u044c\u043c\u0435: ' + filename + '\r\n\r\n' +
+    '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\r\n' +
+    '\u041c\u0410\u0413\u0410\u0417\u0418\u041d: \u2116' + storeId + ' \u00b7 ' + city + ' \u00b7 ' + name + '\r\n' +
+    '\u0420\u0415\u0413\u0418\u041e\u041d: ' + region + '\r\n' +
+    '\u0414\u0410\u0422\u0410: ' + date + '\r\n' +
+    '\u2116 \u0417\u0410\u041a\u0410\u0417\u0410: ' + orderNum + '\r\n' +
+    '\u0418\u0422\u041e\u0413\u041e: ' + total + ' \u0435\u0434.\r\n' +
+    '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\r\n\r\n' +
+    '\u0421\u041e\u0421\u0422\u0410\u0412 \u0417\u0410\u041a\u0410\u0417\u0410:\r\n\r\n' +
+    bodyLines.join('\r\n\r\n') +
+    '\r\n\r\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\r\n' +
+    '\u041e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043e \u0447\u0435\u0440\u0435\u0437 \u0434\u0430\u0448\u0431\u043e\u0440\u0434 Kari \u00ab\u041f\u0430\u0441\u043f\u043e\u0440\u0442 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u043e\u0432\u00bb';
+
+  var subject = '\u0417\u0430\u043a\u0430\u0437 \u0440\u0435\u043a\u043b\u0430\u043c\u043d\u044b\u0445 \u043c\u0430\u0442\u0435\u0440\u0438\u0430\u043b\u043e\u0432 \u2116' + storeId + ' \u043e\u0442 ' + date;
+  window.location.href = 'mailto:t.zaharova@kari.com' +
+    '?subject=' + encodeURIComponent(subject) +
+    '&body='    + encodeURIComponent(body);
+
+  // Помечаем шаг выполненным
+  el.style.background  = '#E8F5E9';
+  el.style.borderColor = '#66BB6A';
+  document.getElementById('pomStep2Icon').textContent = '✅';
+  el.onclick = null;
+}
+
+function pomCloseGuide(e) {
+  if (e && e.target !== document.getElementById('pomGuideOverlay')) return;
+  var el = document.getElementById('pomGuideRoot');
+  if (el) el.remove();
+  closePosmOrderModal();
+}
+
+// ─── ГЕНЕРАЦИЯ EXCEL ──────────────────────────────────────────
+async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename) {
+  var xlsxOk = await ensureXLSX();
+  if (!xlsxOk) { alert('Ошибка загрузки библиотеки Excel. Попробуйте нажать ☁️ Обновить.'); return; }
+
+  var total   = orderItems.reduce(function(a,b){ return a+b.qty; }, 0);
+  var headers = ['Артикул (SKU)', 'Наименование', 'Упаковка', 'Раздел', 'Количество (боксов)'];
+  var rows    = orderItems.map(function(it){
+    return [it.sku||'', it.name, it.pack||'', it.sheet, it.qty];
+  });
+  rows.push(['', '', '', 'ИТОГО:', total]);
+
+  var infoRows = [
+    ['ЗАКАЗ РЕКЛАМНЫХ МАТЕРИАЛОВ'],
+    ['Магазин:',    '№' + s.id + ' · ' + (s.city||'') + ' · ' + (s.name||'')],
+    ['Регион:',     [(s.region||''),(s.division||'')].filter(Boolean).join(' · ')],
+    ['Дата заказа:', date],
+    ['№ заказа:',   orderNum],
+    []
+  ];
+
+  var aoa = infoRows.concat([headers]).concat(rows);
+  var ws  = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:22},{wch:55},{wch:32},{wch:20},{wch:18}];
+
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Заказ РМ');
+  XLSX.writeFile(wb, filename || ('Заказ_РМ_' + s.id + '_' + dateISO + '.xlsx'));
+}
+</script>
+
+<style>
+@keyframes pomConfirmIn {
+  from { transform:translateY(20px) scale(.96); opacity:0; }
+  to   { transform:translateY(0)    scale(1);   opacity:1; }
+}
+@keyframes pomBounce {
+  0%   { transform:scale(0) rotate(-15deg); opacity:0; }
+  60%  { transform:scale(1.2) rotate(5deg); opacity:1; }
+  100% { transform:scale(1) rotate(0); }
+}
+</style>
 
 </body>
 </html>
