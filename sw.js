@@ -1,9 +1,8 @@
 // ══════════════════════════════════════════════════════
-// SERVICE WORKER — Kari Dashboard PWA
-// При каждом обновлении менять ОБЕ версии: CACHE_NAME и APP_VERSION
+// SERVICE WORKER — Kari Dashboard PWA  v1.9
+// При каждом обновлении менять CACHE_NAME
 // ══════════════════════════════════════════════════════
-var CACHE_NAME  = 'kari-dashboard-v1.9';
-var APP_VERSION = '1.9'; // должна совпадать с APP_VERSION в index.html
+var CACHE_NAME = 'kari-dashboard-v1.9';
 
 var PRECACHE_URLS = [
   './',
@@ -13,7 +12,7 @@ var PRECACHE_URLS = [
   './icon-512.png'
 ];
 
-// ── INSTALL: кешируем и сразу активируемся ──
+// ── INSTALL ──
 self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -22,7 +21,7 @@ self.addEventListener('install', function(event) {
   );
 });
 
-// ── ACTIVATE: удаляем ВСЕ старые кеши ──
+// ── ACTIVATE: удаляем старые кеши ──
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(names) {
@@ -45,7 +44,7 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // Большие внешние файлы — только сеть
+  // Внешние ресурсы — только сеть
   if (url.includes('.xlsx') || url.includes('/plans/') || url.includes('/Foto') ||
       url.includes('api.github.com') || url.includes('fonts.googleapis') ||
       url.includes('cdnjs.cloudflare.com')) {
@@ -55,7 +54,7 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // index.html и manifest — Network-First, всегда свежие
+  // index.html — Network-First (всегда свежий)
   if (url.includes('index.html') || url.endsWith('/') || url.includes('manifest.json')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
@@ -86,26 +85,7 @@ self.addEventListener('fetch', function(event) {
 
 // ── MESSAGE ──
 self.addEventListener('message', function(event) {
-  if (!event.data) return;
-
-  // Команда обновиться
-  if (event.data.type === 'SKIP_WAITING') {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
-  }
-
-  // Проверка версии — если не совпадает, сбрасываем кеши и перезагружаем
-  if (event.data.type === 'CHECK_VERSION') {
-    if (event.data.version && event.data.version !== APP_VERSION) {
-      // Удаляем все кеши и говорим странице перезагрузиться
-      caches.keys().then(function(names) {
-        return Promise.all(names.map(function(n) { return caches.delete(n); }));
-      }).then(function() {
-        self.clients.matchAll().then(function(clients) {
-          clients.forEach(function(client) {
-            client.postMessage({ type: 'FORCE_RELOAD' });
-          });
-        });
-      });
-    }
   }
 });

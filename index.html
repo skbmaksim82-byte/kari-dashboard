@@ -1123,10 +1123,6 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function(reg) {
       // updateViaCache:'none' — браузер всегда загружает sw.js с сервера, игнорируя HTTP-кеш
 
-      // Принудительно сбрасываем старые кеши если версия не совпадает
-      if (reg.active) {
-        reg.active.postMessage({ type: 'CHECK_VERSION', version: APP_VERSION });
-      }
 
       // Проверяем обновление сразу и каждые 60 секунд
       reg.update();
@@ -1151,12 +1147,6 @@ if ('serviceWorker' in navigator) {
       if (!refreshing) { refreshing = true; window.location.reload(); }
     });
 
-    // SW сообщает что нужна принудительная перезагрузка (версии не совпали)
-    navigator.serviceWorker.addEventListener('message', function(event) {
-      if (event.data && event.data.type === 'FORCE_RELOAD') {
-        window.location.reload(true);
-      }
-    });
   });
 }
 
@@ -2355,8 +2345,7 @@ function renderMain() {
     // Обращения — с синхронизацией GitHub
     bodyEl.className = '';
     bodyEl.style.cssText = '';
-    bodyEl.innerHTML = renderAppeals(); // сразу показываем локальное
-    ghSyncAndRender();                  // фоновая синхронизация с GitHub
+    bodyEl.innerHTML = renderAppeals();
   } else {
     // Обзор — обычный скролл
     bodyEl.className = '';
@@ -5232,10 +5221,9 @@ function rptSendMail() {
   btn.classList.add('rpt-sending');
   setTimeout(function(){ btn.classList.remove('rpt-sending'); }, 600);
 
-
-  // ── Сохраняем обращение и синхронизируем с GitHub ──
+  // ── Сохраняем обращение в localStorage ──
   var appeal = {
-    id: Date.now(),
+    id:        Date.now(),
     storeId:   storeId,
     storeName: storeName,
     region:    region,
@@ -5243,8 +5231,9 @@ function rptSendMail() {
     items:     lines,
     resolved:  false
   };
-  addAppeal(appeal);
-  // Обновляем счётчик на вкладке если менеджер
+  var appeals = JSON.parse(localStorage.getItem('kari_appeals') || '[]');
+  appeals.unshift(appeal);
+  localStorage.setItem('kari_appeals', JSON.stringify(appeals));
   updateAppealsTabBadge();
 
   // Открываем Outlook
@@ -5270,11 +5259,10 @@ function rptSendMail() {
 // ══════════════════════════════════════════════════════
 
 // ─── Конфиг GitHub для синхронизации ───
-var APPEALS_REPO  = 'skbmaksim82-byte/kari-dashboard';
-var APPEALS_FILE  = 'appeals.json';
-var APPEALS_BRANCH = 'main';
+// ══════════════════════════════════════════════════════
+// СИСТЕМА ОБРАЩЕНИЙ — localStorage, без GitHub
+// ══════════════════════════════════════════════════════
 
-// ─── Локальное хранилище (работает всегда) ───
 function getAppeals() {
   return JSON.parse(localStorage.getItem('kari_appeals') || '[]');
 }
@@ -5292,214 +5280,14 @@ function updateAppealsTabBadge() {
   badge.style.display = cnt > 0 ? 'inline-flex' : 'none';
 }
 
-// ─── GitHub токен менеджера ───
-function getGHToken() { return localStorage.getItem('kari_gh_token') || ''; }
-function setGHToken(t) { localStorage.setItem('kari_gh_token', t.trim()); }
-
-// ─── Получить SHA файла appeals.json на GitHub ───
-function ghGetFileSha(token, cb) {
-  fetch('https://api.github.com/repos/' + APPEALS_REPO + '/contents/' + APPEALS_FILE + '?ref=' + APPEALS_BRANCH, {
-    headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
-  }).then(function(r) {
-    if (r.status === 404) { cb(null, null); return; }
-    return r.json().then(function(d) { cb(null, d.sha || null); });
-  }).catch(function(e) { cb(e, null); });
-}
-
-// ─── Загрузить обращения с GitHub → merge в localStorage ───
-function ghPullAppeals(token, cb) {
-  fetch('https://api.github.com/repos/' + APPEALS_REPO + '/contents/' + APPEALS_FILE + '?ref=' + APPEALS_BRANCH + '&t=' + Date.now(), {
-    headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
-  }).then(function(r) {
-    if (r.status === 404) { if (cb) cb(null); return; }
-    return r.json().then(function(d) {
-      try {
-        var remote = JSON.parse(atob(d.content.replace(/\n/g,'')));
-        // Merge: remote приоритет, но сохраняем resolved статус из local если есть
-        var local = getAppeals();
-        var localMap = {};
-        local.forEach(function(a){ localMap[a.id] = a; });
-        // Обновляем local из remote
-        remote.forEach(function(a) {
-          if (localMap[a.id]) {
-            // Если менеджер локально пометил resolved — синхронизируем
-            if (localMap[a.id].resolved && !a.resolved) a.resolved = true;
-          }
-        });
-        // Добавляем локальные которых нет в remote (новые, ещё не загруженные)
-        local.forEach(function(a) {
-          if (!remote.find(function(r){ return r.id === a.id; })) {
-            remote.push(a);
-          }
-        });
-        saveAppeals(remote);
-        if (cb) cb(null);
-      } catch(e) { if (cb) cb(null); }
-    });
-  }).catch(function() { if (cb) cb(null); });
-}
-
-// ─── Загрузить обращения на GitHub ───
-function ghPushAppeals(token, appeals, cb) {
-  ghGetFileSha(token, function(err, sha) {
-    var body = { message: 'update appeals', content: btoa(unescape(encodeURIComponent(JSON.stringify(appeals, null, 2)))), branch: APPEALS_BRANCH };
-    if (sha) body.sha = sha;
-    fetch('https://api.github.com/repos/' + APPEALS_REPO + '/contents/' + APPEALS_FILE, {
-      method: 'PUT',
-      headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
-      body: JSON.stringify(body)
-    }).then(function(r) {
-      if (cb) cb(r.ok ? null : new Error('GitHub push failed: ' + r.status));
-    }).catch(function(e) { if (cb) cb(e); });
-  });
-}
-
-// ─── Добавить новое обращение ───
-function addAppeal(appeal) {
-  var appeals = getAppeals();
-  appeals.unshift(appeal);
-  saveAppeals(appeals);
-  updateAppealsTabBadge();
-  // Пушим на GitHub (работает как из режима магазина, так и менеджера)
-  var token = getGHToken();
-  if (token) {
-    ghPushAppeals(token, appeals, function(err) {
-      if (err) console.warn('GitHub push appeal failed:', err);
-    });
-  }
-}
-
-// ─── Модал настройки токена GitHub ───
-function openGHTokenModal() {
-  var cur = getGHToken();
-  var html =
-    '<div id="ghTokenOverlay" onclick="closeGHTokenModal(event)" style="position:fixed;inset:0;z-index:9500;background:rgba(45,10,26,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px">' +
-      '<div onclick="event.stopPropagation()" style="background:#fff;border-radius:20px;max-width:480px;width:100%;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.25);animation:appealPop .3s cubic-bezier(.32,.72,0,1)">' +
-        '<div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:17px;color:#2D0A1A;margin-bottom:6px">🔑 GitHub токен для синхронизации</div>' +
-        '<div style="font-size:12px;color:#8C4D6E;margin-bottom:20px;line-height:1.6">Токен нужен чтобы обращения от магазинов синхронизировались между устройствами.<br><b>Settings → Developer settings → Personal access tokens → Fine-grained</b><br>Права: <b>Contents: Read and write</b> для репозитория kari-dashboard</div>' +
-        '<label style="font-size:11px;font-weight:700;color:#8C4D6E;text-transform:uppercase;letter-spacing:.5px">Personal Access Token</label>' +
-        '<input id="ghTokenInput" type="password" placeholder="github_pat_..." value="' + cur + '" style="width:100%;margin-top:6px;padding:10px 14px;border:1.5px solid #F8BBD9;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box" />' +
-        '<div style="display:flex;gap:10px;margin-top:16px">' +
-          '<button onclick="saveGHToken()" style="flex:1;background:linear-gradient(135deg,#C2185B,#880E4F);color:#fff;border:none;padding:11px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:Montserrat,sans-serif">💾 Сохранить</button>' +
-          '<button onclick="closeGHTokenModal()" style="background:#f5f5f5;color:#666;border:none;padding:11px 20px;border-radius:10px;font-size:13px;cursor:pointer;font-family:Montserrat,sans-serif">Отмена</button>' +
-        '</div>' +
-        (cur ? '<button onclick="testGHToken()" style="width:100%;margin-top:10px;background:#E8F5E9;color:#2E7D32;border:1.5px solid #C8E6C9;padding:9px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:Montserrat,sans-serif">🔍 Проверить подключение</button>' : '') +
-      '</div>' +
-    '</div>';
-  var d = document.createElement('div');
-  d.id = 'ghTokenModal';
-  d.innerHTML = html;
-  document.body.appendChild(d);
-}
-function closeGHTokenModal(e) {
-  if (e && e.target.id !== 'ghTokenOverlay') return;
-  var el = document.getElementById('ghTokenModal');
-  if (el) el.remove();
-}
-function saveGHToken() {
-  var val = (document.getElementById('ghTokenInput') || {}).value || '';
-  setGHToken(val);
-  var el = document.getElementById('ghTokenModal');
-  if (el) el.remove();
-  showToast('✅ Токен сохранён');
-  if (activeTab === 'appeals') { ghSyncAndRender(); }
-}
-function testGHToken() {
-  var token = (document.getElementById('ghTokenInput') || {}).value || getGHToken();
-  fetch('https://api.github.com/repos/' + APPEALS_REPO, {
-    headers: { 'Authorization': 'token ' + token }
-  }).then(function(r) {
-    showToast(r.ok ? '✅ Подключение успешно!' : '❌ Ошибка: ' + r.status);
-  }).catch(function() { showToast('❌ Нет доступа к GitHub'); });
-}
-
-function showToast(msg) {
-  var t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2D0A1A;color:#fff;padding:10px 22px;border-radius:24px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;z-index:99999;pointer-events:none;animation:fadeInUp .3s ease';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(function(){ t.remove(); }, 3000);
-}
-
-// ─── Синхронизация + рендер вкладки обращений ───
-function ghSyncAndRender() {
-  var bodyEl = document.getElementById('mainBody');
-  if (!bodyEl || activeTab !== 'appeals') return;
-  var token = getGHToken();
-  if (!token) {
-    bodyEl.innerHTML = renderAppeals();
-    return;
-  }
-  // Показываем спиннер
-  bodyEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#8C4D6E;font-size:14px">⏳ Синхронизация с GitHub...</div>';
-  ghPullAppeals(token, function() {
-    if (activeTab === 'appeals' && document.getElementById('mainBody')) {
-      document.getElementById('mainBody').innerHTML = renderAppeals();
-      updateAppealsTabBadge();
-    }
-  });
-}
-
-// ── Рендер вкладки Обращения ──
-function renderAppeals() {
-  var appeals = getAppeals().filter(function(a){ return !a.resolved; });
-  var resolved = getAppeals().filter(function(a){ return a.resolved; });
-  var token = getGHToken();
-  var syncStatus = token
-    ? '<span style="color:#2E7D32;font-size:11px;font-weight:600">🟢 GitHub подключён</span>'
-    : '<span style="color:#E65100;font-size:11px;font-weight:600">🔴 Без синхронизации</span>';
-
-  var html = '<div style="padding:0 0 32px">';
-
-  // Шапка с кнопкой синхронизации
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:14px 18px;background:#fff;border-radius:14px;border:1.5px solid #F8BBD9;box-shadow:0 2px 8px rgba(194,24,91,0.08)">' +
-    '<div>' +
-      '<div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:15px;color:#2D0A1A;margin-bottom:3px">📩 Обращения от магазинов</div>' +
-      '<div>' + syncStatus + '</div>' +
-    '</div>' +
-    '<div style="display:flex;gap:8px">' +
-      '<button onclick="ghSyncAndRender()" title="Обновить список" style="background:#F3E5F5;color:#6A1B9A;border:none;padding:8px 14px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:Montserrat,sans-serif">🔄 Обновить</button>' +
-      '<button onclick="openGHTokenModal()" style="background:linear-gradient(135deg,#C2185B,#880E4F);color:#fff;border:none;padding:8px 14px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:Montserrat,sans-serif">🔑 Синхронизация</button>' +
-    '</div>' +
-  '</div>';
-
-  if (appeals.length === 0 && resolved.length === 0) {
-    html += '<div style="text-align:center;padding:60px 20px;color:#8C4D6E;font-size:15px">📭 Нет обращений от магазинов</div>';
-    html += '</div>';
-    return html;
-  }
-
-  if (appeals.length > 0) {
-    html += '<div style="font-size:13px;font-weight:700;color:#C2185B;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding:0 4px">🔔 Новые обращения (' + appeals.length + ')</div>';
-    html += '<div class="appeals-list">';
-    appeals.forEach(function(a) {
-      html += appealRow(a, false);
-    });
-    html += '</div>';
-  }
-
-  if (resolved.length > 0) {
-    html += '<div style="font-size:13px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px;margin:28px 0 12px;padding:0 4px">✅ Исправлено (' + resolved.length + ')</div>';
-    html += '<div class="appeals-list resolved">';
-    resolved.slice(0, 20).forEach(function(a) {
-      html += appealRow(a, true);
-    });
-    html += '</div>';
-  }
-
-  html += '</div>';
-  return html;
-}
-
+// ── Строка списка обращений ──
 function appealRow(a, isResolved) {
   var itemsShort = a.items ? a.items[0] : '—';
-  // Укорачиваем первую строку до 70 символов
   var preview = itemsShort.replace(/\r?\n/g, ' ').substring(0, 70) + (itemsShort.length > 70 ? '…' : '');
   var count = a.items ? a.items.length : 0;
   var bg = isResolved ? '#f9f9f9' : '#fff';
   var border = isResolved ? '#e0e0e0' : '#F8BBD9';
   var badgeColor = isResolved ? '#aaa' : '#C2185B';
-
   return '<div class="appeal-row' + (isResolved ? ' resolved' : '') + '" onclick="openAppealModal(' + a.id + ')" style="background:' + bg + ';border:1.5px solid ' + border + '">' +
     '<div class="appeal-row-left">' +
       '<div class="appeal-store-badge" style="background:' + badgeColor + '">№' + a.storeId + '</div>' +
@@ -5516,18 +5304,38 @@ function appealRow(a, isResolved) {
   '</div>';
 }
 
+// ── Рендер вкладки Обращения ──
+function renderAppeals() {
+  var appeals = getAppeals().filter(function(a){ return !a.resolved; });
+  var resolved = getAppeals().filter(function(a){ return a.resolved; });
+  if (appeals.length === 0 && resolved.length === 0) {
+    return '<div style="text-align:center;padding:60px 20px;color:#8C4D6E;font-size:15px">📭 Нет обращений от магазинов</div>';
+  }
+  var html = '<div style="padding:0 0 32px">';
+  if (appeals.length > 0) {
+    html += '<div style="font-size:13px;font-weight:700;color:#C2185B;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding:0 4px">🔔 Новые обращения (' + appeals.length + ')</div>';
+    html += '<div class="appeals-list">';
+    appeals.forEach(function(a){ html += appealRow(a, false); });
+    html += '</div>';
+  }
+  if (resolved.length > 0) {
+    html += '<div style="font-size:13px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px;margin:28px 0 12px;padding:0 4px">✅ Исправлено (' + resolved.length + ')</div>';
+    html += '<div class="appeals-list resolved">';
+    resolved.slice(0, 20).forEach(function(a){ html += appealRow(a, true); });
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
 // ── Модал просмотра обращения ──
 function openAppealModal(id) {
   var appeals = getAppeals();
   var a = appeals.find(function(x){ return x.id === id; });
   if (!a) return;
-
-  var itemsHtml = (a.items || []).map(function(line, i) {
+  var itemsHtml = (a.items || []).map(function(line) {
     var cleaned = line.replace(/\r/g, '');
     var parts = cleaned.split('\n');
-    // parts[0] = "1. Раздел / Поле"
-    // parts[1] = "   Сейчас: X"
-    // parts[2] = "   Исправить на: Y"
     var title = parts[0] || '';
     var curr  = (parts[1] || '').replace(/^\s*/, '');
     var newv  = (parts[2] || '').replace(/^\s*/, '');
@@ -5537,81 +5345,53 @@ function openAppealModal(id) {
       (newv ? '<div class="am-item-row"><span class="am-lbl am-lbl-new">Исправить</span><span class="am-val am-val-new">' + newv.replace('Исправить на: ','') + '</span></div>' : '') +
     '</div>';
   }).join('');
-
-  var resolvedBadge = a.resolved
-    ? '<span style="background:#E8F5E9;color:#2E7D32;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">✅ Исправлено</span>'
-    : '';
-
   var resolveBtn = a.resolved ? '' :
-    '<button onclick="resolveAppeal(' + id + ')" style="background:linear-gradient(135deg,#2E7D32,#388E3C);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Montserrat,sans-serif;box-shadow:0 4px 14px rgba(46,125,50,0.35);transition:all .2s" onmouseover="this.style.transform=\'scale(1.03)\'" onmouseout="this.style.transform=\'\'">✅ Исправлено</button>';
-
+    '<button onclick="resolveAppeal(' + id + ')" style="background:linear-gradient(135deg,#2E7D32,#388E3C);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Montserrat,sans-serif;box-shadow:0 4px 14px rgba(46,125,50,0.35)">✅ Исправлено</button>';
   var html =
     '<div id="appealModalOverlay" onclick="closeAppealModal(event)" style="position:fixed;inset:0;z-index:8000;background:rgba(45,10,26,0.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px">' +
       '<div id="appealModalBox" style="background:#fff;border-radius:20px;max-width:560px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;animation:appealPop .3s cubic-bezier(.32,.72,0,1)">' +
-        // Шапка
         '<div style="background:linear-gradient(135deg,#880E4F,#C2185B);padding:20px 24px;flex-shrink:0">' +
           '<div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">' +
             '<div style="background:rgba(255,255,255,0.2);border-radius:8px;padding:4px 12px;font-size:18px;font-weight:800;color:#fff;font-family:Montserrat,sans-serif">№' + a.storeId + '</div>' +
             '<div style="color:#fff;font-size:15px;font-weight:600;font-family:Montserrat,sans-serif">' + (a.storeName || '') + '</div>' +
-            resolvedBadge +
-            '<button onclick="closeAppealModal()" style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center">×</button>' +
+            '<button onclick="closeAppealModal()" style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">×</button>' +
           '</div>' +
-          '<div style="color:rgba(255,255,255,0.75);font-size:12px">' + a.region + ' · ' + a.date + '</div>' +
+          '<div style="color:rgba(255,255,255,0.75);font-size:12px">' + (a.region||'') + ' · ' + a.date + '</div>' +
         '</div>' +
-        // Тело
         '<div style="overflow-y:auto;padding:20px 24px;flex:1">' +
           '<div style="font-size:12px;font-weight:700;color:#8C4D6E;text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Корректировки (' + (a.items||[]).length + ')</div>' +
           itemsHtml +
         '</div>' +
-        // Футер
         '<div style="padding:16px 24px;border-top:1px solid #F8BBD9;display:flex;justify-content:flex-end;gap:12px;flex-shrink:0">' +
           '<button onclick="closeAppealModal()" style="background:#f5f5f5;color:#666;border:none;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:Montserrat,sans-serif">Закрыть</button>' +
           resolveBtn +
         '</div>' +
       '</div>' +
     '</div>';
-
   var container = document.createElement('div');
   container.id = 'appealModalContainer';
   container.innerHTML = html;
   document.body.appendChild(container);
-
-  // Анимация
-  var styleEl = document.createElement('style');
-  styleEl.textContent = '@keyframes appealPop{from{transform:scale(.92) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}';
-  document.head.appendChild(styleEl);
+  if (!document.getElementById('appealPopStyle')) {
+    var s = document.createElement('style');
+    s.id = 'appealPopStyle';
+    s.textContent = '@keyframes appealPop{from{transform:scale(.92) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}';
+    document.head.appendChild(s);
+  }
 }
-
 function closeAppealModal(e) {
-  if (e && e.target.id !== 'appealModalOverlay') return;
+  if (e && e.target && e.target.id !== 'appealModalOverlay') return;
   var c = document.getElementById('appealModalContainer');
   if (c) c.remove();
 }
-
 function resolveAppeal(id) {
   var appeals = getAppeals();
   var idx = appeals.findIndex(function(x){ return x.id === id; });
   if (idx === -1) return;
   appeals[idx].resolved = true;
-  appeals[idx].resolvedDate = new Date().toLocaleDateString('ru-RU');
   saveAppeals(appeals);
-
-  // Закрываем модал
   var c = document.getElementById('appealModalContainer');
   if (c) c.remove();
-
-  // Синхронизируем на GitHub
-  var token = getGHToken();
-  if (token) {
-    ghPushAppeals(token, appeals, function(err) {
-      if (err) showToast('⚠️ Локально сохранено, GitHub недоступен');
-      else showToast('✅ Исправлено и синхронизировано');
-    });
-  } else {
-    showToast('✅ Обращение закрыто');
-  }
-
-  // Обновляем вкладку
   if (activeTab === 'appeals') {
     var bodyEl = document.getElementById('mainBody');
     if (bodyEl) bodyEl.innerHTML = renderAppeals();
