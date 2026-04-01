@@ -1,86 +1,104 @@
 // ══════════════════════════════════════════════════════
-// SERVICE WORKER — Kari Dashboard PWA
-// Версия кеша — меняется при каждом обновлении дашборда
+// SERVICE WORKER — Kari Dashboard PWA  v1.8
+// ВАЖНО: при каждом обновлении дашборда менять CACHE_NAME
 // ══════════════════════════════════════════════════════
-var CACHE_NAME = 'kari-dashboard-v1.7';
+var CACHE_NAME = 'kari-dashboard-v1.8';
 
-// Файлы, которые кешируем при установке
 var PRECACHE_URLS = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-// ── INSTALL: кешируем основные файлы ──
+// ── INSTALL: кешируем основные файлы и сразу активируемся ──
 self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
       return cache.addAll(PRECACHE_URLS);
+    }).then(function() {
+      // Сразу вызываем skipWaiting — новый SW активируется немедленно
+      // Уведомление показывается в index.html через updatefound → installed
+      return self.skipWaiting();
     })
   );
-  // НЕ вызываем skipWaiting() автоматически — ждём команды от приложения
-  // чтобы пользователь мог сам решить когда обновиться
 });
 
-// ── ACTIVATE: удаляем старые кеши ──
+// ── ACTIVATE: удаляем все старые кеши ──
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(cacheNames) {
       return Promise.all(
-        cacheNames.filter(function(name) {
-          return name !== CACHE_NAME;
-        }).map(function(name) {
-          return caches.delete(name);
-        })
+        cacheNames
+          .filter(function(name) { return name !== CACHE_NAME; })
+          .map(function(name) { return caches.delete(name); })
       );
     }).then(function() {
+      // Берём контроль над всеми открытыми вкладками немедленно
       return self.clients.claim();
     })
   );
 });
 
-// ── FETCH: стратегия Network-First ──
-// Сначала пробуем сеть (чтобы всегда получать свежие данные из GitHub),
-// при ошибке сети — отдаём из кеша
+// ── FETCH: Network-First для HTML, Cache-First для остального ──
 self.addEventListener('fetch', function(event) {
-  // Пропускаем не-GET запросы и запросы к другим доменам (кроме GitHub)
   if (event.request.method !== 'GET') return;
 
   var url = event.request.url;
 
-  // Для xlsx, планировок и фото — только сеть (не кешируем большие файлы)
-  if (url.includes('.xlsx') || url.includes('/plans/') || url.includes('/Foto') ||
-      url.includes('api.github.com') || url.includes('fonts.googleapis') ||
-      url.includes('cdnjs.cloudflare.com')) {
+  // sw.js никогда не кешируем — браузер должен всегда проверять его
+  if (url.includes('sw.js')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Для основного приложения — Network-First
+  // Большие файлы — только сеть
+  if (url.includes('.xlsx') || url.includes('/plans/') || url.includes('/Foto') ||
+      url.includes('api.github.com') || url.includes('fonts.googleapis') ||
+      url.includes('cdnjs.cloudflare.com')) {
+    event.respondWith(
+      fetch(event.request).catch(function() {
+        return new Response('Нет соединения', { status: 503 });
+      })
+    );
+    return;
+  }
+
+  // index.html и manifest.json — Network-First (всегда свежие)
+  if (url.includes('index.html') || url.endsWith('/') || url.includes('manifest.json')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(function(response) {
+          if (response && response.status === 200) {
+            var clone = response.clone();
+            caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
+          }
+          return response;
+        })
+        .catch(function() {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Остальное (иконки, шрифты) — Cache-First
   event.respondWith(
-    fetch(event.request, { cache: 'no-cache' })
-      .then(function(response) {
-        // Кешируем свежий ответ
+    caches.match(event.request).then(function(cached) {
+      if (cached) return cached;
+      return fetch(event.request).then(function(response) {
         if (response && response.status === 200 && response.type === 'basic') {
-          var responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, responseToCache);
-          });
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
         }
         return response;
-      })
-      .catch(function() {
-        // Сеть недоступна — берём из кеша
-        return caches.match(event.request).then(function(cached) {
-          if (cached) return cached;
-          // Если нет в кеше — отдаём главную страницу (для SPA)
-          return caches.match('./index.html');
-        });
-      })
+      });
+    })
   );
 });
 
-// ── MESSAGE: команда от приложения на немедленное обновление ──
+// ── MESSAGE: команда от приложения ──
 self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
