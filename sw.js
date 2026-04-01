@@ -1,8 +1,9 @@
 // ══════════════════════════════════════════════════════
-// SERVICE WORKER — Kari Dashboard PWA  v1.8
-// ВАЖНО: при каждом обновлении дашборда менять CACHE_NAME
+// SERVICE WORKER — Kari Dashboard PWA
+// При каждом обновлении менять ОБЕ версии: CACHE_NAME и APP_VERSION
 // ══════════════════════════════════════════════════════
-var CACHE_NAME = 'kari-dashboard-v1.8';
+var CACHE_NAME  = 'kari-dashboard-v1.9';
+var APP_VERSION = '1.9'; // должна совпадать с APP_VERSION в index.html
 
 var PRECACHE_URLS = [
   './',
@@ -12,95 +13,99 @@ var PRECACHE_URLS = [
   './icon-512.png'
 ];
 
-// ── INSTALL: кешируем основные файлы и сразу активируемся ──
+// ── INSTALL: кешируем и сразу активируемся ──
 self.addEventListener('install', function(event) {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(PRECACHE_URLS);
-    }).then(function() {
-      // Сразу вызываем skipWaiting — новый SW активируется немедленно
-      // Уведомление показывается в index.html через updatefound → installed
-      return self.skipWaiting();
-    })
+    caches.open(CACHE_NAME)
+      .then(function(cache) { return cache.addAll(PRECACHE_URLS); })
+      .then(function() { return self.skipWaiting(); })
   );
 });
 
-// ── ACTIVATE: удаляем все старые кеши ──
+// ── ACTIVATE: удаляем ВСЕ старые кеши ──
 self.addEventListener('activate', function(event) {
   event.waitUntil(
-    caches.keys().then(function(cacheNames) {
+    caches.keys().then(function(names) {
       return Promise.all(
-        cacheNames
-          .filter(function(name) { return name !== CACHE_NAME; })
-          .map(function(name) { return caches.delete(name); })
+        names.filter(function(n) { return n !== CACHE_NAME; })
+             .map(function(n) { return caches.delete(n); })
       );
-    }).then(function() {
-      // Берём контроль над всеми открытыми вкладками немедленно
-      return self.clients.claim();
-    })
+    }).then(function() { return self.clients.claim(); })
   );
 });
 
-// ── FETCH: Network-First для HTML, Cache-First для остального ──
+// ── FETCH ──
 self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
-
   var url = event.request.url;
 
-  // sw.js никогда не кешируем — браузер должен всегда проверять его
+  // sw.js — никогда не кешируем
   if (url.includes('sw.js')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Большие файлы — только сеть
+  // Большие внешние файлы — только сеть
   if (url.includes('.xlsx') || url.includes('/plans/') || url.includes('/Foto') ||
       url.includes('api.github.com') || url.includes('fonts.googleapis') ||
       url.includes('cdnjs.cloudflare.com')) {
-    event.respondWith(
-      fetch(event.request).catch(function() {
-        return new Response('Нет соединения', { status: 503 });
-      })
-    );
+    event.respondWith(fetch(event.request).catch(function() {
+      return new Response('Нет соединения', { status: 503 });
+    }));
     return;
   }
 
-  // index.html и manifest.json — Network-First (всегда свежие)
+  // index.html и manifest — Network-First, всегда свежие
   if (url.includes('index.html') || url.endsWith('/') || url.includes('manifest.json')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
-        .then(function(response) {
-          if (response && response.status === 200) {
-            var clone = response.clone();
-            caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
+        .then(function(resp) {
+          if (resp && resp.status === 200) {
+            caches.open(CACHE_NAME).then(function(c) { c.put(event.request, resp.clone()); });
           }
-          return response;
+          return resp;
         })
-        .catch(function() {
-          return caches.match(event.request);
-        })
+        .catch(function() { return caches.match(event.request); })
     );
     return;
   }
 
-  // Остальное (иконки, шрифты) — Cache-First
+  // Остальное — Cache-First
   event.respondWith(
     caches.match(event.request).then(function(cached) {
       if (cached) return cached;
-      return fetch(event.request).then(function(response) {
-        if (response && response.status === 200 && response.type === 'basic') {
-          var clone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
+      return fetch(event.request).then(function(resp) {
+        if (resp && resp.status === 200 && resp.type === 'basic') {
+          caches.open(CACHE_NAME).then(function(c) { c.put(event.request, resp.clone()); });
         }
-        return response;
+        return resp;
       });
     })
   );
 });
 
-// ── MESSAGE: команда от приложения ──
+// ── MESSAGE ──
 self.addEventListener('message', function(event) {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (!event.data) return;
+
+  // Команда обновиться
+  if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+
+  // Проверка версии — если не совпадает, сбрасываем кеши и перезагружаем
+  if (event.data.type === 'CHECK_VERSION') {
+    if (event.data.version && event.data.version !== APP_VERSION) {
+      // Удаляем все кеши и говорим странице перезагрузиться
+      caches.keys().then(function(names) {
+        return Promise.all(names.map(function(n) { return caches.delete(n); }));
+      }).then(function() {
+        self.clients.matchAll().then(function(clients) {
+          clients.forEach(function(client) {
+            client.postMessage({ type: 'FORCE_RELOAD' });
+          });
+        });
+      });
+    }
   }
 });
