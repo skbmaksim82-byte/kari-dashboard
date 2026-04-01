@@ -2,7 +2,7 @@
 // SERVICE WORKER — Kari Dashboard PWA
 // Версия кеша — меняется при каждом обновлении дашборда
 // ══════════════════════════════════════════════════════
-var CACHE_NAME = 'kari-dashboard-v1.4';
+var CACHE_NAME = 'kari-dashboard-v1.5';
 
 // Файлы, которые кешируем при установке
 var PRECACHE_URLS = [
