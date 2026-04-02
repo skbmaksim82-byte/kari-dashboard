@@ -4,12 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Паспорта магазинов Сибирь</title>
-<!-- ── PWA Install: перехватываем САМЫМ ПЕРВЫМ до любых других скриптов ── -->
+<!-- ── CACHE BUSTER: сбрасываем старые SW при несовпадении версии ── -->
 <script>
-// Блокируем мини-баннер Chrome (👍) сразу при парсинге страницы
+(function() {
+  var EXPECTED = '2.0';
+  var stored = localStorage.getItem('kari_sw_ver');
+  if (stored !== EXPECTED) {
+    // Удаляем ВСЕ service workers и кеши
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(r) { r.unregister(); });
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        names.forEach(function(n) { caches.delete(n); });
+      });
+    }
+    localStorage.setItem('kari_sw_ver', EXPECTED);
+    // Перезагружаем страницу без кеша — только если версия изменилась
+    if (stored !== null) {
+      window.location.reload(true);
+    }
+  }
+})();
+// Блокируем мини-баннер Chrome (👍)
 window._deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault(); // подавляем авто-баннер навсегда
+  e.preventDefault();
   window._deferredInstallPrompt = e;
 });
 </script>
@@ -2342,7 +2364,7 @@ function renderMain() {
     bodyEl.style.cssText = '';
     bodyEl.innerHTML = renderStoreDetail();
   } else if (activeTab === 'appeals') {
-    // Обращения — с синхронизацией GitHub
+    // Обращения
     bodyEl.className = '';
     bodyEl.style.cssText = '';
     bodyEl.innerHTML = renderAppeals();
