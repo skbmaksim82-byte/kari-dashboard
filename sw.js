@@ -1,13 +1,15 @@
 // ─── SERVICE WORKER — Kari Dashboard ───
 // Версия кэша — меняется при каждом деплое (совпадает с APP_VERSION в index.html)
-var CACHE_VERSION = 'kari-v1.11';
+var CACHE_VERSION = 'kari-v1.12';
 var CACHE_NAME = CACHE_VERSION;
 
 // Файлы для кэширования при установке
 var PRECACHE_URLS = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 // ─── УСТАНОВКА ───
