@@ -1,8 +1,5 @@
-// ══════════════════════════════════════════════════════
-// SERVICE WORKER — Kari Dashboard PWA  v1.9
-// При каждом обновлении менять CACHE_NAME
-// ══════════════════════════════════════════════════════
-var CACHE_NAME = 'kari-dashboard-v1.9';
+// SERVICE WORKER — Kari Dashboard PWA  v2.0
+var CACHE_NAME = 'kari-dashboard-v2.0';
 
 var PRECACHE_URLS = [
   './',
@@ -12,7 +9,6 @@ var PRECACHE_URLS = [
   './icon-512.png'
 ];
 
-// ── INSTALL ──
 self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -21,7 +17,6 @@ self.addEventListener('install', function(event) {
   );
 });
 
-// ── ACTIVATE: удаляем старые кеши ──
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(names) {
@@ -33,18 +28,14 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-// ── FETCH ──
 self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
   var url = event.request.url;
 
-  // sw.js — никогда не кешируем
   if (url.includes('sw.js')) {
     event.respondWith(fetch(event.request));
     return;
   }
-
-  // Внешние ресурсы — только сеть
   if (url.includes('.xlsx') || url.includes('/plans/') || url.includes('/Foto') ||
       url.includes('api.github.com') || url.includes('fonts.googleapis') ||
       url.includes('cdnjs.cloudflare.com')) {
@@ -53,8 +44,6 @@ self.addEventListener('fetch', function(event) {
     }));
     return;
   }
-
-  // index.html — Network-First (всегда свежий)
   if (url.includes('index.html') || url.endsWith('/') || url.includes('manifest.json')) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
@@ -68,8 +57,6 @@ self.addEventListener('fetch', function(event) {
     );
     return;
   }
-
-  // Остальное — Cache-First
   event.respondWith(
     caches.match(event.request).then(function(cached) {
       if (cached) return cached;
@@ -83,7 +70,6 @@ self.addEventListener('fetch', function(event) {
   );
 });
 
-// ── MESSAGE ──
 self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
