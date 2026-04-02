@@ -1,5 +1,5 @@
 // SERVICE WORKER — Kari Dashboard PWA  v2.0
-var CACHE_NAME = 'kari-dashboard-v2.0';
+var CACHE_NAME = 'kari-dashboard-v2.1';
 
 var PRECACHE_URLS = [
   './',
