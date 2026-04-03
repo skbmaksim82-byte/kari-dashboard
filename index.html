@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Паспорта магазинов Сибирь</title>
+<meta name="description" content="Дашборд паспортов магазинов Кари — Сибирь">
+<meta name="theme-color" content="#880E4F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kari Паспорта">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -523,6 +530,7 @@ header {
 .floorplan-thumb.no-plan:hover { transform: none; box-shadow: 3px 3px 10px rgba(194,24,91,0.12); }
 .floorplan-loading .fp-icon { animation: fp-spin 1s linear infinite; }
 @keyframes fp-spin { to { transform: rotate(360deg); } }
+@keyframes slideUp { from { transform:translateX(-50%) translateY(80px); opacity:0; } to { transform:translateX(-50%) translateY(0); opacity:1; } }
 
 /* Fullscreen plan modal */
 .plan-modal-overlay {
@@ -1075,6 +1083,40 @@ header {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 var APP_VERSION = '1.13';
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      reg.update();
+      reg.addEventListener('updatefound', function() {
+        var newWorker = reg.installing;
+        newWorker.addEventListener('statechange', function() {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateNotification();
+          }
+        });
+      });
+    }).catch(function(err) { console.log('SW registration failed:', err); });
+  });
+}
+
+function showUpdateNotification() {
+  var el = document.createElement('div');
+  el.id = 'updateToast';
+  el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+    'background:#1565C0;color:#fff;padding:14px 24px;border-radius:12px;z-index:9999;' +
+    'font-family:Montserrat,sans-serif;font-size:14px;font-weight:600;' +
+    'box-shadow:0 4px 20px rgba(0,0,0,0.3);display:flex;align-items:center;gap:14px;' +
+    'animation:slideUp .3s ease';
+  el.innerHTML = '🔄 Доступна новая версия дашборда! ' +
+    '<button onclick="window.location.reload(true)" style="background:#fff;color:#1565C0;' +
+    'border:none;padding:6px 14px;border-radius:8px;font-weight:700;cursor:pointer;' +
+    'font-size:13px">Обновить</button>' +
+    '<button onclick="this.parentNode.remove()" style="background:transparent;border:none;' +
+    'color:rgba(255,255,255,0.7);cursor:pointer;font-size:18px;line-height:1">✕</button>';
+  document.body.appendChild(el);
+}
+
 // ─── FETCH TIMEOUT ПОЛИФИЛЛ (совместимость с мобильными браузерами) ───
 function fetchTimeout(url, options, ms) {
   ms = ms || 12000;
@@ -4455,7 +4497,6 @@ document.addEventListener('keydown', function(e) {
     </div>
     <div class="help-body">
 
-      <!-- ── РАЗДЕЛЫ ДАШБОРДА ── -->
       <div class="help-section">
         <div class="help-section-title">📊 Обзор</div>
         <div class="help-item">
@@ -4492,7 +4533,7 @@ document.addEventListener('keydown', function(e) {
         <div class="help-section-title">🛒 Сводный заказ</div>
         <div class="help-item">
           <span class="help-icon">🛒</span>
-          <span>Формирование сводного заказа рекламных материалов (ПОСм) по всем магазинам. Переключайтесь между листами каталога: <b>Листовки</b>, <b>Чек-поинты</b>, <b>Флаги и роллапы</b>, <b>Прочее</b>. Для каждой позиции выбирайте количество боксов — итог суммируется автоматически.</span>
+          <span>Формирование сводного заказа рекламных материалов (ПОСм) по всем магазинам. Переключайтесь между листами каталога: <b>Листовки</b>, <b>Чек-поинты</b>, <b>Флаги и роллапы</b>, <b>Прочее</b>. Итог суммируется автоматически.</span>
         </div>
         <div class="help-item">
           <span class="help-icon">📤</span>
@@ -4516,7 +4557,7 @@ document.addEventListener('keydown', function(e) {
         </div>
         <div class="help-item">
           <span class="help-icon">✏️</span>
-          <span>Кнопка <span class="help-key">✏️ Сообщить о неточности</span> — форма для отправки корректировок данных паспорта. Выберите раздел и подраздел, укажите правильное значение. Сообщение уходит письмом на t.zaharova@kari.com и сохраняется в разделе <b>Обращения</b> до отметки «Исправлено».</span>
+          <span>Кнопка <span class="help-key">✏️ Сообщить о неточности</span> — форма для отправки корректировок данных паспорта. Сообщение уходит письмом и сохраняется в разделе <b>Обращения</b> до отметки «Исправлено».</span>
         </div>
       </div>
 
@@ -4524,15 +4565,18 @@ document.addEventListener('keydown', function(e) {
         <div class="help-section-title">📬 Обращения (только менеджер)</div>
         <div class="help-item">
           <span class="help-icon">📬</span>
-          <span>Раздел отображает все неисправленные обращения магазинов. Красный счётчик на вкладке показывает количество ожидающих обращений. Обращения хранятся в памяти браузера и не исчезают при перезагрузке страницы.</span>
+          <span>Раздел отображает все неисправленные обращения магазинов. Данные хранятся в GitHub Issues — видны с любого компьютера. Красный счётчик на вкладке показывает количество ожидающих обращений.</span>
         </div>
         <div class="help-item">
           <span class="help-icon">✅</span>
-          <span>Клик на обращение — открывает детали с указанием магазина, раздела, текущего и нового значения. Кнопка <span class="help-key">✅ Исправлено</span> удаляет обращение из списка после внесения правок в данные.</span>
+          <span>Клик на обращение — открывает детали. Кнопка <span class="help-key">✅ Исправлено</span> закрывает Issue на GitHub и убирает обращение из списка.</span>
+        </div>
+        <div class="help-item">
+          <span class="help-icon">🔑</span>
+          <span>Для работы раздела нужен GitHub Personal Access Token с правом <b>repo</b>. Вводится один раз через кнопку <span class="help-key">⚙️ Настроить</span> и сохраняется в браузере.</span>
         </div>
       </div>
 
-      <!-- ── ПОИСК И ФИЛЬТРЫ ── -->
       <div class="help-section">
         <div class="help-section-title">🔍 Поиск и фильтры</div>
         <div class="help-item">
@@ -4541,11 +4585,7 @@ document.addEventListener('keydown', function(e) {
         </div>
         <div class="help-item">
           <span class="help-icon">🎛️</span>
-          <span>Фильтры <b>Подразделение / Категория / Вид / Юрлицо / Магазин</b> работают совместно — каждый дополнительно сужает список. Список магазинов слева обновляется мгновенно.</span>
-        </div>
-        <div class="help-item">
-          <span class="help-icon">🏷️</span>
-          <span>Кнопки зон оформления в панели — фильтруют магазины по наличию конкретной зоны. Активная зона подсвечивается. Повторный клик — сбрасывает фильтр.</span>
+          <span>Фильтры <b>Подразделение / Категория / Вид / Юрлицо / Магазин</b> работают совместно — каждый дополнительно сужает список. Повторный клик на зону — сбрасывает фильтр.</span>
         </div>
         <div class="help-item">
           <span class="help-icon">№</span>
@@ -4553,12 +4593,11 @@ document.addEventListener('keydown', function(e) {
         </div>
       </div>
 
-      <!-- ── ОБНОВЛЕНИЕ ДАННЫХ ── -->
       <div class="help-section">
         <div class="help-section-title">☁️ Обновление данных</div>
         <div class="help-item">
           <span class="help-icon">☁️</span>
-          <span>Кнопка <span class="help-key">☁️ Обновить</span> в шапке загружает свежие данные из GitHub: таблицу <b>паспорт магазина.xlsx</b>, планировки из папки <b>plans/</b> и фото из <b>Foto Reklama/</b>. Статус каждого источника отображается в окне в правом нижнем углу.</span>
+          <span>Кнопка <span class="help-key">☁️ Обновить</span> в шапке загружает свежие данные из GitHub: таблицу <b>паспорт магазина.xlsx</b>, планировки из папки <b>plans/</b> и фото из <b>Foto Reklama/</b>. Статус отображается в окне в правом нижнем углу.</span>
         </div>
         <div class="help-item">
           <span class="help-icon">📁</span>
@@ -4566,28 +4605,23 @@ document.addEventListener('keydown', function(e) {
         </div>
       </div>
 
-      <!-- ── ОБНОВЛЕНИЕ ВЕРСИИ ── -->
       <div class="help-section">
         <div class="help-section-title">🔄 Обновление версии дашборда</div>
         <div class="help-item">
           <span class="help-icon">🔢</span>
-          <span>Текущая версия дашборда отображается в шапке рядом с названием. При каждом изменении функционала версия увеличивается на 0.01 (например, v1.12 → v1.13). Версию нужно обновить в двух местах одновременно.</span>
+          <span>Текущая версия отображается в шапке рядом с названием. При каждом изменении версия увеличивается на 0.01. Нужно обновить в двух файлах одновременно.</span>
         </div>
         <div class="help-item">
           <span class="help-icon">1️⃣</span>
-          <span>В файле <b>index.html</b> — изменить константу <span class="help-key">var APP_VERSION = '1.XX'</span> и бейдж в шапке <span class="help-key">&gt;v1.XX&lt;</span>.</span>
+          <span>В файле <b>index.html</b> — изменить <span class="help-key">var APP_VERSION = '1.XX'</span> и бейдж в шапке <span class="help-key">&gt;v1.XX&lt;</span>.</span>
         </div>
         <div class="help-item">
           <span class="help-icon">2️⃣</span>
-          <span>В файле <b>sw.js</b> — изменить строку <span class="help-key">var CACHE_VERSION = 'kari-v1.XX'</span>. Это принудительно сбрасывает кэш браузера и заставляет приложение загрузить новую версию.</span>
+          <span>В файле <b>sw.js</b> — изменить <span class="help-key">var CACHE_VERSION = 'kari-v1.XX'</span>. Это сбрасывает кэш браузера и заставляет приложение загрузить новую версию.</span>
         </div>
         <div class="help-item">
           <span class="help-icon">3️⃣</span>
-          <span>Загрузить оба файла в репозиторий GitHub. После обновления пользователи увидят синее уведомление в нижней части экрана с кнопкой <span class="help-key">Обновить</span> — при клике приложение перезагрузится с новой версией.</span>
-        </div>
-        <div class="help-item">
-          <span class="help-icon">📱</span>
-          <span>Если дашборд установлен как приложение на компьютер (PWA) — обновление происходит автоматически при следующем запуске после деплоя на GitHub.</span>
+          <span>Загрузить оба файла в репозиторий GitHub. Пользователи увидят уведомление с кнопкой <span class="help-key">Обновить</span>.</span>
         </div>
       </div>
 
@@ -5798,14 +5832,12 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
 }
 </style>
 
-
 <!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- СИСТЕМА ОБРАЩЕНИЙ — отдельный самодостаточный блок                -->
-<!-- Не изменяет существующий код, работает поверх через monkey-patch  -->
+<!-- СИСТЕМА ОБРАЩЕНИЙ — GitHub Issues                                  -->
+<!-- Самодостаточный блок, не изменяет существующий код                 -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 
 <style>
-/* Бейдж-счётчик на вкладке */
 .inbox-tab-badge {
   display:inline-flex;align-items:center;justify-content:center;
   background:#E8162A;color:#fff;font-size:10px;font-weight:800;
@@ -5814,8 +5846,6 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
   font-family:'Montserrat',sans-serif;
 }
 @keyframes inboxBadgePulse {0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
-
-/* Список обращений */
 .inbox-wrap {padding:24px;max-width:900px;margin:0 auto;}
 .inbox-page-title {
   font-family:'Montserrat',sans-serif;font-weight:800;font-size:20px;
@@ -5850,8 +5880,6 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
 }
 .inbox-card-meta {font-size:12px;color:#bbb;}
 .inbox-card-arrow {color:#C2185B;font-size:18px;flex-shrink:0;}
-
-/* Модал просмотра обращения */
 #inboxViewOverlay {
   position:fixed;inset:0;z-index:1600;
   background:rgba(45,10,26,0.65);backdrop-filter:blur(6px);
@@ -5892,8 +5920,7 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
 .inboxv-meta strong {color:#2D0A1A;}
 .inboxv-items {display:flex;flex-direction:column;gap:12px;}
 .inboxv-item {
-  background:#f9f9f9;border-radius:10px;border-left:4px solid #C2185B;
-  padding:14px 16px;
+  background:#f9f9f9;border-radius:10px;border-left:4px solid #C2185B;padding:14px 16px;
 }
 .inboxv-item-num {
   font-size:11px;font-weight:700;color:#C2185B;text-transform:uppercase;
@@ -5919,7 +5946,6 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
 .inboxv-btn-cancel:hover {background:#eee;color:#555;}
 </style>
 
-<!-- Модал просмотра обращения (вставляется в DOM один раз) -->
 <div id="inboxViewOverlay">
   <div id="inboxViewBox">
     <div class="inboxv-head">
@@ -5945,33 +5971,92 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
 (function() {
   'use strict';
 
-  /* ── Хранилище ── */
-  var INBOX_KEY = 'kari_inbox';
-  var _inboxCurrentId = null;
+  /* ═══════════════════════════════════════════════════════════════
+     ХРАНИЛИЩЕ — GitHub Issues
+     Репо: skbmaksim82-byte/kari-dashboard
+     Обращение = Issue с меткой "inbox"
+     Закрыть = close Issue (кнопка Исправлено)
+     Токен хранится в localStorage браузера (не передаётся никуда кроме api.github.com)
+  ═══════════════════════════════════════════════════════════════ */
 
-  function inboxLoad() {
-    try { return JSON.parse(localStorage.getItem(INBOX_KEY) || '[]'); }
-    catch(e) { return []; }
+  var GH_OWNER = 'skbmaksim82-byte';
+  var GH_REPO  = 'kari-dashboard';
+  var GH_LABEL = 'inbox';
+  var GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO;
+
+  var _token          = localStorage.getItem('kari_gh_token') || '';
+  var _inboxCache     = null;   // [{id, number, storeId, storeName, region, date, items}]
+  var _inboxCurrentNumber = null; // номер Issue для закрытия
+
+  /* ── Заголовки для запросов ── */
+  function _headers() {
+    var h = { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    if (_token) h['Authorization'] = 'Bearer ' + _token;
+    return h;
   }
-  function inboxSave(arr) {
-    try { localStorage.setItem(INBOX_KEY, JSON.stringify(arr)); } catch(e) {}
+
+  /* ── Загрузить открытые Issues с меткой inbox ── */
+  function inboxLoad(callback) {
+    if (!_token) { callback([]); return; }
+    fetch(GH_API + '/issues?labels=' + GH_LABEL + '&state=open&per_page=100', {
+      headers: _headers(), cache: 'no-cache'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!Array.isArray(data)) { _inboxCache = []; callback([]); return; }
+      _inboxCache = data.map(function(issue) {
+        var rec = { id: String(issue.number), number: issue.number,
+                    title: issue.title, raw: issue.body || '' };
+        // Парсим тело Issue (записано в JSON-блоке)
+        try {
+          var m = issue.body.match(/```json\s*([\s\S]*?)```/);
+          if (m) { var p = JSON.parse(m[1]); Object.assign(rec, p); }
+        } catch(e) {}
+        return rec;
+      });
+      callback(_inboxCache);
+    })
+    .catch(function() { _inboxCache = _inboxCache || []; callback(_inboxCache); });
   }
+
+  /* ── Создать Issue (обращение от магазина) ── */
   function inboxAdd(rec) {
-    var arr = inboxLoad();
-    arr.unshift(rec);
-    inboxSave(arr);
-    inboxRefreshBadge();
+    if (!_token) return;
+    var body = '**Магазин:** №' + rec.storeId + ' · ' + (rec.storeName || '') + '\n'
+             + '**Регион:** ' + (rec.region || '') + '\n'
+             + '**Дата:** ' + (rec.date || '') + '\n\n'
+             + '**Неточности:**\n' + (rec.items || []).map(function(l, i) {
+                 return (i+1) + '. ' + l; }).join('\n\n')
+             + '\n\n```json\n' + JSON.stringify(rec) + '\n```';
+    fetch(GH_API + '/issues', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, _headers()),
+      body: JSON.stringify({ title: 'Паспорт магазина ' + rec.storeId + ' · ' + (rec.storeName || ''),
+                             body: body, labels: [GH_LABEL] })
+    })
+    .then(function() { _inboxCache = null; inboxRefreshBadge(); })
+    .catch(function() {});
   }
-  function inboxDelete(id) {
-    inboxSave(inboxLoad().filter(function(r){ return r.id !== id; }));
-  }
-  function inboxCount() { return inboxLoad().length; }
 
-  /* ── Бейдж на вкладке ── */
-  function inboxRefreshBadge() {
+  /* ── Закрыть Issue (Исправлено) ── */
+  function inboxClose(number, callback) {
+    if (!_token) { if (callback) callback(); return; }
+    fetch(GH_API + '/issues/' + number, {
+      method: 'PATCH',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, _headers()),
+      body: JSON.stringify({ state: 'closed' })
+    })
+    .then(function() { _inboxCache = null; if (callback) callback(); })
+    .catch(function() { if (callback) callback(); });
+  }
+
+  /* ── Количество (из кэша) ── */
+  function inboxCount() { return _inboxCache ? _inboxCache.length : 0; }
+
+  /* ── Бейдж ── */
+  function _updateBadgeUI(n) {
     var badge = document.getElementById('inboxBadgeEl');
     if (!badge) return;
-    var n = inboxCount();
     if (n > 0) {
       badge.textContent = n > 99 ? '99+' : n;
       badge.style.display = 'inline-flex';
@@ -5981,13 +6066,169 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
     }
   }
 
-  /* ── Monkey-patch rptSendMail — перехватываем после отправки ── */
+  function inboxRefreshBadge() {
+    if (_inboxCache !== null) { _updateBadgeUI(_inboxCache.length); return; }
+    inboxLoad(function(arr) { _updateBadgeUI(arr.length); });
+  }
+
+  /* ── Диалог настройки GitHub Token ── */
+  window.inboxShowSetup = function() {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:2000;background:rgba(45,10,26,0.75);'
+      + 'backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:20px;width:100%;max-width:520px;padding:32px;box-shadow:0 24px 60px rgba(0,0,0,0.3)">'
+      + '<div style="font-family:Montserrat,sans-serif;font-weight:800;font-size:18px;color:#2D0A1A;margin-bottom:6px">&#x2699;&#xFE0F; Настройка обращений</div>'
+      + '<div style="font-size:13px;color:#888;margin-bottom:20px;line-height:1.7">'
+      + 'Обращения хранятся в <b>GitHub Issues</b> репозитория <b>kari-dashboard</b>.<br>'
+      + 'Нужен Personal Access Token с правом <b>repo</b>.<br>'
+      + 'Создать: <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank" style="color:#C2185B">github.com/settings/tokens</a></div>'
+      + '<label style="font-size:12px;font-weight:700;color:#C2185B;text-transform:uppercase;letter-spacing:.5px">GitHub Token</label>'
+      + '<input id="inboxTokenInput" type="password" value="' + _token + '" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"'
+      + ' style="display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px 14px;'
+      + 'border:2px solid #F8BBD0;border-radius:10px;font-size:13px;outline:none;font-family:Inter,sans-serif">'
+      + '<div style="font-size:11px;color:#bbb;margin-top:6px">Хранится только в браузере. Не передаётся никуда кроме api.github.com.</div>'
+      + '<div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">'
+      + '<button onclick="this.closest(\'div[style*=fixed]\').remove()" '
+      + 'style="background:#f5f5f5;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer">Отмена</button>'
+      + '<button onclick="inboxSaveToken(this)" '
+      + 'style="background:linear-gradient(135deg,#880E4F,#C2185B);color:#fff;border:none;border-radius:10px;'
+      + 'padding:10px 24px;font-size:13px;font-weight:700;font-family:Montserrat,sans-serif;cursor:pointer">Сохранить</button>'
+      + '</div></div>';
+    document.body.appendChild(overlay);
+    setTimeout(function(){ document.getElementById('inboxTokenInput').focus(); }, 50);
+  };
+
+  window.inboxSaveToken = function(btn) {
+    var val = document.getElementById('inboxTokenInput').value.trim();
+    if (!val) { document.getElementById('inboxTokenInput').style.borderColor = '#E8162A'; return; }
+    _token = val;
+    localStorage.setItem('kari_gh_token', val);
+    btn.closest('div[style*="fixed"]').remove();
+    _inboxCache = null;
+    // Проверяем токен и обновляем
+    var bodyEl = document.getElementById('mainBody');
+    if (bodyEl && bodyEl.querySelector('.inbox-wrap')) renderInboxPageAsync(bodyEl);
+    else inboxRefreshBadge();
+  };
+
+  /* ── Рендер карточек ── */
+  function _inboxCardsHtml(arr) {
+    if (arr.length === 0) {
+      return '<div class="inbox-page-title">&#x1F4EC; Обращения магазинов</div>'
+        + '<div class="inbox-empty"><div class="inbox-empty-icon">&#x1F4ED;</div><div>Обращений нет</div></div>';
+    }
+    var cards = arr.map(function(r) {
+      var n = r.items ? r.items.length : 0;
+      var word = n === 1 ? 'неточность' : (n < 5 ? 'неточности' : 'неточностей');
+      return '<div class="inbox-card" onclick="inboxOpenView(\'' + r.id + '\')">'
+        + '<div class="inbox-card-icon">&#x2709;&#xFE0F;</div>'
+        + '<div class="inbox-card-body">'
+        +   '<div class="inbox-card-top">'
+        +     '<span class="inbox-card-store">&#x2116;' + (r.storeId || '?') + '</span>'
+        +     '<span class="inbox-card-name">' + (r.storeName || '') + '</span>'
+        +     '<span class="inbox-card-count">' + n + ' ' + word + '</span>'
+        +   '</div>'
+        +   '<div class="inbox-card-meta">' + (r.region || '') + ' &middot; ' + (r.date || '') + ' &middot; Issue #' + r.number + '</div>'
+        + '</div>'
+        + '<div class="inbox-card-arrow">&#x203A;</div>'
+        + '</div>';
+    }).join('');
+    return '<div class="inbox-page-title">&#x1F4EC; Обращения магазинов</div>'
+      + '<div class="inbox-list">' + cards + '</div>';
+  }
+
+  function _inboxSetupBanner() {
+    return '<div class="inbox-page-title">&#x1F4EC; Обращения магазинов</div>'
+      + '<div class="inbox-empty">'
+      + '<div class="inbox-empty-icon">&#x1F511;</div>'
+      + '<div style="margin-bottom:16px">Нужен GitHub Token для синхронизации</div>'
+      + '<button onclick="inboxShowSetup()" style="background:linear-gradient(135deg,#880E4F,#C2185B);'
+      + 'color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;'
+      + 'font-family:Montserrat,sans-serif;cursor:pointer">&#x2699;&#xFE0F; Настроить</button>'
+      + '</div>';
+  }
+
+  function renderInboxPage() {
+    return '<div class="inbox-wrap" id="inboxPageWrap">'
+      + (_inboxCache !== null
+          ? _inboxCardsHtml(_inboxCache)
+          : '<div class="inbox-empty"><div style="font-size:32px;margin-bottom:8px">&#x23F3;</div><div>Загрузка...</div></div>')
+      + '</div>';
+  }
+
+  function renderInboxPageAsync(bodyEl) {
+    if (!_token) {
+      bodyEl.className = ''; bodyEl.style.cssText = '';
+      bodyEl.innerHTML = '<div class="inbox-wrap">' + _inboxSetupBanner() + '</div>';
+      return;
+    }
+    bodyEl.className = ''; bodyEl.style.cssText = '';
+    bodyEl.innerHTML = renderInboxPage();
+    bodyEl.scrollTop = 0;
+    _inboxCache = null;
+    inboxLoad(function(arr) {
+      var wrap = document.getElementById('inboxPageWrap');
+      if (wrap) wrap.innerHTML = _inboxCardsHtml(arr);
+      _updateBadgeUI(arr.length);
+    });
+  }
+
+  /* ── Открыть модал ── */
+  window.inboxOpenView = function(id) {
+    var arr = _inboxCache || [];
+    var rec = null;
+    for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) { rec = arr[i]; break; } }
+    if (!rec) return;
+    _inboxCurrentNumber = rec.number;
+    document.getElementById('inboxvTitle').textContent = 'Магазин \u2116' + (rec.storeId || '?');
+    document.getElementById('inboxvSub').textContent = rec.storeName || '';
+    document.getElementById('inboxvMeta').innerHTML =
+      '<strong>Регион:</strong> ' + (rec.region || '\u2014') + '<br>'
+      + '<strong>Дата обращения:</strong> ' + (rec.date || '\u2014') + '<br>'
+      + '<strong>GitHub Issue:</strong> #' + rec.number;
+    var html = (rec.items || []).map(function(line, idx) {
+      var safe = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return '<div class="inboxv-item">'
+        + '<div class="inboxv-item-num">Неточность ' + (idx+1) + '</div>'
+        + '<div class="inboxv-item-text">' + safe + '</div>'
+        + '</div>';
+    }).join('');
+    document.getElementById('inboxvItems').innerHTML = html;
+    document.getElementById('inboxViewOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  function inboxCloseView() {
+    document.getElementById('inboxViewOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    _inboxCurrentNumber = null;
+  }
+
+  /* ── Кнопка Исправлено — закрывает Issue на GitHub ── */
+  function inboxResolve() {
+    if (!_inboxCurrentNumber) return;
+    var btn = document.getElementById('inboxvResolveBtn');
+    btn.innerHTML = '&#x23F3; Закрываем...';
+    btn.disabled = true;
+    var num = _inboxCurrentNumber;
+    _inboxCurrentNumber = null;
+    inboxClose(num, function() {
+      inboxCloseView();
+      var bodyEl = document.getElementById('mainBody');
+      if (bodyEl && bodyEl.querySelector('.inbox-wrap')) renderInboxPageAsync(bodyEl);
+      inboxRefreshBadge();
+      btn.innerHTML = '&#x2705; Исправлено';
+      btn.disabled = false;
+    });
+  }
+
+  /* ── Monkey-patch rptSendMail ── */
   function patchRptSendMail() {
     if (typeof window.rptSendMail !== 'function') return false;
     if (window._rptSendMailPatched) return true;
     var _orig = window.rptSendMail;
     window.rptSendMail = function() {
-      // Собираем данные ДО вызова оригинала
       var store = window._rptStore;
       var items = [];
       if (store) {
@@ -5997,26 +6238,20 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
           var n = m[1];
           var sec = (document.getElementById('rptSec_'+n)||{}).value || '';
           var sub = (document.getElementById('rptSub_'+n)||{}).value || '';
-          var cur = (document.getElementById('rptCur_'+n)||{}).value || '—';
+          var cur = (document.getElementById('rptCur_'+n)||{}).value || '\u2014';
           var nw  = ((document.getElementById('rptNew_'+n)||{}).value || '').trim();
           if (nw) items.push(sec + ' / ' + sub + '\n   Сейчас: ' + cur + '\n   Исправить на: ' + nw);
         });
       }
-      // Вызываем оригинал
       _orig.apply(this, arguments);
-      // Сохраняем если есть данные
       if (store && items.length > 0) {
-        var storeId   = store.id;
-        var storeName = [store.city, store.name].filter(Boolean).join(' · ');
-        var region    = [store.region, store.division].filter(Boolean).join(' · ');
-        var date      = new Date().toLocaleDateString('ru-RU');
         inboxAdd({
           id: 'rpt_' + Date.now(),
           ts: Date.now(),
-          date: date,
-          storeId: storeId,
-          storeName: storeName,
-          region: region,
+          date: new Date().toLocaleDateString('ru-RU'),
+          storeId: store.id,
+          storeName: [store.city, store.name].filter(Boolean).join(' \xb7 '),
+          region: [store.region, store.division].filter(Boolean).join(' \xb7 '),
           items: items
         });
       }
@@ -6025,140 +6260,37 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
     return true;
   }
 
-  /* ── Рендер страницы обращений ── */
-  function renderInboxPage() {
-    var arr = inboxLoad();
-    if (arr.length === 0) {
-      return '<div class="inbox-wrap">'
-        + '<div class="inbox-page-title">&#x1F4EC; Обращения магазинов</div>'
-        + '<div class="inbox-empty"><div class="inbox-empty-icon">&#x1F4ED;</div><div>Обращений нет</div></div>'
-        + '</div>';
-    }
-    var cards = arr.map(function(r) {
-      var n = r.items ? r.items.length : 0;
-      var word = n === 1 ? 'неточность' : (n < 5 ? 'неточности' : 'неточностей');
-      return '<div class="inbox-card" onclick="inboxOpenView(\'' + r.id + '\')">'
-        + '<div class="inbox-card-icon">&#x2709;&#xFE0F;</div>'
-        + '<div class="inbox-card-body">'
-        +   '<div class="inbox-card-top">'
-        +     '<span class="inbox-card-store">&#x2116;' + r.storeId + '</span>'
-        +     '<span class="inbox-card-name">' + (r.storeName || '') + '</span>'
-        +     '<span class="inbox-card-count">' + n + ' ' + word + '</span>'
-        +   '</div>'
-        +   '<div class="inbox-card-meta">' + (r.region || '') + ' &middot; ' + (r.date || '') + '</div>'
-        + '</div>'
-        + '<div class="inbox-card-arrow">&#x203A;</div>'
-        + '</div>';
-    }).join('');
-    return '<div class="inbox-wrap">'
-      + '<div class="inbox-page-title">&#x1F4EC; Обращения магазинов</div>'
-      + '<div class="inbox-list">' + cards + '</div>'
-      + '</div>';
-  }
-
-  /* ── Открыть модал просмотра ── */
-  window.inboxOpenView = function(id) {
-    var arr = inboxLoad();
-    var rec = null;
-    for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) { rec = arr[i]; break; } }
-    if (!rec) return;
-    _inboxCurrentId = id;
-    document.getElementById('inboxvTitle').textContent = 'Магазин \u2116' + rec.storeId;
-    document.getElementById('inboxvSub').textContent = rec.storeName || '';
-    document.getElementById('inboxvMeta').innerHTML =
-      '<strong>Регион:</strong> ' + (rec.region || '—') + '<br>'
-      + '<strong>Дата обращения:</strong> ' + (rec.date || '—');
-    var html = (rec.items || []).map(function(line, idx) {
-      var safe = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      return '<div class="inboxv-item">'
-        + '<div class="inboxv-item-num">Неточность ' + (idx+1) + '</div>'
-        + '<div class="inboxv-item-text">' + safe + '</div>'
-        + '</div>';
-    }).join('');
-    document.getElementById('inboxvItems').innerHTML = html;
-    var ov = document.getElementById('inboxViewOverlay');
-    ov.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  };
-
-  function inboxCloseView() {
-    document.getElementById('inboxViewOverlay').classList.remove('open');
-    document.body.style.overflow = '';
-    _inboxCurrentId = null;
-  }
-
-  /* ── Кнопка Исправлено ── */
-  function inboxResolve() {
-    if (!_inboxCurrentId) return;
-    var btn = document.getElementById('inboxvResolveBtn');
-    btn.textContent = 'Удалено...';
-    btn.disabled = true;
-    inboxDelete(_inboxCurrentId);
-    _inboxCurrentId = null;
-    setTimeout(function() {
-      inboxCloseView();
-      inboxRefreshBadge();
-      // Перерисовываем содержимое если открыта вкладка обращений
-      var bodyEl = document.getElementById('mainBody');
-      if (bodyEl && bodyEl.querySelector('.inbox-wrap')) {
-        bodyEl.innerHTML = renderInboxPage();
-      }
-      btn.textContent = '\u2705 Исправлено';
-      btn.disabled = false;
-    }, 400);
-  }
-
-  /* ── Добавляем вкладку Обращения в существующий .tabs ── */
+  /* ── Вкладка Обращения через MutationObserver ── */
   function inboxInjectTab() {
     var isManager = (window._authDone && window._authStoreId === null);
     if (!isManager) return;
-
     var tabsDiv = document.querySelector('#mainTabs .tabs');
     if (!tabsDiv) return;
-    if (tabsDiv.querySelector('[data-inbox-tab]')) {
-      // Уже есть — только обновляем активное состояние и бейдж
-      inboxRefreshBadge();
-      return;
-    }
-
+    if (tabsDiv.querySelector('[data-inbox-tab]')) { inboxRefreshBadge(); return; }
     var btn = document.createElement('button');
     btn.setAttribute('data-inbox-tab', '1');
     btn.className = 'tab-btn';
     btn.innerHTML = '&#x1F4EC; Обращения<span id="inboxBadgeEl" class="inbox-tab-badge" style="display:none"></span>';
     btn.onclick = function() {
-      // Снимаем active со всех вкладок
       tabsDiv.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
-      // Рендерим контент вручную в mainBody (не вызываем renderMain чтобы не сбросить)
       var bodyEl = document.getElementById('mainBody');
-      if (bodyEl) {
-        bodyEl.className = '';
-        bodyEl.style.cssText = '';
-        bodyEl.innerHTML = renderInboxPage();
-        bodyEl.scrollTop = 0;
-      }
-      // Говорим activeTab чтобы кнопки остальных вкладок при клике перезаписали правильно
-      if (typeof window.activeTab !== 'undefined') window.activeTab = 'overview'; // нейтральное
+      if (bodyEl) renderInboxPageAsync(bodyEl);
+      if (typeof window.activeTab !== 'undefined') window.activeTab = 'overview';
     };
     tabsDiv.appendChild(btn);
     inboxRefreshBadge();
   }
 
-  /* ── MutationObserver — отслеживаем перерисовку вкладок ── */
   function startObserver() {
     var mainTabs = document.getElementById('mainTabs');
     if (!mainTabs) { setTimeout(startObserver, 300); return; }
-
-    var observer = new MutationObserver(function() {
-      setTimeout(inboxInjectTab, 0); // после того как renderMain завершил
-    });
+    var observer = new MutationObserver(function() { setTimeout(inboxInjectTab, 0); });
     observer.observe(mainTabs, { childList: true, subtree: true });
-
-    // Первичная вставка
     setTimeout(inboxInjectTab, 200);
   }
 
-  /* ── Клик по оверлею закрывает модал ── */
+  /* ── Клики на модал ── */
   document.getElementById('inboxViewOverlay').addEventListener('click', function(e) {
     if (e.target === this) inboxCloseView();
   });
@@ -6166,14 +6298,19 @@ async function pomGenerateExcel(orderItems, s, date, dateISO, orderNum, filename
   document.getElementById('inboxvCancelBtn').addEventListener('click', inboxCloseView);
   document.getElementById('inboxvResolveBtn').addEventListener('click', inboxResolve);
 
-  /* ── Запуск после загрузки страницы ── */
+  /* ── Init ── */
   function init() {
-    // Ждём пока rptSendMail появится в window (он объявлен позже в коде)
     var attempts = 0;
     var patchTimer = setInterval(function() {
       if (patchRptSendMail() || ++attempts > 50) clearInterval(patchTimer);
     }, 100);
     startObserver();
+    // При старте загружаем счётчик (только менеджер, только если токен есть)
+    setTimeout(function() {
+      if (window._authDone && window._authStoreId === null && _token) {
+        inboxLoad(function(arr) { _updateBadgeUI(arr.length); });
+      }
+    }, 1500);
   }
 
   if (document.readyState === 'loading') {
