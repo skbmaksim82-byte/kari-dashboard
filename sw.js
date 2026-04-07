@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'kari-v1.15';
+const CACHE_VERSION = 'kari-v1.16';
 const ASSETS = [
   '/',
   '/index.html',
@@ -23,14 +23,10 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-
-  // Сетевые запросы к GitHub raw — всегда из сети (без кэша)
   if (url.hostname === 'raw.githubusercontent.com' || url.hostname === 'api.github.com') {
     event.respondWith(fetch(event.request));
     return;
   }
-
-  // Остальное: сначала кэш, потом сеть
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request))
   );
