@@ -1,4 +1,4 @@
-var CACHE_NAME = 'portal-zakazov-v45';
+var CACHE_NAME = 'portal-zakazov-v54';
 var URLS_TO_CACHE = ['/Portal-zakazov/', '/Portal-zakazov/index.html'];
 self.addEventListener('install', function(e) {
   e.waitUntil(caches.open(CACHE_NAME).then(function(cache) { return cache.addAll(URLS_TO_CACHE); }));
