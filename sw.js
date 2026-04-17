@@ -1,14 +1,34 @@
-var CACHE_NAME = 'portal-zakazov-v62';
-var URLS_TO_CACHE = ['/Portal-zakazov/', '/Portal-zakazov/index.html'];
-self.addEventListener('install', function(e) {
-  e.waitUntil(caches.open(CACHE_NAME).then(function(cache) { return cache.addAll(URLS_TO_CACHE); }));
+const CACHE_NAME = 'portal-zakazov-v63';
+const urlsToCache = [
+  './',
+  './index.html'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+  );
   self.skipWaiting();
 });
-self.addEventListener('activate', function(e) {
-  e.waitUntil(caches.keys().then(function(keys) {
-    return Promise.all(keys.filter(function(k){ return k !== CACHE_NAME; }).map(function(k){ return caches.delete(k); }));
-  }));
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
 });
-self.addEventListener('fetch', function(e) {
-  e.respondWith(caches.match(e.request).then(function(r){ return r || fetch(e.request); }));
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(resp =>
+      resp || fetch(event.request).then(r => {
+        if (!r || r.status !== 200 || r.type !== 'basic') return r;
+        const rc = r.clone();
+        caches.open(CACHE_NAME).then(c => c.put(event.request, rc));
+        return r;
+      })
+    )
+  );
 });
