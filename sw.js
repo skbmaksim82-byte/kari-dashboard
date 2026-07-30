@@ -1,4 +1,4 @@
-var CACHE_NAME = 'portal-zakazov-v71';
+var CACHE_NAME = 'portal-zakazov-v72';
 var urlsToCache = [
   './',
   './index.html',
