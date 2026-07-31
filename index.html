@@ -1115,10 +1115,118 @@ header {
   border-radius: 5px; padding: 1px 7px; font-size: 11px; font-weight: 700;
   color: var(--red); font-family: 'Montserrat',sans-serif; white-space: nowrap;
 }
+
+/* ═══ v1.46: ВИЗУАЛЬНЫЕ ЭФФЕКТЫ ═══ */
+
+/* 1) Плавное появление контента вкладок */
+@keyframes contentFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.anim-fade { animation: contentFadeIn .3s ease; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.summary-cards .card { animation: cardIn .4s ease both; }
+.summary-cards .card:nth-child(1) { animation-delay: .02s; }
+.summary-cards .card:nth-child(2) { animation-delay: .06s; }
+.summary-cards .card:nth-child(3) { animation-delay: .10s; }
+.summary-cards .card:nth-child(4) { animation-delay: .14s; }
+.summary-cards .card:nth-child(5) { animation-delay: .18s; }
+.summary-cards .card:nth-child(6) { animation-delay: .22s; }
+.summary-cards .card:nth-child(7) { animation-delay: .26s; }
+.summary-cards .card:nth-child(8) { animation-delay: .30s; }
+
+/* 2) Hover-эффекты карточек */
+.card { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.card.clickable:hover {
+  transform: translateY(-3px);
+  box-shadow: 6px 10px 22px rgba(194,24,91,0.22), -2px -2px 8px rgba(255,255,255,0.8);
+  border-color: var(--red-light);
+}
+.detail-section { transition: box-shadow .2s ease, transform .2s ease; }
+.detail-section:hover { box-shadow: 3px 4px 14px rgba(194,24,91,0.16), -1px -1px 5px rgba(255,255,255,0.9); }
+.export-btn { transition: all .2s ease; }
+.export-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(194,24,91,0.35); }
+.store-item { transition: all .18s ease; }
+.store-item:hover { transform: translateX(2px); }
+
+/* 4) Ripple-эффект */
+.store-item, .export-btn { overflow: hidden; }
+@keyframes fxRipple { from { transform: scale(0); opacity: .45; } to { transform: scale(1); opacity: 0; } }
+.fx-ripple {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(194,24,91,0.35) 0%, rgba(194,24,91,0.12) 60%, transparent 100%);
+  animation: fxRipple .6s ease-out forwards; z-index: 0;
+}
+.tab-btn .fx-ripple, .export-btn .fx-ripple { background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.15) 60%, transparent 100%); }
+
+/* 5) Бегущий индикатор активной вкладки */
+.tabs { position: relative; }
+.tab-btn { position: relative; z-index: 1; overflow: hidden; }
+.tab-indicator {
+  position: absolute; top: 4px; bottom: 4px; left: 0; width: 0;
+  border-radius: 7px; z-index: 0;
+  background: linear-gradient(145deg, #ffffff, #fce4ec);
+  box-shadow: 4px 4px 10px rgba(194,24,91,0.18), -2px -2px 6px rgba(255,255,255,0.9);
+  transition: left .3s cubic-bezier(.4,0,.2,1), width .3s cubic-bezier(.4,0,.2,1);
+}
+.tabs .tab-btn.active { background: transparent; box-shadow: none; }
+
+/* 3) Count-up значений в шапке */
+.hstat-val { transition: color .3s; }
+
+/* 7-8) Оснащённость: прогресс-бар и тепловая полоса в списке магазинов */
+.si-score { height: 4px; border-radius: 2px; background: rgba(194,24,91,0.12); margin-top: 7px; overflow: hidden; }
+.si-score-fill { height: 100%; border-radius: 2px; transition: width .5s ease; }
+.store-item { border-left: 3px solid transparent; }
+
+/* 6) Кольцевая диаграмма оснащённости */
+@keyframes ringGrow { from { stroke-dasharray: 0 999; } }
+.ring-anim { animation: ringGrow 1.1s ease-out; }
+
+/* 10) Glassmorphism */
+.chart-card { background: rgba(255,255,255,0.82); backdrop-filter: blur(10px); box-shadow: 4px 4px 12px rgba(194,24,91,0.08), -2px -2px 8px rgba(255,255,255,0.7); }
+
+/* 9) ТЁМНАЯ ТЕМА */
+[data-theme="dark"] {
+  --bg-solid: #1A0E16; --surface: #241621; --surface2: #2E1B28;
+  --border: #4A2C3E; --text: #F5E3EC; --muted: #C48BA6;
+  color-scheme: dark;
+}
+[data-theme="dark"] body { background: linear-gradient(135deg, #1A0E16 0%, #24101B 40%, #2A1220 70%, #1E0F1A 100%) fixed; }
+[data-theme="dark"] header { background: linear-gradient(135deg, #3B0A26 0%, #5A1038 50%, #47102E 100%); border-bottom-color: #6B2148; }
+[data-theme="dark"] .sidebar { background: rgba(30,17,27,0.92); }
+[data-theme="dark"] .card,
+[data-theme="dark"] .detail-panel,
+[data-theme="dark"] .order-section,
+[data-theme="dark"] .detail-section,
+[data-theme="dark"] .chart-card { background: rgba(38,22,34,0.88); box-shadow: 4px 4px 14px rgba(0,0,0,0.45); }
+[data-theme="dark"] .card.clickable:hover { box-shadow: 6px 10px 24px rgba(0,0,0,0.55); border-color: var(--red-light); }
+[data-theme="dark"] .tabs { background: rgba(38,22,34,0.72); box-shadow: inset 2px 2px 6px rgba(0,0,0,0.4); }
+[data-theme="dark"] .tab-indicator { background: linear-gradient(145deg, #3A2233, #2E1B28); box-shadow: 3px 3px 8px rgba(0,0,0,0.5); }
+[data-theme="dark"] .tab-btn.active { color: #F06292; }
+[data-theme="dark"] .search-box,
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea { background: rgba(38,22,34,0.92); color: var(--text); border-color: var(--border); }
+[data-theme="dark"] .order-table th { background: var(--surface2); }
+[data-theme="dark"] .order-table td { border-bottom-color: rgba(74,44,62,0.6); }
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .plan-modal-box { background: #241621; color: var(--text); }
+[data-theme="dark"] .store-item:hover { background: var(--surface2); }
+[data-theme="dark"] .store-item.active { background: rgba(240,98,146,0.14); }
+[data-theme="dark"] .mobile-store-card { background: rgba(38,22,34,0.92); }
+[data-theme="dark"] .si-score { background: rgba(240,98,146,0.15); }
+[data-theme="dark"] .detail-row { border-bottom-color: rgba(74,44,62,0.7); }
+#themeToggle {
+  width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.12); cursor: pointer; font-size: 16px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s;
+}
+#themeToggle:hover { background: rgba(255,255,255,0.25); transform: rotate(20deg); }
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-var APP_VERSION = '1.45';
+var APP_VERSION = '1.46';
+// v1.46: раннее применение темы до отрисовки (без FOUC)
+try { if (localStorage.getItem('kari_theme') === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); } } catch(e) {}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
@@ -1614,6 +1722,7 @@ window.addEventListener('load', function(){
   <button id="logoutBtn" onclick="doLogout()" title="Выйти из аккаунта">
     🚪 Выйти
   </button>
+  <button id="themeToggle" onclick="toggleTheme()" title="Переключить тему"></button>
   <div class="header-stats">
     <div class="hstat">
       <div class="hstat-val" id="h-total">80</div>
@@ -2133,10 +2242,11 @@ function applyFilters() {
     return true;
   });
   const selCount = filteredStores.length;
-  document.getElementById('h-selected').textContent = selCount < STORES.length ? selCount : '—';
-  // Update total count always
-  document.getElementById('h-total').textContent = STORES.length;
-  document.getElementById('h-divs').textContent = [...new Set(STORES.map(s=>s.division))].length;
+  if (selCount < STORES.length) { fxCountUp(document.getElementById('h-selected'), selCount); }
+  else { document.getElementById('h-selected').textContent = '—'; }
+  // Update total count always (с анимацией прокрутки цифр)
+  fxCountUp(document.getElementById('h-total'), STORES.length);
+  fxCountUp(document.getElementById('h-divs'), [...new Set(STORES.map(s=>s.division))].length);
   renderStoreList();
   renderMain();
 }
@@ -2269,6 +2379,93 @@ function zoneDots(s) {
   ).join('');
 }
 
+// ═══ v1.46: ВИЗУАЛЬНЫЕ ХЕЛПЕРЫ ═══
+
+// Анимация "прокрутки" числа от текущего значения к целевому
+function fxCountUp(el, to) {
+  if (!el) return;
+  var target = parseInt(to, 10);
+  if (isNaN(target)) { el.textContent = to; return; }
+  var from = parseInt(el.textContent, 10);
+  if (isNaN(from)) from = 0;
+  if (from === target) { el.textContent = target; return; }
+  var dur = 600, t0 = null;
+  function step(ts) {
+    if (!t0) t0 = ts;
+    var p = Math.min((ts - t0) / dur, 1);
+    p = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(from + (target - from) * p);
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// Оценка оснащённости магазина (0-100%) по 14 группам зон
+function storeScore(s) {
+  var checks = [
+    !!(s.tortsX || s.tortsG || s.tortsGold || s.tortsLeather),
+    !!s.hasVitrina, s.ymCount > 0, s.antiTheftGates > 0,
+    !!s.hasKH, !!s.hasCosmetics, !!s.hasClothes, !!s.hasSport,
+    !!s.lightSigns, s.lightboxesCount > 0,
+    !!(s.facadeType && s.facadeType !== '-' && s.facadeType !== '\u043d\u0435\u0442'),
+    s.workHourSignsCount > 0,
+    !!(s.hasBaskets || s.shelfMobile || s.shelfCrocs || s.trolley || s.kariWood),
+    !!(s.cash2new || s.cash3new || s.cash4new || s.cash2std || s.cash3std || s.cash4std)
+  ];
+  var n = 0;
+  for (var i = 0; i < checks.length; i++) { if (checks[i]) n++; }
+  return Math.round(n / checks.length * 100);
+}
+function scoreColor(p) { return p >= 70 ? '#28C76F' : p >= 40 ? '#FF9F43' : '#E8162A'; }
+
+// Позиционирование бегущего индикатора вкладок
+function positionTabIndicator() {
+  var ind = document.getElementById('tabIndicator');
+  if (!ind) return;
+  var act = ind.parentElement.querySelector('.tab-btn.active');
+  if (!act) { ind.style.width = '0'; return; }
+  ind.style.left = act.offsetLeft + 'px';
+  ind.style.width = act.offsetWidth + 'px';
+}
+window.addEventListener('resize', function() { try { positionTabIndicator(); } catch(e) {} });
+
+// Переключение тёмной темы
+function toggleTheme() {
+  var d = document.documentElement;
+  var nt = d.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  if (nt === 'dark') d.setAttribute('data-theme', 'dark');
+  else d.removeAttribute('data-theme');
+  try { localStorage.setItem('kari_theme', nt); } catch(e) {}
+  fxSetThemeIcon();
+}
+function fxSetThemeIcon() {
+  var b = document.getElementById('themeToggle');
+  if (!b) return;
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  b.textContent = dark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+}
+fxSetThemeIcon();
+
+// Ripple-эффект на кликабельных элементах
+document.addEventListener('pointerdown', function(e) {
+  var t = e.target.closest ? e.target.closest('.tab-btn, .export-btn, .card.clickable, .store-item') : null;
+  if (!t) return;
+  try {
+    var r = t.getBoundingClientRect();
+    var rip = document.createElement('span');
+    rip.className = 'fx-ripple';
+    var d = Math.max(r.width, r.height) * 2;
+    rip.style.width = d + 'px';
+    rip.style.height = d + 'px';
+    rip.style.left = (e.clientX - r.left - d / 2) + 'px';
+    rip.style.top = (e.clientY - r.top - d / 2) + 'px';
+    var cs = getComputedStyle(t);
+    if (cs.position === 'static') t.style.position = 'relative';
+    t.appendChild(rip);
+    setTimeout(function() { if (rip.parentNode) rip.parentNode.removeChild(rip); }, 650);
+  } catch(err) {}
+});
+
 function renderStoreList() {
   const el = document.getElementById('storeList');
   const counter = '<div style="font-size:11px;font-weight:700;color:var(--muted);padding:4px 2px 8px;'
@@ -2277,8 +2474,10 @@ function renderStoreList() {
     el.innerHTML = counter + '<div class="empty-state"><div class="icon">🔍</div><p>Магазины не найдены</p></div>';
     return;
   }
-  el.innerHTML = counter + filteredStores.map(s => `
-    <div class="store-item ${selectedStore && selectedStore.id === s.id ? 'active' : ''}" onclick="selectStore(${s.id})">
+  el.innerHTML = counter + filteredStores.map(s => {
+    const _sc = storeScore(s);
+    return `
+    <div class="store-item ${selectedStore && selectedStore.id === s.id ? 'active' : ''}" style="border-left:3px solid ${scoreColor(_sc)}" onclick="selectStore(${s.id})">
       <div class="store-item-name"><span style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--red);margin-right:5px">№${s.id}</span>${s.name}${s.top15 ? `<span style="margin-left:5px;font-size:9px;font-weight:800;color:#fff;background:#E8162A;padding:1px 5px;border-radius:3px;vertical-align:middle">${window._TOP_LABEL||'ТОП 15'}</span>` : ''}</div>
       <div class="store-item-meta">
         <span class="store-cat">Кат. ${s.category}</span>
@@ -2286,8 +2485,9 @@ function renderStoreList() {
         ${s.kind !== '-' ? `<span class="store-kind-badge">${s.kind}</span>` : ''}
       </div>
       <div class="store-zones">${zoneDots(s)}</div>
+      <div class="si-score" title="Оснащённость: ${_sc}%"><div class="si-score-fill" style="width:${_sc}%;background:${scoreColor(_sc)}"></div></div>
     </div>
-  `).join('');
+  `;}).join('');
 }
 
 function selectStore(id) {
@@ -2332,15 +2532,21 @@ function renderMain() {
   // ── Вкладки — всегда зафиксированы, не скроллируются ──
   if (isStoreMode) {
     tabsEl.innerHTML = '';
+  } else if (tabsEl.querySelector('.tabs') && tabsEl.querySelectorAll('.tab-btn').length === 5) {
+    // v1.46: вкладки уже построены — только переключаем active и двигаем индикатор
+    tabsEl.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === activeTab); });
+    positionTabIndicator();
   } else {
     tabsEl.innerHTML = `
       <div class="tabs">
-        <button class="tab-btn ${activeTab==='overview'?'active':''}" onclick="setTab('overview')">📊 Обзор</button>
-        <button class="tab-btn ${activeTab==='order'?'active':''}" onclick="setTab('order')">📋 Сводные данные</button>
-        <button class="tab-btn ${activeTab==='posm_order'?'active':''}" onclick="setTab('posm_order')">🛒 Сводный заказ</button>
-        <button class="tab-btn ${activeTab==='store'?'active':''}" onclick="setTab('store')">🏪 Паспорт магазина</button>
-        <button class="tab-btn ${activeTab==='inbox'?'active':''}" onclick="setTab('inbox')">📬 Обращения<span id="inboxBadge" style="display:none;background:#E8162A;color:#fff;border-radius:50%;font-size:10px;font-weight:800;min-width:17px;height:17px;line-height:17px;text-align:center;margin-left:5px;padding:0 3px;font-family:Montserrat,sans-serif;vertical-align:middle"></span></button>
+        <div class="tab-indicator" id="tabIndicator"></div>
+        <button data-tab="overview" class="tab-btn ${activeTab==='overview'?'active':''}" onclick="setTab('overview')">📊 Обзор</button>
+        <button data-tab="order" class="tab-btn ${activeTab==='order'?'active':''}" onclick="setTab('order')">📋 Сводные данные</button>
+        <button data-tab="posm_order" class="tab-btn ${activeTab==='posm_order'?'active':''}" onclick="setTab('posm_order')">🛒 Сводный заказ</button>
+        <button data-tab="store" class="tab-btn ${activeTab==='store'?'active':''}" onclick="setTab('store')">🏪 Паспорт магазина</button>
+        <button data-tab="inbox" class="tab-btn ${activeTab==='inbox'?'active':''}" onclick="setTab('inbox')">📬 Обращения<span id="inboxBadge" style="display:none;background:#E8162A;color:#fff;border-radius:50%;font-size:10px;font-weight:800;min-width:17px;height:17px;line-height:17px;text-align:center;margin-left:5px;padding:0 3px;font-family:Montserrat,sans-serif;vertical-align:middle"></span></button>
       </div>`;
+    requestAnimationFrame(positionTabIndicator);
   }
 
   // ── Контент ──
@@ -2372,6 +2578,9 @@ function renderMain() {
     bodyEl.style.cssText = '';
     bodyEl.innerHTML = renderOverview();
   }
+  // v1.46: плавное появление контента при каждом рендере
+  void bodyEl.offsetWidth;
+  bodyEl.classList.add('anim-fade');
 }
 
 function setTab(tab) {
@@ -2406,6 +2615,7 @@ function renderOverview() {
   const totalTortsLeather = stores.reduce((a,s)=>a+(s.tortsLeather||0),0);
   const totalYM = stores.reduce((a,s)=>a+s.ymCount,0);
   const totalGates = stores.reduce((a,s)=>a+s.antiTheftGates,0);
+  const avgScore = total ? Math.round(stores.reduce((a,s)=>a+storeScore(s),0)/total) : 0;
 
   // Division breakdown
   const divCounts = {};
@@ -2431,6 +2641,20 @@ function renderOverview() {
         <div class="card-val" id="ct-top15" style="color:#E8162A">${stores.filter(s=>s.top15).length}</div>
         <div class="card-lbl">ТОП 15</div>
         <div class="card-click-hint">📋 фильтр ТОП 15</div>
+      </div>
+      <div class="card">
+        <div class="card-accent" style="background:linear-gradient(90deg,#E8162A,#FF9F43,#28C76F)"></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <svg width="64" height="64" viewBox="0 0 64 64" style="flex-shrink:0">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="var(--border)" stroke-width="7" opacity="0.5"/>
+            <circle class="ring-anim" cx="32" cy="32" r="26" fill="none" stroke="${scoreColor(avgScore)}" stroke-width="7" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="${(avgScore/100*163.4).toFixed(1)} 163.4"/>
+            <text x="32" y="37" text-anchor="middle" font-size="14" font-weight="800" font-family="Montserrat, sans-serif" fill="var(--text)">${avgScore}%</text>
+          </svg>
+          <div>
+            <div class="card-lbl" style="margin-top:0;font-weight:600">Средняя оснащённость</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">по ${total} маг.</div>
+          </div>
+        </div>
       </div>
 
       <!-- ── ЗОНЫ ОФОРМЛЕНИЯ — генерируются из ZONES_CFG ───── -->
