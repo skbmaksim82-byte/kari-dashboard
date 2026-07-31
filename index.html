@@ -1224,7 +1224,7 @@ header {
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-var APP_VERSION = '1.46';
+var APP_VERSION = '1.47';
 // v1.46: раннее применение темы до отрисовки (без FOUC)
 try { if (localStorage.getItem('kari_theme') === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); } } catch(e) {}
 
@@ -2644,17 +2644,12 @@ function renderOverview() {
       </div>
       <div class="card">
         <div class="card-accent" style="background:linear-gradient(90deg,#E8162A,#FF9F43,#28C76F)"></div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <svg width="64" height="64" viewBox="0 0 64 64" style="flex-shrink:0">
-            <circle cx="32" cy="32" r="26" fill="none" stroke="var(--border)" stroke-width="7" opacity="0.5"/>
-            <circle class="ring-anim" cx="32" cy="32" r="26" fill="none" stroke="${scoreColor(avgScore)}" stroke-width="7" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="${(avgScore/100*163.4).toFixed(1)} 163.4"/>
-            <text x="32" y="37" text-anchor="middle" font-size="14" font-weight="800" font-family="Montserrat, sans-serif" fill="var(--text)">${avgScore}%</text>
-          </svg>
-          <div>
-            <div class="card-lbl" style="margin-top:0;font-weight:600">Средняя оснащённость</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px">по ${total} маг.</div>
-          </div>
-        </div>
+        <svg width="46" height="46" viewBox="0 0 64 64" style="display:block;margin-bottom:8px">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="var(--border)" stroke-width="8" opacity="0.5"/>
+          <circle class="ring-anim" cx="32" cy="32" r="26" fill="none" stroke="${scoreColor(avgScore)}" stroke-width="8" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="${(avgScore/100*163.4).toFixed(1)} 163.4"/>
+        </svg>
+        <div class="card-val" style="color:${scoreColor(avgScore)}">${avgScore}%</div>
+        <div class="card-lbl">Средняя оснащённость (${total} маг.)</div>
       </div>
 
       <!-- ── ЗОНЫ ОФОРМЛЕНИЯ — генерируются из ZONES_CFG ───── -->
