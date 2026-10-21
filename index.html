@@ -306,6 +306,39 @@ header {
 .pie-legend { flex: 1; }
 .pie-legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
 .pie-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+/* v1.67: интерактивная кольцевая диаграмма категорий */
+.pie-svg { flex-shrink: 0; overflow: visible; }
+.pie-seg {
+  transform-box: view-box; transform-origin: 90px 90px; cursor: pointer;
+  transition: transform .25s cubic-bezier(.4,0,.2,1), opacity .25s ease, filter .25s ease;
+  animation: pieSegIn .6s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes pieSegIn { from { opacity: 0; transform: scale(.6) rotate(-25deg); } to { opacity: 1; transform: none; } }
+.pie-wrap.has-hi .pie-seg { opacity: .35; }
+.pie-wrap.has-hi .pie-seg.hi {
+  opacity: 1; transform: translate(var(--tx), var(--ty)) scale(1.07);
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
+}
+.pie-center-val { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 26px; fill: var(--text); transition: fill .2s; }
+.pie-center-lbl { font-size: 10px; fill: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.pie-legend .pie-legend-item {
+  position: relative; padding: 6px 10px; margin-bottom: 4px; border-radius: 8px; cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background .2s, transform .2s, opacity .2s, border-color .2s, box-shadow .2s;
+}
+.pie-legend-item .pli-name { flex: 1; }
+.pie-legend-item .pli-cnt { font-family: 'Montserrat', sans-serif; font-weight: 700; min-width: 22px; text-align: right; }
+.pie-legend-item .pli-pct { font-size: 11px; color: var(--muted); min-width: 36px; text-align: right; }
+.pie-legend-item .pli-bar { position: absolute; left: 10px; right: 10px; bottom: 2px; height: 2px; border-radius: 1px; opacity: .25; transform-origin: left; transition: opacity .2s; }
+.pie-wrap.has-hi .pie-legend-item { opacity: .45; }
+.pie-wrap.has-hi .pie-legend-item.hi {
+  opacity: 1; transform: translateX(4px) scale(1.04);
+  background: var(--hi-bg); border-left-color: var(--hi-c);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08); font-weight: 600;
+}
+.pie-wrap.has-hi .pie-legend-item.hi .pli-bar { opacity: .9; }
+.pie-wrap.has-hi .pie-legend-item.hi .pie-dot { transform: scale(1.3); }
+.pie-dot { transition: transform .2s; }
 
 /* ─── SCROLLBAR MAIN ─── */
 .main::-webkit-scrollbar { width: 6px; }
@@ -1554,7 +1587,7 @@ else setTimeout(function () { labSync(); }, 0);
 
 </script>
 <script>
-var APP_VERSION = '1.66';
+var APP_VERSION = '1.67';
 function fmtFloor(f){ var t = String(f==null?'':f).trim(); if (!t || t === '-' || t === '0') return ''; if (/этаж/i.test(t)) return ' · ' + t; if (/^-?\d+([.,]0+)?$/.test(t)) return ' · ' + parseInt(t,10) + ' этаж'; return ' · ' + t; }
 function escAddr(t){ return String(t==null?'':t).replace(/[&<>"']/g, function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]; }); }
 // v1.46: раннее применение темы до отрисовки (без FOUC)
@@ -3402,22 +3435,7 @@ function renderOverview() {
 
       <div class="chart-card">
         <h3>Распределение по категориям</h3>
-        <div class="pie-container">
-          <svg width="120" height="120" viewBox="0 0 120 120">
-            ${renderPie(catCounts, total, 60)}
-          </svg>
-          <div class="pie-legend">
-            ${Object.entries(catCounts).filter(([,v])=>v>0).sort((a,b)=>+a[0]-+b[0]).map(([cat,cnt], i) => {
-              const colors = ['#888888','#E8162A','#FF9F43','#00B4D8','#9B5DE5','#28C76F'];
-              const colorIdx = Math.min(i, colors.length-1);
-              const label = cat==='0' ? 'Без кат.' : 'Кат. '+cat;
-              return `<div class="pie-legend-item">
-                <div class="pie-dot" style="background:${colors[colorIdx]}"></div>
-                <span>${label}: <strong>${cnt}</strong></span>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>
+        ${renderCatDonut(catCounts, total)}
       </div>
     </div>
 
@@ -3453,6 +3471,73 @@ function renderOverview() {
       `).join('')}
     </div>
   `;
+}
+
+// ═══ v1.67: интерактивный донат категорий ═══
+var PIE_COLORS = ['#888888','#E8162A','#FF9F43','#00B4D8','#9B5DE5','#28C76F'];
+function renderCatDonut(catCounts, total) {
+  if (!total) return '<div class="empty-state"><p>Нет данных</p></div>';
+  var cats = Object.entries(catCounts).filter(function(e){ return e[1] > 0; })
+    .sort(function(a,b){ return (+a[0]) - (+b[0]); });
+  var C = 90, R = 78, r = 48, a0 = -Math.PI / 2, gap = cats.length > 1 ? 0.012 : 0;
+  var segs = '', legend = '';
+  window._pieData = [];
+  _pieLocked = -1;
+  cats.forEach(function(e, i) {
+    var cat = e[0], cnt = e[1];
+    var col = PIE_COLORS[Math.min(i, PIE_COLORS.length - 1)];
+    var lbl = cat === '0' ? 'Без кат.' : 'Кат. ' + cat;
+    var pct = Math.round(cnt / total * 100);
+    var ang = cnt / total * Math.PI * 2;
+    var s = a0 + gap, en = a0 + ang - gap;
+    if (cats.length === 1) { s = a0; en = a0 + Math.PI * 2 - 0.0001; }
+    var mid = a0 + ang / 2;
+    var large = (en - s) > Math.PI ? 1 : 0;
+    var p = function(rad, a) { return (C + rad * Math.cos(a)).toFixed(2) + ' ' + (C + rad * Math.sin(a)).toFixed(2); };
+    var d = 'M ' + p(R, s) + ' A ' + R + ' ' + R + ' 0 ' + large + ' 1 ' + p(R, en) +
+            ' L ' + p(r, en) + ' A ' + r + ' ' + r + ' 0 ' + large + ' 0 ' + p(r, s) + ' Z';
+    var tx = (Math.cos(mid) * 6).toFixed(1), ty = (Math.sin(mid) * 6).toFixed(1);
+    window._pieData.push({ cnt: cnt, pct: pct, lbl: lbl, col: col });
+    segs += '<path class="pie-seg" data-i="' + i + '" d="' + d + '" fill="' + col + '" ' +
+      'style="--tx:' + tx + 'px;--ty:' + ty + 'px;animation-delay:' + (i * 0.07).toFixed(2) + 's" ' +
+      'onmouseenter="pieHi(' + i + ')" onmouseleave="pieHi(-1)" onclick="pieTap(' + i + ')"></path>';
+    legend += '<div class="pie-legend-item" data-i="' + i + '" style="--hi-c:' + col + ';--hi-bg:' + col + '1F" ' +
+      'onmouseenter="pieHi(' + i + ')" onmouseleave="pieHi(-1)" onclick="pieTap(' + i + ')">' +
+      '<div class="pie-dot" style="background:' + col + '"></div>' +
+      '<span class="pli-name">' + lbl + '</span>' +
+      '<span class="pli-cnt">' + cnt + '</span>' +
+      '<span class="pli-pct">' + pct + '%</span>' +
+      '<div class="pli-bar" style="background:' + col + ';width:calc((100% - 20px) * ' + (cnt / total).toFixed(3) + ')"></div>' +
+      '</div>';
+    a0 += ang;
+  });
+  window._pieTotal = total;
+  return '<div class="pie-container pie-wrap" id="catPie">' +
+    '<svg class="pie-svg" width="180" height="180" viewBox="0 0 180 180">' + segs +
+    '<text class="pie-center-val" id="pieCVal" x="90" y="94" text-anchor="middle">' + total + '</text>' +
+    '<text class="pie-center-lbl" id="pieCLbl" x="90" y="112" text-anchor="middle">магазинов</text>' +
+    '</svg><div class="pie-legend">' + legend + '</div></div>';
+}
+var _pieLocked = -1;
+function pieHi(i) {
+  if (i < 0 && _pieLocked >= 0) i = _pieLocked;
+  var w = document.getElementById('catPie');
+  if (!w) return;
+  w.classList.toggle('has-hi', i >= 0);
+  w.querySelectorAll('[data-i]').forEach(function(el) {
+    el.classList.toggle('hi', +el.getAttribute('data-i') === i);
+  });
+  var v = document.getElementById('pieCVal'), l = document.getElementById('pieCLbl');
+  var dt = (window._pieData || [])[i];
+  if (v && l) {
+    if (dt) { v.textContent = dt.cnt; v.style.fill = dt.col; l.textContent = dt.lbl + ' · ' + dt.pct + '%'; }
+    else { v.textContent = window._pieTotal || ''; v.style.fill = ''; l.textContent = 'магазинов'; }
+  }
+}
+// Тап (для планшетов/телефонов): фиксирует выделение, повторный тап — снимает
+function pieTap(i) {
+  _pieLocked = (_pieLocked === i) ? -1 : i;
+  pieHi(_pieLocked);
 }
 
 function renderPie(catCounts, total, cx) {
