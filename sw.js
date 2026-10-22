@@ -1,4 +1,4 @@
-var CACHE_NAME = 'portal-zakazov-v100';
+var CACHE_NAME = 'portal-zakazov-v101';
 var REQ_STATE_CACHE = 'kari-req-state'; // состояние фоновой проверки запросов (не удалять при обновлении)
 var urlsToCache = [
   './',
