@@ -1,18 +1,29 @@
-var CACHE_NAME = 'portal-zakazov-v101';
+var CACHE_NAME = 'portal-zakazov-v102';
 var REQ_STATE_CACHE = 'kari-req-state'; // состояние фоновой проверки запросов (не удалять при обновлении)
+// v1.73: только файлы приложения; шрифты Google кэшируются при первой загрузке (fetch-обработчик),
+// чтобы недоступный/медленный fonts.googleapis.com не срывал установку обновления
 var urlsToCache = [
   './',
-  './index.html',
-  'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap'
+  './index.html'
 ];
 
+// v1.73: кэшируем в обход HTTP-кэша браузера (cache:'reload'), иначе в новый кэш
+// попадала старая index.html из HTTP-кэша GitHub Pages и «Обновить» ничего не меняло.
 self.addEventListener('install', function(event) {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(urlsToCache);
+      return Promise.all(urlsToCache.map(function(u) {
+        return fetch(new Request(u, { cache: 'reload' })).then(function(r) {
+          if (r && (r.ok || r.type === 'opaque')) return cache.put(u, r);
+        }).catch(function() {});
+      }));
     })
   );
+});
+
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', function(event) {
@@ -31,26 +42,49 @@ self.addEventListener('activate', function(event) {
   );
 });
 
+function isAppShell(req) {
+  if (req.mode === 'navigate') return true;
+  var u = new URL(req.url);
+  return u.origin === self.location.origin && /\/(index\.html)?$/.test(u.pathname);
+}
+
 self.addEventListener('fetch', function(event) {
-  var url = event.request.url;
+  var req = event.request;
+  if (req.method !== 'GET') return;
+  var url = req.url;
   // Не кэшируем GitHub API и raw-файлы (данные должны быть свежими)
   if (url.includes('api.github.com') ||
       url.includes('raw.githubusercontent.com') ||
       url.includes('script.google.com') ||
       url.includes('fonts.gstatic.com')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(fetch(req));
+    return;
+  }
+  // v1.73: страница приложения — сначала сеть (свежая версия), офлайн — из кэша
+  if (isAppShell(req)) {
+    event.respondWith(
+      fetch(req, { cache: 'no-cache' }).then(function(resp) {
+        if (resp && resp.ok) {
+          var copy = resp.clone();
+          caches.open(CACHE_NAME).then(function(cache) { cache.put('./index.html', copy); });
+        }
+        return resp;
+      }).catch(function() {
+        return caches.match('./index.html').then(function(r) { return r || caches.match('./'); });
+      })
+    );
     return;
   }
   event.respondWith(
-    caches.match(event.request).then(function(response) {
+    caches.match(req).then(function(response) {
       if (response) return response;
-      return fetch(event.request).then(function(fetchResponse) {
+      return fetch(req).then(function(fetchResponse) {
         if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type === 'opaque') {
           return fetchResponse;
         }
         var responseToCache = fetchResponse.clone();
         caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(event.request, responseToCache);
+          cache.put(req, responseToCache);
         });
         return fetchResponse;
       });
