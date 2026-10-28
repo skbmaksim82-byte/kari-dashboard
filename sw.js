@@ -1,11 +1,17 @@
-var CACHE_NAME = 'portal-zakazov-v122';
+var CACHE_NAME = 'portal-zakazov-v123'; // v1.94: новая иконка приложения (вариант H)
 var REQ_STATE_CACHE = 'kari-req-state'; // состояние фоновой проверки запросов (не удалять при обновлении)
 var REQ_PHOTO_CACHE = 'kari-req-photos'; // v1.90: фото запросов (не удалять при обновлении)
 // v1.73: только файлы приложения; шрифты Google кэшируются при первой загрузке (fetch-обработчик),
 // чтобы недоступный/медленный fonts.googleapis.com не срывал установку обновления
 var urlsToCache = [
   './',
-  './index.html'
+  './index.html',
+  './manifest.json',
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png',
+  './badge-96.png'
 ];
 
 // v1.73: кэшируем в обход HTTP-кэша браузера (cache:'reload'), иначе в новый кэш
@@ -172,7 +178,7 @@ function reqBackgroundCheck() {
         return reqStatePut(st).then(function () {
           return self.registration.showNotification('📨 Запрос от менеджера', {
             body: fresh.length === 1 ? fresh[0].title : 'Новых запросов: ' + fresh.length,
-            tag: 'kari-req', renotify: true, icon: 'icon-192.png', badge: 'icon-192.png',
+            tag: 'kari-req', renotify: true, icon: 'icon-192.png', badge: 'badge-96.png',
             data: { url: self.registration.scope }
           });
         });
