@@ -1,4 +1,4 @@
-var CACHE_NAME = 'portal-zakazov-v120';
+var CACHE_NAME = 'portal-zakazov-v121';
 var REQ_STATE_CACHE = 'kari-req-state'; // состояние фоновой проверки запросов (не удалять при обновлении)
 var REQ_PHOTO_CACHE = 'kari-req-photos'; // v1.90: фото запросов (не удалять при обновлении)
 // v1.73: только файлы приложения; шрифты Google кэшируются при первой загрузке (fetch-обработчик),
@@ -59,6 +59,12 @@ self.addEventListener('fetch', function(event) {
       url.includes('script.google.com') ||
       url.includes('fonts.gstatic.com')) {
     event.respondWith(fetch(req));
+    return;
+  }
+  // v1.92: сканы документов из сетевой папки (files/…) — всегда из сети, без кэша,
+  // чтобы после замены файла магазин сразу скачивал новый протокол
+  if (new URL(url).pathname.indexOf('/files/') >= 0) {
+    event.respondWith(fetch(req, { cache: 'no-store' }));
     return;
   }
   // v1.90: фото запросов с Google Диска — из кэша (магазин видит баннер и без сети)
