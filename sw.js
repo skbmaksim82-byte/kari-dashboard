@@ -1,5 +1,6 @@
-var CACHE_NAME = 'portal-zakazov-v118';
+var CACHE_NAME = 'portal-zakazov-v119';
 var REQ_STATE_CACHE = 'kari-req-state'; // состояние фоновой проверки запросов (не удалять при обновлении)
+var REQ_PHOTO_CACHE = 'kari-req-photos'; // v1.90: фото запросов (не удалять при обновлении)
 // v1.73: только файлы приложения; шрифты Google кэшируются при первой загрузке (fetch-обработчик),
 // чтобы недоступный/медленный fonts.googleapis.com не срывал установку обновления
 var urlsToCache = [
@@ -31,7 +32,7 @@ self.addEventListener('activate', function(event) {
     caches.keys().then(function(cacheNames) {
       return Promise.all(
         cacheNames.filter(function(name) {
-          return name !== CACHE_NAME && name !== REQ_STATE_CACHE;
+          return name !== CACHE_NAME && name !== REQ_STATE_CACHE && name !== REQ_PHOTO_CACHE;
         }).map(function(name) {
           return caches.delete(name);
         })
@@ -58,6 +59,27 @@ self.addEventListener('fetch', function(event) {
       url.includes('script.google.com') ||
       url.includes('fonts.gstatic.com')) {
     event.respondWith(fetch(req));
+    return;
+  }
+  // v1.90: фото запросов с Google Диска — из кэша (магазин видит баннер и без сети)
+  if (url.indexOf('drive.google.com/thumbnail') >= 0) {
+    event.respondWith(
+      caches.open(REQ_PHOTO_CACHE).then(function(cache) {
+        return cache.match(req).then(function(hit) {
+          if (hit) return hit;
+          return fetch(req).then(function(resp) {
+            if (resp && (resp.ok || resp.type === 'opaque')) {
+              cache.put(req, resp.clone()).then(function() {
+                return cache.keys().then(function(keys) { // храним не больше 40 последних фото
+                  return Promise.all(keys.slice(0, Math.max(0, keys.length - 40)).map(function(k) { return cache.delete(k); }));
+                });
+              }).catch(function() {});
+            }
+            return resp;
+          });
+        });
+      })
+    );
     return;
   }
   // v1.73: страница приложения — сначала сеть (свежая версия), офлайн — из кэша
