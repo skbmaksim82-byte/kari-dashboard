@@ -1,4 +1,4 @@
-var CACHE_NAME = 'portal-zakazov-v121';
+var CACHE_NAME = 'portal-zakazov-v122';
 var REQ_STATE_CACHE = 'kari-req-state'; // состояние фоновой проверки запросов (не удалять при обновлении)
 var REQ_PHOTO_CACHE = 'kari-req-photos'; // v1.90: фото запросов (не удалять при обновлении)
 // v1.73: только файлы приложения; шрифты Google кэшируются при первой загрузке (fetch-обработчик),
