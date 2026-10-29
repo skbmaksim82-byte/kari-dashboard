@@ -1,17 +1,11 @@
-var CACHE_NAME = 'portal-zakazov-v123'; // v1.94: новая иконка приложения (вариант H)
+var CACHE_NAME = 'passport-sibir-v201';
 var REQ_STATE_CACHE = 'kari-req-state'; // состояние фоновой проверки запросов (не удалять при обновлении)
 var REQ_PHOTO_CACHE = 'kari-req-photos'; // v1.90: фото запросов (не удалять при обновлении)
 // v1.73: только файлы приложения; шрифты Google кэшируются при первой загрузке (fetch-обработчик),
 // чтобы недоступный/медленный fonts.googleapis.com не срывал установку обновления
 var urlsToCache = [
   './',
-  './index.html',
-  './manifest.json',
-  './icon.svg',
-  './icon-192.png',
-  './icon-512.png',
-  './apple-touch-icon.png',
-  './badge-96.png'
+  './index.html'
 ];
 
 // v1.73: кэшируем в обход HTTP-кэша браузера (cache:'reload'), иначе в новый кэш
@@ -59,8 +53,10 @@ self.addEventListener('fetch', function(event) {
   var req = event.request;
   if (req.method !== 'GET') return;
   var url = req.url;
-  // Не кэшируем GitHub API и raw-файлы (данные должны быть свежими)
-  if (url.includes('api.github.com') ||
+  // Не кэшируем данные: api/ и data/ с сервера, Apps Script (данные должны быть свежими)
+  var _p = new URL(url).pathname;
+  if (_p.indexOf('/api/') === 0 || _p.indexOf('/data/') === 0 ||
+      url.includes('api.github.com') ||
       url.includes('raw.githubusercontent.com') ||
       url.includes('script.google.com') ||
       url.includes('fonts.gstatic.com')) {
@@ -178,7 +174,7 @@ function reqBackgroundCheck() {
         return reqStatePut(st).then(function () {
           return self.registration.showNotification('📨 Запрос от менеджера', {
             body: fresh.length === 1 ? fresh[0].title : 'Новых запросов: ' + fresh.length,
-            tag: 'kari-req', renotify: true, icon: 'icon-192.png', badge: 'badge-96.png',
+            tag: 'kari-req', renotify: true, icon: 'icon-192.png', badge: 'icon-192.png',
             data: { url: self.registration.scope }
           });
         });
